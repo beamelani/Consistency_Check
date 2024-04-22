@@ -1,4 +1,5 @@
 # Authors: Ezio Bartocci, Beatrice Melani
+# Authors: Ezio Bartocci, Beatrice Melani
 # STL Consistency Checking (ver 0.2)
 # Date: 22-04-2024
 #
@@ -68,55 +69,63 @@ class STLVisitor:
     def visit_unary_temporal_operator(self, operator, time_interval_low, time_interval_high, expr):
         # Visit the expression within the temporal operator
         print(f"Visiting Unary Temporal Operator: {operator}" + " with time Interval [" + time_interval_low + "," + time_interval_high + "]")
-        prop0 = [operator, time_interval_low, time_interval_high, self.visit(expr)]
+        ret = self.visit(expr)
+
+        prop0 = [operator, time_interval_low, time_interval_high, ret[0]]
         prop = f"_phi{self._prop_count}"
         self._basic_propositions[prop] = prop0
         self._prop_count = self._prop_count + 1
-
-        return prop
+        return prop, str(int(time_interval_high) + int(ret[1]))
 
     def visit_binary_temporal_operator(self, operator, time_interval_low, time_interval_high, left, right):
         # Visit the expression within the temporal operator
         print(f"Visiting Binary Temporal Operator: {operator}" + " with time Interval [" + time_interval_low + "," + time_interval_high + "]")
-        prop0 = [operator, time_interval_low, time_interval_high, self.visit(left), self.visit(right)]
+        ret_left  = self.visit(left)
+        ret_right = self.visit(right)
+
+        prop0 = [operator, time_interval_low, time_interval_high, ret_left[0], ret_right[0]]
         prop = f"_phi{self._prop_count}"
         self._basic_propositions[prop] = prop0
         self._prop_count = self._prop_count + 1
-        return prop
+        return prop, str(int(time_interval_high) + max(int(ret_left[1]),int(ret_right[1])))
 
     def visit_unary_logical(self, operator, expr):
         # Visit both sides of the logical expression
         print(f"Visiting Unary Logical Operator: {operator}")
-        prop0 = [operator, self.visit(expr)]
+        ret = self.visit(expr)
+        prop0 = [operator, ret[0]]
         prop = f"_phi{self._prop_count}"
         self._basic_propositions[prop] = prop0
         self._prop_count = self._prop_count + 1
-        return prop
+        return prop, ret[1]
 
     def visit_binary_logical(self, operator, left, right):
         # Visit both sides of the logical expression
         print(f"Visiting Logical Operator: {operator}")
+        ret_left = self.visit(left)
+        ret_right = self.visit(right)
+
         if operator in {'&&', '||'}:
-            prop0 = [operator, self.visit(left), self.visit(right)]
+            prop0 = [operator, ret_left[0], ret_right[0]]
             prop = f"_phi{self._prop_count}"
             self._basic_propositions[prop] = prop0
             self._prop_count = self._prop_count + 1
         elif operator in {'->'}:
-            prop0 = ['!', self.visit(left)]
+            prop0 = ['!', ret_left[0]]
             prop = f"_phi{self._prop_count}"
             self._basic_propositions[prop] = prop0
             self._prop_count = self._prop_count + 1
-            prop1 = ['||', prop, self.visit(right)]
+            prop1 = ['||', prop, ret_right[0]]
             prop = f"_phi{self._prop_count}"
             self._basic_propositions[prop] = prop1
             self._prop_count = self._prop_count + 1
         elif operator in {'<->'}:
-            p = self.visit(left)
-            q = self.visit(right)
+            p = ret_left[0]
+            q = ret_right[0]
             p_and_q = self.visit_binary_logical('&&', p, q)
             np_and_nq = self.visit_binary_logical('&&', self.visit_unary_logical('!', p), self.visit_unary_logical('!', q))
             prop = self.visit_binary_logical('||', p_and_q, np_and_nq)
-        return prop
+        return prop, str(max(int(ret_left[1]), int(ret_right[1])))
 
     def visit_binary_relational(self, operator, left, right):
         # Visit both sides of the relational expression
@@ -156,7 +165,7 @@ class STLVisitor:
             self._basic_propositions[prop] = [self.visit(left), operator, self.visit(right)] #modificato mettendo i self.visit
             self._prop_count = self._prop_count + 1
 
-        return prop
+        return prop, '1'
 
 
 
@@ -178,7 +187,7 @@ class STLVisitor:
             self._basic_propositions[prop] = [binary_var]
             self._prop_count = self._prop_count + 1
 
-        return prop
+        return prop, '1'
 
     def visit_identifier(self, identifier):
         # Simply return the identifier, in more complex cases you might want to look up values
@@ -250,12 +259,12 @@ def parse_stl_expression(expression):
 #stl_expression = " F [0,5] (! (a > 0) &&  b > 0)" #controlla not davanti ad a -> ora è ok
 #stl_expression = " F [0,5] ! (a > 0 &&  b > 0)"
 # Example STL expression
-#stl_expression = "! F [0,5] a > 0"
+stl_expression = "! F [0,5] G [2,5] a > 0"
 #stl_expression = "!(a > 0)"
 #stl_expression = "(! x<0 && y>0) U[1,5] ( y > 6.07)"
 #stl_expression = "G[0,5] ((x > 3) && (F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] ((x > 3) && (y < 2))"
-stl_expression = "G[0,5] (x > 3)"
+#stl_expression = "G[0,5] (x > 3)"
 #stl_expression = "G[0,5] ((F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] (x > y)" #questa va bene come epsressione? perché non viene visitata correttamente
 #stl_expression = "G[0,5] (F[7,9] (x > 3))"
@@ -268,6 +277,7 @@ print("Parsed STL Expression:", parsed_expr)
 # Create a visitor and visit the parsed expression
 visitor = STLVisitor()
 result = visitor.visit(parsed_expr)
-#print("Result of visiting:", result)
+print("Result of visiting:", result)
 
 visitor.print_vars()
+print(f"formula_horizon = {result[1]}")
