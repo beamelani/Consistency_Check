@@ -99,7 +99,7 @@ class STLVisitor:
 
 # Example STL expression
 #stl_expression = "G[0,5] ((x > 3) && (F[2,7] (y < 2)))"
-stl_expression = "G[0,5] (x > 3) && (y < 2)"
+stl_expression = "G[0,5] ((x > 3) && (y < 2))"
 #stl_expression = "G[0,5] ((F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] (z == 2)"
 #stl_expression = "G[0,5] (F[7,9] (x > 3))"
