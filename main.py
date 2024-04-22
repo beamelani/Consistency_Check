@@ -91,7 +91,6 @@ class STLVisitor:
     def visit_unary_logical(self, operator, expr):
         # Visit both sides of the logical expression
         print(f"Visiting Unary Logical Operator: {operator}")
-
         prop0 = [operator, self.visit(expr)]
         prop = f"_phi{self._prop_count}"
         self._basic_propositions[prop] = prop0
@@ -158,7 +157,7 @@ class STLVisitor:
             print(f"Key '{left}' added in the dictionary.")
             prop = f"_phi{self._prop_count}"
             self._real_constraints[left] = {operator:{right:prop}}
-            self._basic_propositions[prop] = [left, operator, right]
+            self._basic_propositions[prop] = [self.visit(left), operator, self.visit(right)] #modificato mettendo i self.visit
             self._prop_count = self._prop_count + 1
 
         return prop
@@ -260,13 +259,13 @@ def parse_stl_expression(expression):
 #stl_expression = "(! x<0 && y>0) U[1,5] ( y > 6.07)"
 #stl_expression = "G[0,5] ((x > 3) && (F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] ((x > 3) && (y < 2))"
+stl_expression = "G[0,5] (x > 3)"
 #stl_expression = "G[0,5] ((F[2,7] (y < 2)))"
-#stl_expression = "G[0,5] (x > y)"
+#stl_expression = "G[0,5] (x > y)" #questa va bene come epsressione? perché non viene visitata correttamente
 #stl_expression = "G[0,5] (F[7,9] (x > 3))"
 #stl_expression = "G[0,10](x U[2,5] y)" #Until è sistemato
 # stl_expression = "G[0,5] (!(x && y == 5))"
-# stl_expression = "G[0,10] ((x > 0) => (F[0,5] (y > 0)))" #aggiunto simbolo =>
-# stl_expression = "G[0,5] (x && y)"
+
 parsed_expr = parse_stl_expression(stl_expression)
 print("Parsed STL Expression:", parsed_expr)
 
