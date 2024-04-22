@@ -82,7 +82,11 @@ class STLVisitor:
     def visit_binary_temporal_operator(self, operator, time_interval_low, time_interval_high, left, right):
         # Visit the expression within the temporal operator
         print(f"Visiting Binary Temporal Operator: {operator}" + " with time Interval [" + time_interval_low + "," + time_interval_high + "]")
-        return operator, self.visit(left), self.visit(right)
+        prop0 = [operator, time_interval_low, time_interval_high, self.visit(left), self.visit(right)]
+        prop = f"_phi{self._prop_count}"
+        self._basic_propositions[prop] = prop0
+        self._prop_count = self._prop_count + 1
+        return prop
 
     def visit_unary_logical(self, operator, expr):
         # Visit both sides of the logical expression
@@ -157,7 +161,7 @@ class STLVisitor:
             self._basic_propositions[prop] = [left, operator, right]
             self._prop_count = self._prop_count + 1
 
-        return prop, operator, self.visit(left), self.visit(right)
+        return prop
 
 
 
@@ -227,11 +231,12 @@ def create_stl_parser():
     parens = Group(Literal("(") + expr + Literal(")"))
 
     # Building the expressions
-    binary_relation = Group(identifier + relational_op + real_number)
+    binary_relation = Group(identifier + relational_op + real_number) | Group(identifier + relational_op + identifier)
     binary_variable = Group(identifier)
+    unary_relation = Group(Optional(binary_temporal_prefix)+ unary_logical_op+expr)
 
     # Expression with all options
-    expr <<= infixNotation(binary_relation | binary_variable | parens,
+    expr <<= infixNotation(binary_relation | unary_relation | binary_variable | parens,
                            [ (unary_temporal_prefix, 1, opAssoc.RIGHT),
                              (unary_logical_op, 1, opAssoc.RIGHT),
                              (binary_temporal_prefix, 2, opAssoc.LEFT),
@@ -247,15 +252,18 @@ def parse_stl_expression(expression):
     return parsed_expression.asList()
 
 # Example STL expression
-#stl_expression = " F [0,5] a > 0 && ! b > 0"
+#stl_expression = " F [0,5] (! (a > 0) &&  b > 0)" #controlla not davanti ad a -> ora è ok
+#stl_expression = " F [0,5] ! (a > 0 &&  b > 0)"
 # Example STL expression
+#stl_expression = "F [0,5] !(a > 0)"
+#stl_expression = "!(a > 0)"
 #stl_expression = "(! x<0 && y>0) U[1,5] ( y > 6.07)"
 #stl_expression = "G[0,5] ((x > 3) && (F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] ((x > 3) && (y < 2))"
 #stl_expression = "G[0,5] ((F[2,7] (y < 2)))"
-#stl_expression = "G[0,5] (z == 2)"
+#stl_expression = "G[0,5] (x > y)"
 #stl_expression = "G[0,5] (F[7,9] (x > 3))"
-stl_expression = "G[0,10](x U[2,5] y)" #Until è sistemato
+#stl_expression = "G[0,10](x U[2,5] y)" #Until è sistemato
 # stl_expression = "G[0,5] (!(x && y == 5))"
 # stl_expression = "G[0,10] ((x > 0) => (F[0,5] (y > 0)))" #aggiunto simbolo =>
 # stl_expression = "G[0,5] (x && y)"
@@ -265,6 +273,6 @@ print("Parsed STL Expression:", parsed_expr)
 # Create a visitor and visit the parsed expression
 visitor = STLVisitor()
 result = visitor.visit(parsed_expr)
-print("Result of visiting:", result)
+#print("Result of visiting:", result)
 
 visitor.print_vars()
