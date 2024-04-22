@@ -75,10 +75,10 @@ class STLVisitor:
         return identifier
     def visit_open_parenthesis(self, open_parenthesis, expr, close_parenthesis):
         # Simply return the identifier, in more complex cases you might want to look up values
-        #print(f"Visiting Parenthesis: {open_parenthesis}")
+        print(f"Visiting Parenthesis: {open_parenthesis}")
         return open_parenthesis, self.visit(expr), self.visit(close_parenthesis)
     def visit_close_parenthesis(self, close_parenthesis):
-        #print(f"Visiting Parenthesis: {close_parenthesis}")
+        print(f"Visiting Parenthesis: {close_parenthesis}")
         return close_parenthesis
 
 
@@ -118,9 +118,10 @@ def create_stl_parser():
 
     # Building the expressions
     binary_relation = Group(identifier + relational_op + real_number)
+    binary_variable = Group(identifier)
 
     # Expression with all options
-    expr <<= infixNotation(binary_relation | parens,
+    expr <<= infixNotation(binary_relation | binary_variable | parens,
                            [ (unary_temporal_prefix, 1, opAssoc.RIGHT),
                              (unary_logical_op, 1, opAssoc.RIGHT),
                              (binary_temporal_prefix, 2, opAssoc.LEFT),
@@ -137,13 +138,13 @@ def parse_stl_expression(expression):
 
 # Example STL expression
 #stl_expression = "(! x<0 && y>0) U[1,5] ( y > 6.07)"
-stl_expression = "G[0,5] ((x > 3) && (F[2,7] (y < 2)))"
+#stl_expression = "G[0,5] ((x > 3) && (F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] ((x > 3) && (y < 2))"
 #stl_expression = "G[0,5] ((F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] (z == 2)"
 #stl_expression = "G[0,5] (F[7,9] (x > 3))"
 #stl_expression = "G[0,10](x U[2,5] y)" #Until è sistemato
-# stl_expression = "G[0,5] (!(x && y == 5))"
+stl_expression = "G[0,5] (!(x && y == 5))"
 # stl_expression = "G[0,10] ((x > 0) => (F[0,5] (y > 0)))" #aggiunto simbolo =>
 # stl_expression = "G[0,5] (x && y)"
 parsed_expr = parse_stl_expression(stl_expression)

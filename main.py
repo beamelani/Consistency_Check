@@ -49,7 +49,7 @@ class STLVisitor:
                         raise SyntaxError("The lower bound of the time interval is greater than the upper bound")
                     return self.visit_unary_temporal_operator(node[0], node[2], node[4], node[6])
             elif isinstance(node[1], str):
-                print(node[0])
+                #print(node[0])
                 if node[1] in {'U'}:  # Temporal operators with two arguments
                     if (int(node[3]) > int(node[5])):
                         raise SyntaxError("The lower bound of the time interval is greater than the upper bound")
@@ -188,10 +188,6 @@ class STLVisitor:
 
 
 
-
-
-
-
 def create_stl_parser():
     # Basic elements
     identifier = Word(alphas, alphanums + "_")
@@ -254,12 +250,12 @@ def parse_stl_expression(expression):
 #stl_expression = " F [0,5] a > 0 && ! b > 0"
 # Example STL expression
 #stl_expression = "(! x<0 && y>0) U[1,5] ( y > 6.07)"
-stl_expression = "G[0,5] ((x > 3) && (F[2,7] (y < 2)))"
+#stl_expression = "G[0,5] ((x > 3) && (F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] ((x > 3) && (y < 2))"
 #stl_expression = "G[0,5] ((F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] (z == 2)"
 #stl_expression = "G[0,5] (F[7,9] (x > 3))"
-#stl_expression = "G[0,10](x U[2,5] y)" #Until è sistemato
+stl_expression = "G[0,10](x U[2,5] y)" #Until è sistemato
 # stl_expression = "G[0,5] (!(x && y == 5))"
 # stl_expression = "G[0,10] ((x > 0) => (F[0,5] (y > 0)))" #aggiunto simbolo =>
 # stl_expression = "G[0,5] (x && y)"
