@@ -63,11 +63,7 @@ class STLVisitor:
     def visit_parenthesis(self, openPar, closePar, expr):
         # Visit the expression within the temporal operator
         print(f"Visiting parenthesis: {openPar}{closePar}")
-        prop0 = [self.visit(expr)]
-        prop = f"_phi{self._prop_count}"
-        self._basic_propositions[prop] = prop0
-        self._prop_count = self._prop_count + 1
-        return prop
+        return self.visit(expr)
 
     def visit_unary_temporal_operator(self, operator, time_interval_low, time_interval_high, expr):
         # Visit the expression within the temporal operator
@@ -232,7 +228,7 @@ def create_stl_parser():
     # Building the expressions
     binary_relation = Group(identifier + relational_op + real_number) | Group(identifier + relational_op + identifier)
     binary_variable = Group(identifier)
-    unary_relation = Group(Optional(binary_temporal_prefix)+ unary_logical_op+expr)
+    unary_relation = Group(Optional(binary_temporal_prefix) + unary_logical_op+expr)
 
     # Expression with all options
     expr <<= infixNotation(binary_relation | unary_relation | binary_variable | parens,
@@ -254,7 +250,7 @@ def parse_stl_expression(expression):
 #stl_expression = " F [0,5] (! (a > 0) &&  b > 0)" #controlla not davanti ad a -> ora è ok
 #stl_expression = " F [0,5] ! (a > 0 &&  b > 0)"
 # Example STL expression
-#stl_expression = "F [0,5] !(a > 0)"
+#stl_expression = "! F [0,5] a > 0"
 #stl_expression = "!(a > 0)"
 #stl_expression = "(! x<0 && y>0) U[1,5] ( y > 6.07)"
 #stl_expression = "G[0,5] ((x > 3) && (F[2,7] (y < 2)))"
