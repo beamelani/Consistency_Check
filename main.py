@@ -1,6 +1,6 @@
 # Authors: Ezio Bartocci, Beatrice Melani
-# STL Consistency Checking (ver 0.2)
-# Date: 22-04-2024
+# STL Consistency Checking (ver 0.3)
+# Date: 23-04-2024
 #
 # Parser for Signal Temporal Logic (STL) formulas (discrete semantics)
 
@@ -270,21 +270,29 @@ def parse_stl_expression(expression):
     parsed_expression = stl_parser.parseString(expression, parseAll=True)
     return parsed_expression.asList()
 
+def generate_time_variables(formula_horizon, vars):
+    time_variables = {}
+    for var in vars:
+        for i in range(formula_horizon):
+            var_name = f"{var}{i}"
+            time_variables[var_name] = None  # O assegna un valore iniziale appropriato
+    return time_variables
+
 # Example STL expression
 #stl_expression = " F [0,5] (! (a > 0) &&  b > 0)" #controlla not davanti ad a -> ora è ok
 #stl_expression = " F [0,5] ! (a > 0 &&  b > 0)"
 # Example STL expression
-stl_expression = "! F [0,5] G [2,5] a > 0"
+#stl_expression = "! F [0,5] G [2,5] a > 0"
 #stl_expression = "!(a > 0)"
 #stl_expression = "(! x<0 && y>0) U[1,5] ( y > 6.07)"
-#stl_expression = "G[0,5] ((x > 3) && (F[2,7] (y < 2)))"
+stl_expression = "G[0,5] ((x > 3) && (F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] ((x > 3) && (y < 2))"
 #stl_expression = "G[0,5] (x > 3)"
 #stl_expression = "G[0,5] ((F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] (x > y)" #questa va bene come epsressione? perché non viene visitata correttamente
 #stl_expression = "G[0,5] (F[7,9] (x > 3))"
 #stl_expression = "G[0,10](x U[2,5] y)" #Until è sistemato
-# stl_expression = "G[0,5] (!(x && y == 5))"
+#stl_expression = "G[0,5] (x && y==5)"
 
 parsed_expr = parse_stl_expression(stl_expression)
 print("Parsed STL Expression:", parsed_expr)
@@ -292,8 +300,17 @@ print("Parsed STL Expression:", parsed_expr)
 # Create a visitor and visit the parsed expression
 visitor = STLVisitor()
 result = visitor.visit(parsed_expr)
-print("Result of visiting:", result)
+#print("Result of visiting:", result)
+#visitor.print_vars()
+print(f"Formula_horizon = {result[1]}")
+formula_horizon = int(result[1])
+variables = visitor.getVariableList()
+propositions =visitor.getBasicPropositionsList()
+expression = list(propositions.values())
+print(f"Propositions: ", propositions)
+print(f"Propositions: ", expression)
+time_variables = generate_time_variables(formula_horizon, variables.keys())
+print(f"Time variables: ", time_variables)
 
-visitor.print_vars()
-print(f"formula_horizon = {result[1]}")
+
 
