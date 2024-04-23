@@ -1,5 +1,4 @@
 # Authors: Ezio Bartocci, Beatrice Melani
-# Authors: Ezio Bartocci, Beatrice Melani
 # STL Consistency Checking (ver 0.2)
 # Date: 22-04-2024
 #
@@ -22,6 +21,22 @@ class STLVisitor:
         self._basic_propositions = {}  # Protected variable
         self._prop_count         = 0   # Protected variable
 
+
+
+    def getVariableList (self):
+        return self._variables
+
+    def getRealConstraintsList (self):
+        return self._real_constraints
+
+    def getBinaryConstraintsList (self):
+        return self._binary_constraints
+
+    def getBasicPropositionsList (self):
+        return self._basic_propositions
+
+    def getNumProp (self):
+        return self._prop_count
 
     def print_vars(self):
         print(self._variables)
@@ -281,3 +296,4 @@ print("Result of visiting:", result)
 
 visitor.print_vars()
 print(f"formula_horizon = {result[1]}")
+
