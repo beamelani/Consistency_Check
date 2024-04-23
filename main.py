@@ -4,7 +4,7 @@
 #
 # Parser for Signal Temporal Logic (STL) formulas (discrete semantics)
 
-
+from z3 import *
 from pyparsing import (Optional, Combine, Literal, Word, alphas, nums, alphanums, Group, Forward, infixNotation, opAssoc, oneOf)
 
 class SyntaxError(Exception):
@@ -313,4 +313,30 @@ time_variables = generate_time_variables(formula_horizon, variables.keys())
 print(f"Time variables: ", time_variables)
 
 
+#Ezio: example of code for encoding in SMT 
+time_horizon  = int(result[1])
+smt_variables = {} 
 
+
+for key in variables:
+	for t in range(time_horizon):
+		s = f"{key}_t{t}"
+		if variables[key] == 'real':
+			print(f"{s} = Real('{s}')")
+			smt_variables[s] = Real(s)
+		elif variables[key] == 'binary':
+			smt_variables[s] = Bool(s)
+			print(f"{s} = Bool('{s}')")
+	print("")
+print(smt_variables)
+
+
+s = Solver()
+
+# I add in the solver R1
+s.add(Or(smt_variables['x_t0'] > 10, smt_variables['x_t1'] > 10  ))
+
+
+
+print(s.check())
+print(s.model())
