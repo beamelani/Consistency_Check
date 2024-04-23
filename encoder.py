@@ -4,11 +4,7 @@
 # ovvero un dict in cui ogni elemento è una proposizione espressa come una lista e che parte dalle
 #prop atomiche e man mano le compone (albero)
 
-#stl_expression = "G[0,5] ((x > 3) && (F[2,7] (y < 2)))"
-#propositions = [['x', '>', '3'], ['y', '<', '2'], ['F', '2', '7', '_phi1'], ['&&', '_phi0', '_phi2'], ['G', '0', '5', '_phi3']]
-#variables = ['x', 'y']
-#formula_horizon = 13
-#time variable=  {'x0': None, 'x1': None, 'x2': None, 'x3': None, 'x4': None, 'x5': None, 'x6': None, 'x7': None, 'x8': None, 'x9': None, 'x10': None, 'x11': None, 'x12': None, 'y0': None, 'y1': None, 'y2': None, 'y3': None, 'y4': None, 'y5': None, 'y6': None, 'y7': None, 'y8': None, 'y9': None, 'y10': None, 'y11': None, 'y12': None}
+
 class Encoder:
     def visit_expression(self, formula_horizon, variables, time_variables, propositions):
         for variable in variables: #for each variable in the formula
@@ -50,6 +46,12 @@ class Encoder:
 
 
 #Esempio
+#stl_expression = "G[0,5] ((x > 3) && (F[2,7] (y < 2)))"
+#propositions = [['x', '>', '3'], ['y', '<', '2'], ['F', '2', '7', '_phi1'], ['&&', '_phi0', '_phi2'], ['G', '0', '5', '_phi3']]
+#variables = ['x', 'y']
+#formula_horizon = 13
+#time variable=  {'x0': None, 'x1': None, 'x2': None, 'x3': None, 'x4': None, 'x5': None, 'x6': None, 'x7': None, 'x8': None, 'x9': None, 'x10': None, 'x11': None, 'x12': None, 'y0': None, 'y1': None, 'y2': None, 'y3': None, 'y4': None, 'y5': None, 'y6': None, 'y7': None, 'y8': None, 'y9': None, 'y10': None, 'y11': None, 'y12': None}
+
 #stl_expression = "G[0,5] (x > 3)"
 propositions=  [['x', '>', '3'], ['G', '0', '5', '_phi0']]
 formula_horizon = 6

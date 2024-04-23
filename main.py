@@ -308,7 +308,7 @@ variables = visitor.getVariableList()
 propositions =visitor.getBasicPropositionsList()
 expression = list(propositions.values())
 print(f"Propositions: ", propositions)
-print(f"Propositions: ", expression)
+#print(f"Propositions: ", expression)
 time_variables = generate_time_variables(formula_horizon, variables.keys())
 print(f"Time variables: ", time_variables)
 
