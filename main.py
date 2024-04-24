@@ -1,6 +1,6 @@
 # Authors: Ezio Bartocci, Beatrice Melani
 # STL Consistency Checking (ver 0.3)
-# Date: 23-04-2024
+# Date: 24-04-2024
 #
 # Parser for Signal Temporal Logic (STL) formulas (discrete semantics)
 
@@ -285,9 +285,9 @@ def generate_time_variables(formula_horizon, vars):
 #stl_expression = "! F [0,5] G [2,5] a > 0"
 #stl_expression = "!(a > 0)"
 #stl_expression = "(! x<0 && y>0) U[1,5] ( y > 6.07)"
-stl_expression = "G[0,5] ((x > 3) && (F[2,7] (y < 2)))"
+#stl_expression = "G[0,5] ((x > 3) && (F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] ((x > 3) && (y < 2))"
-#stl_expression = "G[0,5] (x > 3)"
+stl_expression = "G[0,5] (x > 3)"
 #stl_expression = "G[0,5] ((F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] (x > y)" #questa va bene come epsressione? perché non viene visitata correttamente
 #stl_expression = "G[0,5] (F[7,9] (x > 3))"
@@ -313,28 +313,72 @@ time_variables = generate_time_variables(formula_horizon, variables.keys())
 print(f"Time variables: ", time_variables)
 
 
-#Ezio: example of code for encoding in SMT 
+#Ezio: example of code for encoding in SMT
 time_horizon  = int(result[1])
-smt_variables = {} 
+smt_variables = {}
 
 
 for key in variables:
 	for t in range(time_horizon):
-		s = f"{key}_t{t}"
+		prop = f"{key}_t{t}"
 		if variables[key] == 'real':
-			print(f"{s} = Real('{s}')")
-			smt_variables[s] = Real(s)
+			print(f"{prop} = Real('{prop}')")
+			smt_variables[prop] = Real(prop)
 		elif variables[key] == 'binary':
-			smt_variables[s] = Bool(s)
-			print(f"{s} = Bool('{s}')")
+			smt_variables[prop] = Bool(prop)
+			print(f"{prop} = Bool('{prop}')")
 	print("")
-print(smt_variables)
 
-
+print("")
+print("s = Solver")
+#print(smt_variables)
 s = Solver()
+print("")
+
+for key in propositions:
+         for t in range(time_horizon):
+                 prop = f"{key}_t{t}"
+                 if len(propositions[key]) == 3 and propositions[key][1] in {'<', '<=', '>', '>=', '==', '!='}:
+                         print(f"{prop} = Bool('{prop}')")
+                         smt_variables[prop] = Bool(prop)
+                         print(f"s.add({prop} == {propositions[key][0]}_t{t} {propositions[key][1]} {propositions[key][2]})")
+                         if propositions[key][1] == '<':
+                                s.add(smt_variables[prop] == (smt_variables[f"{propositions[key][0]}_t{t}"] < float(propositions[key][2])))
+                                print(f"s.add({smt_variables[prop]} == ({propositions[key][0]}_t{t} < {propositions[key][2]}))")
+                         elif propositions[key][1] == '<=':
+                             s.add(smt_variables[prop] == (smt_variables[f"{propositions[key][0]}_t{t}"] <= float(propositions[key][2])))
+                             print(f"s.add({smt_variables[prop]} == ({propositions[key][0]}_t{t} <= {propositions[key][2]}))")
+                         elif propositions[key][1] == '>':
+                             s.add(smt_variables[prop] == (smt_variables[f"{propositions[key][0]}_t{t}"] > float(propositions[key][2])))
+                             print(f"s.add({smt_variables[prop]} == ({propositions[key][0]}_t{t} > {propositions[key][2]}))")
+                         elif propositions[key][1] == '>=':
+                             s.add(smt_variables[prop] == (smt_variables[f"{propositions[key][0]}_t{t}"] >= float(propositions[key][2])))
+                             print(f"s.add({smt_variables[prop]} == ({propositions[key][0]}_t{t} >= {propositions[key][2]}))")
+                         elif propositions[key][1] == '==':
+                             s.add(smt_variables[prop] == (smt_variables[f"{propositions[key][0]}_t{t}"] == float(propositions[key][2])))
+                             print(f"s.add({smt_variables[prop]} == ({propositions[key][0]}_t{t} == {propositions[key][2]}))")
+                         elif propositions[key][1] == '!=':
+                             s.add(smt_variables[prop] == (smt_variables[f"{propositions[key][0]}_t{t}"] != float(propositions[key][2])))
+                             print(f"s.add({smt_variables[prop]} == ({propositions[key][0]}_t{t} != {propositions[key][2]}))")
+                 elif len(propositions[key]) == 4 and propositions[key][0] in {'G', 'F'} :
+                     print(f"{prop} = Bool('{prop}')")
+                     smt_variables[prop] = Bool(prop)
+                     interval_low        = int(propositions[key][1])
+                     interval_high       = int(propositions[key][2])
+                     prop1               = propositions[key][3]
+                     #print(f"{prop1}_t{t}")
+                     prop1_list          = [smt_variables[f"{prop1}_t{i}"] for i in range(interval_low,interval_high+1)]
+                     print(prop1_list)
+                     if propositions[key][0] == 'G':
+                        s.add(And(prop1_list))
+                     elif propositions[key][0] == 'F':
+                        s.add(Or(prop1_list))
+
+
+#smt_variables['_phi0'] = Bool('_phi0')
 
 # I add in the solver R1
-s.add(Or(smt_variables['x_t0'] > 10, smt_variables['x_t1'] > 10  ))
+#s.add(smt_variables['_phi0'] == (smt_variables['x_t0'] > 10))
 
 
 
