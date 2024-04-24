@@ -287,7 +287,7 @@ def generate_time_variables(formula_horizon, vars):
 #stl_expression = "(! x<0 && y>0) U[1,5] ( y > 6.07)"
 #stl_expression = "G[0,5] ((x > 3) && (F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] ((x > 3) && (y < 2))"
-stl_expression = "G[2,5] (x > 3) && F[2,5] (y > 3)"
+stl_expression = " (x > 4) && ! (y > 3)"
 #stl_expression = "G[0,5] ((F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] (x > y)" #questa va bene come epsressione? perché non viene visitata correttamente
 #stl_expression = "G[0,5] (F[7,9] (x > 3))"
@@ -338,6 +338,7 @@ print("")
 for key in propositions:
          for t in range(time_horizon):
                  prop = f"{key}_t{t}"
+                 print(prop)
                  if len(propositions[key]) == 3 and propositions[key][1] in {'<', '<=', '>', '>=', '==', '!='}:
                          print(f"{prop} = Bool('{prop}')")
                          smt_variables[prop] = Bool(prop)
@@ -388,6 +389,14 @@ for key in propositions:
                          elif propositions[key][0] == '||':
                             s.add(smt_variables[prop] == Or(smt_variables[prop1], smt_variables[prop2]))
                             print(f"s.add({prop} == Or({prop1},{prop2}))")
+                 elif len(propositions[key]) == 2 and propositions[key][0] in {'!'}:
+                     prop1 = f"{propositions[key][1]}_t{t}"
+                     if prop1 in smt_variables.keys():
+                        print(f"{prop} = Bool('{prop}')")
+                        smt_variables[prop] = Bool(prop)
+                        if propositions[key][0] == '!':
+                            s.add(smt_variables[prop] == Not(smt_variables[prop1]))
+                            print(f"s.add({prop} == Not({prop1}))")
 
 #smt_variables['_phi0'] = Bool('_phi0')
 
@@ -398,5 +407,4 @@ for key in propositions:
 
 print(s.check())
 print(s.model())
-
 
