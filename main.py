@@ -287,7 +287,7 @@ def generate_time_variables(formula_horizon, vars):
 #stl_expression = "(! x<0 && y>0) U[1,5] ( y > 6.07)"
 #stl_expression = "G[0,5] ((x > 3) && (F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] ((x > 3) && (y < 2))"
-stl_expression = "G[2,5] (x > 3)"
+stl_expression = "G[2,5] (x > 3) && F[2,5] (y > 3)"
 #stl_expression = "G[0,5] ((F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] (x > y)" #questa va bene come epsressione? perché non viene visitata correttamente
 #stl_expression = "G[0,5] (F[7,9] (x > 3))"
@@ -375,11 +375,28 @@ for key in propositions:
                         elif propositions[key][0] == 'F':
                             s.add(smt_variables[prop] == Or(prop1_list))
                             print(f"s.add({prop} == Or({prop1_list}))")
-
+                        print("")
+                 elif len(propositions[key]) == 3 and propositions[key][0] in {'&&', '||'}:
+                     prop1 = f"{propositions[key][1]}_t{t}"
+                     prop2 = f"{propositions[key][2]}_t{t}"
+                     if prop1 in smt_variables.keys() and prop2 in smt_variables.keys():
+                         print(f"{prop} = Bool('{prop}')")
+                         smt_variables[prop] = Bool(prop)
+                         if propositions[key][0] == '&&':
+                            s.add(smt_variables[prop] == And(smt_variables[prop1], smt_variables[prop2] ))
+                            print(f"s.add({prop} == And({prop1},{prop2}))")
+                         elif propositions[key][0] == '||':
+                            s.add(smt_variables[prop] == Or(smt_variables[prop1], smt_variables[prop2]))
+                            print(f"s.add({prop} == Or({prop1},{prop2}))")
 
 #smt_variables['_phi0'] = Bool('_phi0')
 
 # I add in the solver R1
 #s.add(smt_variables['_phi0'] == (smt_variables['x_t0'] > 10))
+
+
+
+print(s.check())
+print(s.model())
 
 
