@@ -43,8 +43,6 @@ class STLVisitor:
         self._basic_propositions = {}  # Protected variable
         self._prop_count         = 0   # Protected variable
 
-
-
     def getVariableList (self):
         return self._variables
 
@@ -300,6 +298,8 @@ def generate_time_variables(formula_horizon, vars):
             time_variables[var_name] = None  # O assegna un valore iniziale appropriato
     return time_variables
 
+
+
 # Example STL expression
 #stl_expression = " F [0,5] (! (a > 0) &&  b > 0)" #controlla not davanti ad a -> ora è ok
 #stl_expression = " F [0,5] ! (a > 0 &&  b > 0)"
@@ -314,7 +314,8 @@ def generate_time_variables(formula_horizon, vars):
 #stl_expression = "G[0,5] (x > y)" #questa va bene come epsressione? perché non viene visitata correttamente
 #stl_expression = "G[0,5] (F[7,9] (x > 3))"
 #stl_expression = "G[0,10](x U[2,5] y)" #Until è sistemato
-stl_expression = "x>0 U[2,7] y < 0"
+#stl_expression = "x>0 U[2,7] y < 0"
+stl_expression = "G[2,5] x > 5 && G[1,3] x < 0"
 
 parsed_expr = parse_stl_expression(stl_expression)
 print("Parsed STL Expression:", parsed_expr)
@@ -443,14 +444,14 @@ for key in propositions:
 
 
                            print(f"{prop}_A = Bool('{prop}_A')")
-                           smt_variables[f"{prop}_A"] = Bool('{prop}_A')
+                           smt_variables[f"{prop}_A"] = Bool(f"{prop}_A")
                            prop_a_list = [smt_variables[f"{prop1}_t{t + i}"] for i in range(0, interval_low + 1)]
                            print(prop_a_list)
                            s.add(smt_variables[f"{prop}_A"] == And(prop_a_list))
                            print(f"s.add({prop}_A == And({prop_a_list}))")
 
                            print(f"{prop}_B = Bool('{prop}_B')")
-                           smt_variables[f"{prop}_B"] = Bool('{prop}_B')
+                           smt_variables[f"{prop}_B"] = Bool(f"{prop}_B")
                            prop_b_list = [smt_variables[f"{prop2}_t{t + i}"] for i in range(interval_low, interval_high + 1)]
                            print(f"s.add({prop2}_B == Or({prop_b_list}))")
 
@@ -459,19 +460,19 @@ for key in propositions:
 
                                if not f"{key}_t{time_horizon-1}_C" in smt_variables.keys():
                                    print(f"{key}_t{time_horizon-1}_C = Bool('{key}_t{time_horizon-1}_C')")
-                                   smt_variables[f"{key}_t{time_horizon-1}_C"] = Bool('{key}_t{time_horizon-1}_C')
+                                   smt_variables[f"{key}_t{time_horizon-1}_C"] = Bool(f"{key}_t{time_horizon-1}_C")
                                    s.add(smt_variables[f"{key}_t{time_horizon-1}_C"] == smt_variables[f"{prop2}_t{time_horizon-1}"])
                                    print(f"s.add({key}_t{time_horizon-1}_C == {prop2}_t{time_horizon-1})")
                                for i in range(t+interval_low, time_horizon-1):
                                    k = time_horizon - i
                                    if not f"{key}_t{k}_C" in smt_variables.keys():
                                        print(f"{key}_t{k}_C = Bool('{key}_t{k}_C')")
-                                       smt_variables[f"{key}_t{k}_C"] = Bool('{key}_t{k}_C')
+                                       smt_variables[f"{key}_t{k}_C"] = Bool(f"{key}_t{k}_C")
                                        print(f"s.add({key}_t{k}_C == Or({prop2}_t{k},And({prop1}_t{k},{key}_t{k + 1}_C))")
                                        s.add(smt_variables[f"{key}_t{k}_C"] == Or(smt_variables[f"{prop2}_t{k}"], And(smt_variables[f"{prop1}_t{k}"],smt_variables[f"{key}_t{k+1}_C"])))
 
                            print("")
-                           smt_variables[f"{prop}"] = Bool('{prop}')
+                           smt_variables[f"{prop}"] = Bool(f"{prop}")
                            print(f"{prop} = Bool('{prop}')")
 
                            s.add(smt_variables[f"{prop}"] == And(smt_variables[f"{prop}_A"],smt_variables[f"{prop}_B"],smt_variables[f"{key}_t{interval_low}_C"]))
