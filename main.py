@@ -1,8 +1,30 @@
-# Authors: Ezio Bartocci, Beatrice Melani
-# STL Consistency Checking (ver 0.3)
-# Date: 23-04-2024
+# MIT License
 #
-# Parser for Signal Temporal Logic (STL) formulas (discrete semantics)
+# Copyright (c) 2024 Ezio Bartocci, Beatrice Melani
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+
+# STL Requirement Consistency Checking (ver 0.4)
+# Date: 25-04-2024
+#
+#
 
 from z3 import *
 from pyparsing import (Optional, Combine, Literal, Word, alphas, nums, alphanums, Group, Forward, infixNotation, opAssoc, oneOf)
@@ -287,12 +309,12 @@ def generate_time_variables(formula_horizon, vars):
 #stl_expression = "(! x<0 && y>0) U[1,5] ( y > 6.07)"
 #stl_expression = "G[0,5] ((x > 3) && (F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] ((x > 3) && (y < 2))"
-stl_expression = " (x > 4) && ! (y > 3)"
+#stl_expression = " (x > 4) && ! (y > 3)"
 #stl_expression = "G[0,5] ((F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] (x > y)" #questa va bene come epsressione? perché non viene visitata correttamente
 #stl_expression = "G[0,5] (F[7,9] (x > 3))"
 #stl_expression = "G[0,10](x U[2,5] y)" #Until è sistemato
-#stl_expression = "G[0,5] (x && y==5)"
+stl_expression = "x>0 U[2,7] y < 0"
 
 parsed_expr = parse_stl_expression(stl_expression)
 print("Parsed STL Expression:", parsed_expr)
@@ -308,9 +330,6 @@ variables = visitor.getVariableList()
 propositions =visitor.getBasicPropositionsList()
 expression = list(propositions.values())
 print(f"Propositions: ", propositions)
-#print(f"Propositions: ", expression)
-time_variables = generate_time_variables(formula_horizon, variables.keys())
-print(f"Time variables: ", time_variables)
 
 
 #Ezio: example of code for encoding in SMT
@@ -338,8 +357,12 @@ print("")
 for key in propositions:
          for t in range(time_horizon):
                  prop = f"{key}_t{t}"
-                 print(prop)
-                 if len(propositions[key]) == 3 and propositions[key][1] in {'<', '<=', '>', '>=', '==', '!='}:
+                 #print(prop)
+                 if len(propositions[key]) == 1:
+                     print(f"{prop} = Bool('{prop}')")
+                     smt_variables[prop] = Bool(prop)
+                     print(f"s.add({prop} == {propositions[key][0]}_t{t})")
+                 elif len(propositions[key]) == 3 and propositions[key][1] in {'<', '<=', '>', '>=', '==', '!='}:
                          print(f"{prop} = Bool('{prop}')")
                          smt_variables[prop] = Bool(prop)
                          print(f"s.add({prop} == {propositions[key][0]}_t{t} {propositions[key][1]} {propositions[key][2]})")
@@ -397,11 +420,71 @@ for key in propositions:
                         if propositions[key][0] == '!':
                             s.add(smt_variables[prop] == Not(smt_variables[prop1]))
                             print(f"s.add({prop} == Not({prop1}))")
+                 elif len(propositions[key]) == 5 and propositions[key][0] in {'U'}:
+                        interval_low = int(propositions[key][1])
+                        interval_high = int(propositions[key][2])
+                        # phi1 U_[a,b] phi2 = G [0,a] phi1 && F [a,b] phi2 && F [a,a] (phi1 U phi2)
+                        # A   = G [0,a] phi1
+                        # B   = F [a,b] phi2
+                        # C   = phi1 U phi2
+                        # C_t = phi2_t or (phi1_t and C_t+1) with C_N = phi2_N
+                        # C_a = F [a,a] (phi1 U phi2)
+                        # Example
+                        # a = 2 and N = 7
+                        # C_t7 = phi2_t7
+                        # C_t6 = phi2_t6 or (phi1_t6 and C_t7)
+                        # C_t5 = phi2_t5 or (phi1_t5 and C_t6)
 
-#smt_variables['_phi0'] = Bool('_phi0')
 
-# I add in the solver R1
-#s.add(smt_variables['_phi0'] == (smt_variables['x_t0'] > 10))
+                        prop1 = propositions[key][3]
+                        prop2 = propositions[key][4]
+
+                        if t + interval_high < time_horizon:
+
+
+                           print(f"{prop}_A = Bool('{prop}_A')")
+                           smt_variables[f"{prop}_A"] = Bool('{prop}_A')
+                           prop_a_list = [smt_variables[f"{prop1}_t{t + i}"] for i in range(0, interval_low + 1)]
+                           print(prop_a_list)
+                           s.add(smt_variables[f"{prop}_A"] == And(prop_a_list))
+                           print(f"s.add({prop}_A == And({prop_a_list}))")
+
+                           print(f"{prop}_B = Bool('{prop}_B')")
+                           smt_variables[f"{prop}_B"] = Bool('{prop}_B')
+                           prop_b_list = [smt_variables[f"{prop2}_t{t + i}"] for i in range(interval_low, interval_high + 1)]
+                           print(f"s.add({prop2}_B == Or({prop_b_list}))")
+
+                           if not f"{key}_t{t+interval_low}_C" in smt_variables.keys():
+                               print(f"The variables {key}_t{t+interval_low}_C is not in smt_variables")
+
+                               if not f"{key}_t{time_horizon-1}_C" in smt_variables.keys():
+                                   print(f"{key}_t{time_horizon-1}_C = Bool('{key}_t{time_horizon-1}_C')")
+                                   smt_variables[f"{key}_t{time_horizon-1}_C"] = Bool('{key}_t{time_horizon-1}_C')
+                                   s.add(smt_variables[f"{key}_t{time_horizon-1}_C"] == smt_variables[f"{prop2}_t{time_horizon-1}"])
+                                   print(f"s.add({key}_t{time_horizon-1}_C == {prop2}_t{time_horizon-1})")
+                               for i in range(t+interval_low, time_horizon-1):
+                                   k = time_horizon - i
+                                   if not f"{key}_t{k}_C" in smt_variables.keys():
+                                       print(f"{key}_t{k}_C = Bool('{key}_t{k}_C')")
+                                       smt_variables[f"{key}_t{k}_C"] = Bool('{key}_t{k}_C')
+                                       print(f"s.add({key}_t{k}_C == Or({prop2}_t{k},And({prop1}_t{k},{key}_t{k + 1}_C))")
+                                       s.add(smt_variables[f"{key}_t{k}_C"] == Or(smt_variables[f"{prop2}_t{k}"], And(smt_variables[f"{prop1}_t{k}"],smt_variables[f"{key}_t{k+1}_C"])))
+
+                           print("")
+                           smt_variables[f"{prop}"] = Bool('{prop}')
+                           print(f"{prop} = Bool('{prop}')")
+
+                           s.add(smt_variables[f"{prop}"] == And(smt_variables[f"{prop}_A"],smt_variables[f"{prop}_B"],smt_variables[f"{key}_t{interval_low}_C"]))
+                           print(f"s.add({prop} == And({prop}_A,{prop}_B,{key}_t{interval_low}_C))")
+
+
+
+
+
+
+
+print(s.check())
+print(s.model())
 
 
 
