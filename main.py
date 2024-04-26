@@ -458,7 +458,7 @@ for key in propositions:
                              else:
                                  s.add((smt_variables[f"{propositions[key][0]}_t{t}"] != float(propositions[key][2])))
                                  print(f"s.add(({propositions[key][0]}_t{t} != {propositions[key][2]}))")
-                 elif len(propositions[key]) == 4 and propositions[key][0] in {'G', 'F'} :
+                 elif len(propositions[key]) == 4 and propositions[key][0] in {'G', 'F'} and t == 0: #non serve che faccia il ciclo per ogni t
                      int_a = int(propositions[key][1])
                      int_b = int(propositions[key][2])
                      if t + int_b < time_horizon:
