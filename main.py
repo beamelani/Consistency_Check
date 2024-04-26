@@ -21,8 +21,8 @@
 # SOFTWARE.
 
 
-# STL Requirement Consistency Checking (ver 0.4)
-# Date: 25-04-2024
+# STL Requirement Consistency Checking (ver 0.41)
+# Date: 26-04-2024
 #
 #
 
@@ -500,8 +500,8 @@ for key in propositions:
                                 s.add(smt_variables[prop] == Or(smt_variables[prop1], smt_variables[prop2]))
                                 print(f"s.add({prop} == Or({prop1},{prop2}))")
                             else:
-                                s.add(smt_variables[prop] == Or(smt_variables[prop1], smt_variables[prop2]))
-                                print(f"s.add({prop} == Or({prop1},{prop2}))")
+                                s.add(Or(smt_variables[prop1], smt_variables[prop2]))
+                                print(f"s.add(Or({prop1},{prop2}))")
                  elif len(propositions[key]) == 2 and propositions[key][0] in {'!'}:
                      prop1 = f"{propositions[key][1]}_t{t}"
                      if prop1 in smt_variables.keys():
