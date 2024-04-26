@@ -21,8 +21,8 @@
 # SOFTWARE.
 
 
-# STL Requirement Consistency Checking (ver 0.41)
-# Date: 26-04-2024
+# STL Requirement Consistency Checking (ver 0.4)
+# Date: 25-04-2024
 #
 #
 
@@ -34,13 +34,13 @@ class SyntaxError(Exception):
     pass
 
 
-class STLVisitor:
+class STLConsistencyChecker:
 
     def __init__(self):
         self._variables          = {}  # Protected variable
         self._real_constraints   = {}  # Protected variable
         self._binary_constraints = {}  # Protected variable
-        self._sub_formulas = {}  # Protected variable
+        self._sub_formulas       = {}  # Protected variable
         self._prop_count         = 0   # Protected variable
 
     def getVariableList (self):
@@ -93,11 +93,73 @@ class STLVisitor:
                 print(f"{key} = {self._sub_formulas[key][0]} {self._sub_formulas[key][1]}   (Not)")
         print("")
 
+
+
     def print_vars(self):
         print(self._variables)
         print(self._real_constraints)
         print(self._binary_constraints)
         print(self._sub_formulas)
+
+    def _create_stl_parser(self):
+        # Basic elements
+        identifier = Word(alphas, alphanums + "_")
+
+        # Expression for integer
+        non_zero_digit = "123456789"
+        zero = "0"
+        integer_number = Word(non_zero_digit, nums) | zero
+
+        # Expression for real
+        point = "."
+        e = Word("eE", exact=1)
+        plus_or_minus = Word("+-", exact=1)
+        real_number = Combine(Optional(plus_or_minus) + Word(nums) + Optional(point + Optional(Word(nums))) + Optional(
+            e + Optional(plus_or_minus) + Word(nums)))
+
+        # Define relational operators
+        relational_op = oneOf("< <= > >= == !=")
+
+        # Logical operators
+        unary_logical_op = Literal('!')
+        binary_logical_op = oneOf("&& || -> <->")
+
+        interval = Literal('[') + integer_number + Literal(',') + integer_number + Literal(']')
+
+        # Temporal operators
+        unary_temporal_op = oneOf("G F")
+        unary_temporal_prefix = unary_temporal_op + interval
+
+        binary_temporal_op = Literal('U')
+        binary_temporal_prefix = binary_temporal_op + interval
+
+        # Define expressions
+        expr = Forward()
+
+        # Parentheses for grouping
+        parens = Group(Literal("(") + expr + Literal(")"))
+
+        # Building the expressions
+        binary_relation = Group(identifier + relational_op + real_number) | Group(
+            identifier + relational_op + identifier)
+        binary_variable = Group(identifier)
+        unary_relation = Group(Optional(binary_temporal_prefix) + unary_logical_op + expr)
+
+        # Expression with all options
+        expr <<= infixNotation(binary_relation | unary_relation | binary_variable | parens,
+                               [(unary_temporal_prefix, 1, opAssoc.RIGHT),
+                                (unary_logical_op, 1, opAssoc.RIGHT),
+                                (binary_temporal_prefix, 2, opAssoc.LEFT),
+                                (binary_logical_op, 2, opAssoc.LEFT)
+                                ])
+
+        return expr
+
+    # Example parser usage
+    def parseSTL(self, expression):
+        stl_parser = self._create_stl_parser()
+        parsed_expression = stl_parser.parseString(expression, parseAll=True)
+        return parsed_expression.asList()
 
     def visit(self, node):
         # Determine the type of the node and call the appropriate visit method
@@ -129,7 +191,6 @@ class STLVisitor:
                     return self.visit_binary_logical(node[1], node[0], node[2:])
         elif isinstance(node, str):
             return self.visit_identifier(node)
-
 
     def visit_parenthesis(self, openPar, closePar, expr):
         # Visit the expression within the temporal operator
@@ -264,79 +325,297 @@ class STLVisitor:
         # print(f"Visiting Identifier: {identifier}")
         return identifier
 
+    def _encode_variables (self,time_horizon,smt_variables,verbose):
+        if verbose:
+            print("")
+            print("# Encode the Real/Binary variables ")
+            print("")
+        for key in self._variables:
+            for t in range(time_horizon):
+                prop = f"{key}_t{t}"
+                if variables[key] == 'real':
+                    if verbose:
+                        print(f"{prop} = Real('{prop}')")
+                    smt_variables[prop] = Real(prop)
+                elif variables[key] == 'binary':
+                    if verbose:
+                        print(f"{prop} = Bool('{prop}')")
+                    smt_variables[prop] = Bool(prop)
+            print("")
+
+    def _filter_witness(self, model):
+        filter_model1 = []
+        filter_model2 = {}
+        sorted_model =  {}
+        for var in model:
+            var_name = str(var)
+            if len(var_name) >= 4:
+                if var_name[0:4] != "_phi":
+                    filter_model1.append(var_name)
+                    filter_model2[var_name] = model[var]
+
+        filter_model1.sort()
+        for var in filter_model1:
+            sorted_model[var] = filter_model2[var]
+
+        return sorted_model
+
+    def solve(self, time_horizon, root_formula, verbose):
+        #This hashtable will contains the variables for the SMT Solver
+        smt_variables = {}
+
+        if verbose:
+            print("from z3 import *")
+            print("")
+            print("# SMT Encoding")
+            print("===========================")
+
+        self._encode_variables(time_horizon,smt_variables,verbose)
+
+        if verbose:
+            print("")
+            print("# Instantiate the SMT Solver")
+            print("s = Solver()")
+
+        s = Solver()
+        root_prop = f"{root_formula}_t{0}"
+
+        for key in self._sub_formulas:
+            for t in range(time_horizon):
+                prop = f"{key}_t{t}"
+
+                if len(self._sub_formulas[key]) == 1:
+                    if verbose:
+                        print(f"{prop} = Bool('{prop}')")
+
+                    smt_variables[prop] = Bool(prop)
+                    if (root_prop != prop):
+                        if verbose:
+                            print(f"s.add({prop} == {self._sub_formulas[key][0]}_t{t})")
+                        s.add(smt_variables[prop] == smt_variables[f"{self._sub_formulas[key][0]}_t{t}"])
+                    else:
+                        if verbose:
+                            print(f"s.add({self._sub_formulas[key][0]}_t{t})")
+                        s.add(smt_variables[f"{self._sub_formulas[key][0]}_t{t}"])
+                elif len(self._sub_formulas[key]) == 3 and self._sub_formulas[key][1] in {'<', '<=', '>', '>=', '==', '!='}:
+                    if verbose:
+                        print(f"{prop} = Bool('{prop}')")
+                    smt_variables[prop] = Bool(prop)
+                    if self._sub_formulas[key][1] == '<':
+                        if (root_prop != prop):
+                            s.add(smt_variables[prop] == (smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] < float(self._sub_formulas[key][2])))
+                            if verbose:
+                                print(f"s.add({smt_variables[prop]} == ({self._sub_formulas[key][0]}_t{t} < {self._sub_formulas[key][2]}))")
+                        else:
+                            s.add((smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] < float(self._sub_formulas[key][2])))
+                            if verbose:
+                                print(f"s.add({self._sub_formulas[key][0]}_t{t} < {self._sub_formulas[key][2]})")
+                    elif self._sub_formulas[key][1] == '<=':
+                        if (root_prop != prop):
+                            s.add(smt_variables[prop] == (smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] <= float(self._sub_formulas[key][2])))
+                            if verbose:
+                                print(f"s.add({smt_variables[prop]} == ({self._sub_formulas[key][0]}_t{t} <= {self._sub_formulas[key][2]}))")
+                        else:
+                            s.add((smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] <= float(self._sub_formulas[key][2])))
+                            if verbose:
+                                print(f"s.add({self._sub_formulas[key][0]}_t{t} <= {self._sub_formulas[key][2]})")
+                    elif self._sub_formulas[key][1] == '>':
+                        if (root_prop != prop):
+                            s.add(smt_variables[prop] == (smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] > float(self._sub_formulas[key][2])))
+                            if verbose:
+                                print(f"s.add({smt_variables[prop]} == ({self._sub_formulas[key][0]}_t{t} > {self._sub_formulas[key][2]}))")
+                        else:
+                            s.add((smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] > float(self._sub_formulas[key][2])))
+                            if verbose:
+                                print(f"s.add(({self._sub_formulas[key][0]}_t{t} > {self._sub_formulas[key][2]}))")
+                    elif self._sub_formulas[key][1] == '>=':
+                        if (root_prop != prop):
+                            s.add(smt_variables[prop] == (smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] >= float(self._sub_formulas[key][2])))
+                            if verbose:
+                                print(f"s.add({smt_variables[prop]} == ({self._sub_formulas[key][0]}_t{t} >= {self._sub_formulas[key][2]}))")
+                        else:
+                            s.add((smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] >= float(self._sub_formulas[key][2])))
+                            if verbose:
+                                print(f"s.add(({self._sub_formulas[key][0]}_t{t} >= {self._sub_formulas[key][2]}))")
+                    elif self._sub_formulas[key][1] == '==':
+                        if (root_prop != prop):
+                            s.add(smt_variables[prop] == (smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] == float(self._sub_formulas[key][2])))
+                            if verbose:
+                                print(f"s.add({smt_variables[prop]} == ({self._sub_formulas[key][0]}_t{t} == {self._sub_formulas[key][2]}))")
+                        else:
+                            s.add((smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] == float(self._sub_formulas[key][2])))
+                            if verbose:
+                                print(f"s.add(({self._sub_formulas[key][0]}_t{t} == {self._sub_formulas[key][2]}))")
+                    elif self._sub_formulas[key][1] == '!=':
+                        if (root_prop != prop):
+                            s.add(smt_variables[prop] == (smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] != float(self._sub_formulas[key][2])))
+                            if verbose:
+                                print(f"s.add({smt_variables[prop]} == ({self._sub_formulas[key][0]}_t{t} != {self._sub_formulas[key][2]}))")
+                        else:
+                            s.add((smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] != float(self._sub_formulas[key][2])))
+                            if verbose:
+                                print(f"s.add(({self._sub_formulas[key][0]}_t{t} != {self._sub_formulas[key][2]}))")
+                elif len(self._sub_formulas[key]) == 4 and self._sub_formulas[key][0] in {'G','F'} and t == 0:  # non serve che faccia il ciclo per ogni t
+                    int_a = int(self._sub_formulas[key][1])
+                    int_b = int(self._sub_formulas[key][2])
+                    if t + int_b < time_horizon:
+                        if verbose:
+                            print(f"{prop} = Bool('{prop}')")
+                        smt_variables[prop] = Bool(prop)
+                        prop1 = self._sub_formulas[key][3]
+                        prop1_list = [smt_variables[f"{prop1}_t{t + i}"] for i in range(int_a, int_b + 1)]
+                        if self._sub_formulas[key][0] == 'G':
+                            if (root_prop != prop):
+                                s.add(smt_variables[prop] == And(prop1_list))
+                                if verbose:
+                                    print(f"s.add({prop} == And({prop1_list}))")
+                            else:
+                                s.add(And(prop1_list))
+                                if verbose:
+                                    print(f"s.add(And({prop1_list}))")
+                        elif self._sub_formulas[key][0] == 'F':
+                            if (root_prop != prop):
+                                s.add(smt_variables[prop] == Or(prop1_list))
+                                if verbose:
+                                    print(f"s.add({prop} == Or({prop1_list}))")
+                            else:
+                                s.add(Or(prop1_list))
+                                if verbose:
+                                    print(f"Or({prop1_list}))")
+                        print("")
+                elif len(self._sub_formulas[key]) == 3 and self._sub_formulas[key][0] in {'&&', '||'}:
+                    prop1 = f"{self._sub_formulas[key][1]}_t{t}"
+                    prop2 = f"{self._sub_formulas[key][2]}_t{t}"
+                    if prop1 in smt_variables.keys() and prop2 in smt_variables.keys():
+                        if verbose:
+                            print(f"{prop} = Bool('{prop}')")
+                        smt_variables[prop] = Bool(prop)
+                        if self._sub_formulas[key][0] == '&&':
+                            if (root_prop != prop):
+                                s.add(smt_variables[prop] == And(smt_variables[prop1], smt_variables[prop2]))
+                                if verbose:
+                                    print(f"s.add({prop} == And({prop1},{prop2}))")
+                            else:
+                                s.add(And(smt_variables[prop1], smt_variables[prop2]))
+                                if verbose:
+                                    print(f"s.add(And({prop1},{prop2}))")
+                        elif self._sub_formulas[key][0] == '||':
+                            if (root_prop != prop):
+                                s.add(smt_variables[prop] == Or(smt_variables[prop1], smt_variables[prop2]))
+                                if verbose:
+                                    print(f"s.add({prop} == Or({prop1},{prop2}))")
+                            else:
+                                s.add(Or(smt_variables[prop1], smt_variables[prop2]))
+                                if verbose:
+                                    print(f"s.add(Or({prop1},{prop2}))")
+                elif len(self._sub_formulas[key]) == 2 and self._sub_formulas[key][0] in {'!'}:
+                    prop1 = f"{self._sub_formulas[key][1]}_t{t}"
+                    if prop1 in smt_variables.keys():
+                        if verbose:
+                            print(f"{prop} = Bool('{prop}')")
+                        smt_variables[prop] = Bool(prop)
+                        if self._sub_formulas[key][0] == '!':
+                            if (root_prop != prop):
+                                s.add(smt_variables[prop] == Not(smt_variables[prop1]))
+                                if verbose:
+                                    print(f"s.add({prop} == Not({prop1}))")
+                            else:
+                                s.add(Not(smt_variables[prop1]))
+                                if verbose:
+                                    print(f"s.add(Not({prop1}))")
+                elif len(self._sub_formulas[key]) == 5 and self._sub_formulas[key][0] in {'U'}:
+                    int_a = int(self._sub_formulas[key][1])
+                    int_b = int(self._sub_formulas[key][2])
+                    # phi1 U_[a,b] phi2 = G [0,a] phi1 && F [a,b] phi2 && F [a,a] (phi1 U phi2)
+                    # A   = G [0,a] phi1
+                    # B   = F [a,b] phi2
+                    # C   = phi1 U phi2
+                    # C_t = phi2_t or (phi1_t and C_t+1) with C_N = phi2_N
+                    # C_a = F [a,a] (phi1 U phi2)
+                    # Example
+                    # a = 2 and N = 7
+                    # C_t7 = phi2_t7
+                    # C_t6 = phi2_t6 or (phi1_t6 and C_t7)
+                    # C_t5 = phi2_t5 or (phi1_t5 and C_t6)
+
+                    prop1 = self._sub_formulas[key][3]
+                    prop2 = self._sub_formulas[key][4]
+
+                    if t + int_b < time_horizon:
+                        if verbose:
+                            print(f"{prop}_A = Bool('{prop}_A')")
+                        smt_variables[f"{prop}_A"] = Bool(f"{prop}_A")
+                        prop_a_list = [smt_variables[f"{prop1}_t{t + i}"] for i in range(0, int_a + 1)]
+                        s.add(smt_variables[f"{prop}_A"] == And(prop_a_list))
+                        if verbose:
+                            print(f"s.add({prop}_A == And({prop_a_list}))")
+                            print(f"{prop}_B = Bool('{prop}_B')")
+                        smt_variables[f"{prop}_B"] = Bool(f"{prop}_B")
+                        prop_b_list = [smt_variables[f"{prop2}_t{t + i}"] for i in range(int_a, int_b + 1)]
+                        if verbose:
+                            print(f"s.add({prop2}_B == Or({prop_b_list}))")
+
+                        if not f"{key}_t{t + int_a}_C" in smt_variables.keys():
+                            if verbose:
+                                print(f"The variables {key}_t{t + int_a}_C is not in smt_variables")
+
+                            if not f"{key}_t{time_horizon - 1}_C" in smt_variables.keys():
+                                if verbose:
+                                    print(f"{key}_t{time_horizon - 1}_C = Bool('{key}_t{time_horizon - 1}_C')")
+                                smt_variables[f"{key}_t{time_horizon - 1}_C"] = Bool(f"{key}_t{time_horizon - 1}_C")
+                                s.add(smt_variables[f"{key}_t{time_horizon - 1}_C"] == smt_variables[
+                                    f"{prop2}_t{time_horizon - 1}"])
+                                if verbose:
+                                    print(f"s.add({key}_t{time_horizon - 1}_C == {prop2}_t{time_horizon - 1})")
+                            for i in range(t + int_a, time_horizon - 1):
+                                k = time_horizon - i
+                                if not f"{key}_t{k}_C" in smt_variables.keys():
+                                    if verbose:
+                                        print(f"{key}_t{k}_C = Bool('{key}_t{k}_C')")
+                                    smt_variables[f"{key}_t{k}_C"] = Bool(f"{key}_t{k}_C")
+                                    if verbose:
+                                        print(f"s.add({key}_t{k}_C == Or({prop2}_t{k},And({prop1}_t{k},{key}_t{k + 1}_C))")
+                                    s.add(smt_variables[f"{key}_t{k}_C"] == Or(smt_variables[f"{prop2}_t{k}"],
+                                                                               And(smt_variables[f"{prop1}_t{k}"],
+                                                                                   smt_variables[f"{key}_t{k + 1}_C"])))
+                        if verbose:
+                            print("")
+                        smt_variables[f"{prop}"] = Bool(f"{prop}")
+                        if verbose:
+                            print(f"{prop} = Bool('{prop}')")
+
+                        if (root_prop != prop):
+                            s.add(
+                                smt_variables[f"{prop}"] == And(smt_variables[f"{prop}_A"], smt_variables[f"{prop}_B"],
+                                                                smt_variables[f"{key}_t{int_a}_C"]))
+                            if verbose:
+                                print(f"s.add({prop} == And({prop}_A,{prop}_B,{key}_t{int_a}_C))")
+                        else:
+                            s.add(And(smt_variables[f"{prop}_A"], smt_variables[f"{prop}_B"],
+                                      smt_variables[f"{key}_t{int_a}_C"]))
+                            if verbose:
+                                print(f"s.add(And({prop}_A,{prop}_B,{key}_t{int_a}_C))")
+
+        if s.check() == unsat:
+            print("")
+            print("The STL requirements are inconsistent.")
+        else:
+            print("")
+            print("The STL requirements are consistent. This is a signal witness:")
+            print(self._filter_witness(s.model()))
+
+#End class STLConsistencyChecker
 
 
-def create_stl_parser():
-    # Basic elements
-    identifier = Word(alphas, alphanums + "_")
-
-    # Expression for integer
-    non_zero_digit = "123456789"
-    zero = "0"
-    integer_number = Word(non_zero_digit, nums) | zero
-
-    # Expression for real
-    point = "."
-    e = Word("eE", exact=1)
-    plus_or_minus = Word("+-", exact=1)
-    real_number = Combine(Optional(plus_or_minus) + Word(nums) + Optional(point + Optional(Word(nums))) + Optional(e + Optional(plus_or_minus) + Word(nums)))
 
 
-    # Define relational operators
-    relational_op = oneOf("< <= > >= == !=")
 
-    # Logical operators
-    unary_logical_op = Literal('!')
-    binary_logical_op = oneOf("&& || -> <->")
 
-    interval = Literal('[') + integer_number + Literal(',') + integer_number + Literal(']')
-
-    # Temporal operators
-    unary_temporal_op = oneOf("G F")
-    unary_temporal_prefix = unary_temporal_op + interval
-
-    binary_temporal_op = Literal('U')
-    binary_temporal_prefix = binary_temporal_op + interval
-
-    # Define expressions
-    expr = Forward()
-
-    # Parentheses for grouping
-    parens = Group(Literal("(") + expr + Literal(")"))
-
-    # Building the expressions
-    binary_relation = Group(identifier + relational_op + real_number) | Group(identifier + relational_op + identifier)
-    binary_variable = Group(identifier)
-    unary_relation = Group(Optional(binary_temporal_prefix) + unary_logical_op+expr)
-
-    # Expression with all options
-    expr <<= infixNotation(binary_relation | unary_relation | binary_variable | parens,
-                           [ (unary_temporal_prefix, 1, opAssoc.RIGHT),
-                             (unary_logical_op, 1, opAssoc.RIGHT),
-                             (binary_temporal_prefix, 2, opAssoc.LEFT),
-                             (binary_logical_op, 2, opAssoc.LEFT)
-                           ])
-
-    return expr
-
-# Example parser usage
-def parse_stl_expression(expression):
-    stl_parser = create_stl_parser()
-    parsed_expression = stl_parser.parseString(expression, parseAll=True)
-    return parsed_expression.asList()
-
-def generate_time_variables(formula_horizon, vars):
-    time_variables = {}
-    for var in vars:
-        for i in range(formula_horizon):
-            var_name = f"{var}{i}"
-            time_variables[var_name] = None  # O assegna un valore iniziale appropriato
-    return time_variables
 
 
 
 # Example STL expression
-#stl_expression = " F [0,5] (! (a > 0) &&  b > 0)" #controlla not davanti ad a -> ora è ok
+stl_expression = " F [0,5] (! (a > 0) &&  b > 0)" #controlla not davanti ad a -> ora è ok
 #stl_expression = " F [0,5] ! (a > 0 &&  b > 0)"
 # Example STL expression
 #stl_expression = "! F [0,5] G [2,5] a > 0"
@@ -350,235 +629,24 @@ def generate_time_variables(formula_horizon, vars):
 #stl_expression = "G[0,5] (F[7,9] (x > 3))"
 #stl_expression = "G[0,10](x U[2,5] y)" #Until è sistemato
 #stl_expression = "x>0 U[2,7] y < 0"
-stl_expression = "G[2,5] x > 5 || G[1,3] x < 0"  #Giustamente dice che è sat, ma poi la witness che produce non ha senso
+#stl_expression = "G[2,5] x > 5 || G[1,3] x < 0"  #Giustamente dice che è sat, ma poi la witness che produce non ha senso
 #stl_expression = "G[2,5] (x > 5 || x < 0)"
 #stl_expression = "! a && a"
-parsed_expr = parse_stl_expression(stl_expression)
+
+
+# Create a checker and visit the parsed expression
+checker = STLConsistencyChecker()
+parsed_expr = checker.parseSTL(stl_expression)
 print("Input STL expression: ", stl_expression)
 print("Parsed STL Expression:", parsed_expr)
-
-# Create a visitor and visit the parsed expression
-visitor = STLVisitor()
-result = visitor.visit(parsed_expr)
+result = checker.visit(parsed_expr)
 
 print(f"Formula_horizon =  {result[1]}")
 print(f"Root sub_formula = {result[0]} ")
-visitor.printSubFormulas()
-#print("Result of visiting:", result)
-#visitor.print_vars()
+checker.printSubFormulas()
 formula_horizon = int(result[1])
-variables = visitor.getVariableList()
-propositions = visitor.getBasicPropositionsList()
+variables = checker.getVariableList()
+propositions = checker.getBasicPropositionsList()
 expression = list(propositions.values())
 
-print("")
-print("# SMT Encoding")
-print("")
-
-#Ezio: example of code for encoding in SMT
-time_horizon  = int(result[1])
-root_subformula = result[0]
-smt_variables = {}
-
-print("# Encode the real and the binary variables ")
-print("")
-for key in variables:
-    for t in range(time_horizon):
-        prop = f"{key}_t{t}"
-        if variables[key] == 'real':
-            print(f"{prop} = Real('{prop}')")
-            smt_variables[prop] = Real(prop)
-        elif variables[key] == 'binary':
-            smt_variables[prop] = Bool(prop)
-            print(f"{prop} = Bool('{prop}')")
-    print("")
-
-print("#Instantiate the SMT Solver")
-print("s = Solver()")
-
-s = Solver()
-print("")
-
-root_prop = f"{root_subformula}_t{0}"
-
-for key in propositions:
-         for t in range(time_horizon):
-                 prop = f"{key}_t{t}"
-                 #print(prop)
-                 if len(propositions[key]) == 1:
-                     print(f"{prop} = Bool('{prop}')")
-                     smt_variables[prop] = Bool(prop)
-                     if (root_prop != prop):
-                        print(f"s.add({prop} == {propositions[key][0]}_t{t})")
-                        s.add(smt_variables[prop] == smt_variables[f"{propositions[key][0]}_t{t}"])
-                     else:
-                        print(f"s.add({propositions[key][0]}_t{t})")
-                        s.add(smt_variables[f"{propositions[key][0]}_t{t}"])
-                 elif len(propositions[key]) == 3 and propositions[key][1] in {'<', '<=', '>', '>=', '==', '!='}:
-                         print(f"{prop} = Bool('{prop}')")
-                         smt_variables[prop] = Bool(prop)
-                         if propositions[key][1] == '<':
-                            if (root_prop != prop):
-                                s.add(smt_variables[prop] == (smt_variables[f"{propositions[key][0]}_t{t}"] < float(propositions[key][2])))
-                                print(f"s.add({smt_variables[prop]} == ({propositions[key][0]}_t{t} < {propositions[key][2]}))")
-                            else:
-                                s.add((smt_variables[f"{propositions[key][0]}_t{t}"] < float(propositions[key][2])))
-                                print(f"s.add({propositions[key][0]}_t{t} < {propositions[key][2]})")
-                         elif propositions[key][1] == '<=':
-                            if (root_prop != prop):
-                                s.add(smt_variables[prop] == (smt_variables[f"{propositions[key][0]}_t{t}"] <= float(propositions[key][2])))
-                                print(f"s.add({smt_variables[prop]} == ({propositions[key][0]}_t{t} <= {propositions[key][2]}))")
-                            else:
-                                s.add((smt_variables[f"{propositions[key][0]}_t{t}"] <= float(propositions[key][2])))
-                                print(f"s.add({propositions[key][0]}_t{t} <= {propositions[key][2]})")
-                         elif propositions[key][1] == '>':
-                             if (root_prop != prop):
-                                s.add(smt_variables[prop] == (smt_variables[f"{propositions[key][0]}_t{t}"] > float(propositions[key][2])))
-                                print(f"s.add({smt_variables[prop]} == ({propositions[key][0]}_t{t} > {propositions[key][2]}))")
-                             else:
-                                 s.add((smt_variables[f"{propositions[key][0]}_t{t}"] > float(propositions[key][2])))
-                                 print(f"s.add(({propositions[key][0]}_t{t} > {propositions[key][2]}))")
-                         elif propositions[key][1] == '>=':
-                             if (root_prop != prop):
-                                s.add(smt_variables[prop] == (smt_variables[f"{propositions[key][0]}_t{t}"] >= float(propositions[key][2])))
-                                print(f"s.add({smt_variables[prop]} == ({propositions[key][0]}_t{t} >= {propositions[key][2]}))")
-                             else:
-                                 s.add((smt_variables[f"{propositions[key][0]}_t{t}"] >= float(propositions[key][2])))
-                                 print(f"s.add(({propositions[key][0]}_t{t} >= {propositions[key][2]}))")
-                         elif propositions[key][1] == '==':
-                             if (root_prop != prop):
-                                s.add(smt_variables[prop] == (smt_variables[f"{propositions[key][0]}_t{t}"] == float(propositions[key][2])))
-                                print(f"s.add({smt_variables[prop]} == ({propositions[key][0]}_t{t} == {propositions[key][2]}))")
-                             else:
-                                 s.add((smt_variables[f"{propositions[key][0]}_t{t}"] == float(propositions[key][2])))
-                                 print(f"s.add(({propositions[key][0]}_t{t} == {propositions[key][2]}))")
-                         elif propositions[key][1] == '!=':
-                             if (root_prop != prop):
-                                s.add(smt_variables[prop] == (smt_variables[f"{propositions[key][0]}_t{t}"] != float(propositions[key][2])))
-                                print(f"s.add({smt_variables[prop]} == ({propositions[key][0]}_t{t} != {propositions[key][2]}))")
-                             else:
-                                 s.add((smt_variables[f"{propositions[key][0]}_t{t}"] != float(propositions[key][2])))
-                                 print(f"s.add(({propositions[key][0]}_t{t} != {propositions[key][2]}))")
-                 elif len(propositions[key]) == 4 and propositions[key][0] in {'G', 'F'} and t == 0: #non serve che faccia il ciclo per ogni t
-                     int_a = int(propositions[key][1])
-                     int_b = int(propositions[key][2])
-                     if t + int_b < time_horizon:
-                        print(f"{prop} = Bool('{prop}')")
-                        smt_variables[prop] = Bool(prop)
-                        prop1               = propositions[key][3]
-                        prop1_list          = [smt_variables[f"{prop1}_t{t+i}"] for i in range(int_a,int_b+1)]
-                        if propositions[key][0] == 'G':
-                            if (root_prop != prop):
-                                s.add(smt_variables[prop] == And(prop1_list))
-                                print(f"s.add({prop} == And({prop1_list}))")
-                            else:
-                                s.add(And(prop1_list))
-                                print(f"s.add(And({prop1_list}))")
-                        elif propositions[key][0] == 'F':
-                            if (root_prop != prop):
-                                s.add(smt_variables[prop] == Or(prop1_list))
-                                print(f"s.add({prop} == Or({prop1_list}))")
-                            else:
-                                s.add(Or(prop1_list))
-                                print(f"Or({prop1_list}))")
-                        print("")
-                 elif len(propositions[key]) == 3 and propositions[key][0] in {'&&', '||'}:
-                     prop1 = f"{propositions[key][1]}_t{t}"
-                     prop2 = f"{propositions[key][2]}_t{t}"
-                     if prop1 in smt_variables.keys() and prop2 in smt_variables.keys():
-                         print(f"{prop} = Bool('{prop}')")
-                         smt_variables[prop] = Bool(prop)
-                         if propositions[key][0] == '&&':
-                            if (root_prop != prop):
-                                s.add(smt_variables[prop] == And(smt_variables[prop1], smt_variables[prop2] ))
-                                print(f"s.add({prop} == And({prop1},{prop2}))")
-                            else:
-                                s.add(And(smt_variables[prop1], smt_variables[prop2]))
-                                print(f"s.add(And({prop1},{prop2}))")
-                         elif propositions[key][0] == '||':
-                            if (root_prop != prop):
-                                s.add(smt_variables[prop] == Or(smt_variables[prop1], smt_variables[prop2]))
-                                print(f"s.add({prop} == Or({prop1},{prop2}))")
-                            else:
-                                s.add(Or(smt_variables[prop1], smt_variables[prop2]))
-                                print(f"s.add(Or({prop1},{prop2}))")
-                 elif len(propositions[key]) == 2 and propositions[key][0] in {'!'}:
-                     prop1 = f"{propositions[key][1]}_t{t}"
-                     if prop1 in smt_variables.keys():
-                        print(f"{prop} = Bool('{prop}')")
-                        smt_variables[prop] = Bool(prop)
-                        if propositions[key][0] == '!':
-                            if (root_prop != prop):
-                                s.add(smt_variables[prop] == Not(smt_variables[prop1]))
-                                print(f"s.add({prop} == Not({prop1}))")
-                            else:
-                                s.add(Not(smt_variables[prop1]))
-                                print(f"s.add(Not({prop1}))")
-                 elif len(propositions[key]) == 5 and propositions[key][0] in {'U'}:
-                        int_a = int(propositions[key][1])
-                        int_b = int(propositions[key][2])
-                        # phi1 U_[a,b] phi2 = G [0,a] phi1 && F [a,b] phi2 && F [a,a] (phi1 U phi2)
-                        # A   = G [0,a] phi1
-                        # B   = F [a,b] phi2
-                        # C   = phi1 U phi2
-                        # C_t = phi2_t or (phi1_t and C_t+1) with C_N = phi2_N
-                        # C_a = F [a,a] (phi1 U phi2)
-                        # Example
-                        # a = 2 and N = 7
-                        # C_t7 = phi2_t7
-                        # C_t6 = phi2_t6 or (phi1_t6 and C_t7)
-                        # C_t5 = phi2_t5 or (phi1_t5 and C_t6)
-
-
-                        prop1 = propositions[key][3]
-                        prop2 = propositions[key][4]
-
-                        if t + int_b < time_horizon:
-
-
-                           print(f"{prop}_A = Bool('{prop}_A')")
-                           smt_variables[f"{prop}_A"] = Bool(f"{prop}_A")
-                           prop_a_list = [smt_variables[f"{prop1}_t{t + i}"] for i in range(0, int_a + 1)]
-                           print(prop_a_list)
-                           s.add(smt_variables[f"{prop}_A"] == And(prop_a_list))
-                           print(f"s.add({prop}_A == And({prop_a_list}))")
-
-                           print(f"{prop}_B = Bool('{prop}_B')")
-                           smt_variables[f"{prop}_B"] = Bool(f"{prop}_B")
-                           prop_b_list = [smt_variables[f"{prop2}_t{t + i}"] for i in range(int_a, int_b + 1)]
-                           print(f"s.add({prop2}_B == Or({prop_b_list}))")
-
-                           if not f"{key}_t{t+int_a}_C" in smt_variables.keys():
-                               print(f"The variables {key}_t{t+int_a}_C is not in smt_variables")
-
-                               if not f"{key}_t{time_horizon-1}_C" in smt_variables.keys():
-                                   print(f"{key}_t{time_horizon-1}_C = Bool('{key}_t{time_horizon-1}_C')")
-                                   smt_variables[f"{key}_t{time_horizon-1}_C"] = Bool(f"{key}_t{time_horizon-1}_C")
-                                   s.add(smt_variables[f"{key}_t{time_horizon-1}_C"] == smt_variables[f"{prop2}_t{time_horizon-1}"])
-                                   print(f"s.add({key}_t{time_horizon-1}_C == {prop2}_t{time_horizon-1})")
-                               for i in range(t+int_a, time_horizon-1):
-                                   k = time_horizon - i
-                                   if not f"{key}_t{k}_C" in smt_variables.keys():
-                                       print(f"{key}_t{k}_C = Bool('{key}_t{k}_C')")
-                                       smt_variables[f"{key}_t{k}_C"] = Bool(f"{key}_t{k}_C")
-                                       print(f"s.add({key}_t{k}_C == Or({prop2}_t{k},And({prop1}_t{k},{key}_t{k + 1}_C))")
-                                       s.add(smt_variables[f"{key}_t{k}_C"] == Or(smt_variables[f"{prop2}_t{k}"], And(smt_variables[f"{prop1}_t{k}"],smt_variables[f"{key}_t{k+1}_C"])))
-
-                           print("")
-                           smt_variables[f"{prop}"] = Bool(f"{prop}")
-                           print(f"{prop} = Bool('{prop}')")
-
-                           if (root_prop != prop):
-                               s.add(smt_variables[f"{prop}"] == And(smt_variables[f"{prop}_A"],smt_variables[f"{prop}_B"],smt_variables[f"{key}_t{int_a}_C"]))
-                               print(f"s.add({prop} == And({prop}_A,{prop}_B,{key}_t{int_a}_C))")
-                           else:
-                               s.add(And(smt_variables[f"{prop}_A"], smt_variables[f"{prop}_B"], smt_variables[f"{key}_t{int_a}_C"]))
-                               print(f"s.add(And({prop}_A,{prop}_B,{key}_t{int_a}_C))")
-
-if s.check() == unsat:
-    print("")
-    print("The STL requirements are inconsistent.")
-else:
-    print ("The STL requirements are consistent. This is a witness.")
-    print(s.model())
-
+checker.solve(int(result[1]), result[0], True)
