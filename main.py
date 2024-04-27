@@ -21,7 +21,7 @@
 # SOFTWARE.
 
 
-# STL Requirement Consistency Checking (ver 0.4)
+# STL Requirements Consistency Checking (ver 0.4)
 # Date: 25-04-2024
 #
 #
@@ -365,10 +365,11 @@ class STLConsistencyChecker:
         smt_variables = {}
 
         if verbose:
+            print("# SMT Encoding in Python")
+            print("")
+            print("#===========================")
             print("from z3 import *")
             print("")
-            print("# SMT Encoding")
-            print("===========================")
 
         self._encode_variables(time_horizon,smt_variables,verbose)
 
@@ -381,13 +382,18 @@ class STLConsistencyChecker:
         root_prop = f"{root_formula}_t{0}"
 
         for key in self._sub_formulas:
-            for t in range(time_horizon):
+            # If the sub-formula to consider is the root formula then
+            # we compute only the for time tO
+            # we introduce another variable
+            time_limit = 1
+            if key != root_formula:
+                time_limit = time_horizon
+            for t in range(time_limit):
                 prop = f"{key}_t{t}"
-
+                #print(f"{prop}")
                 if len(self._sub_formulas[key]) == 1:
                     if verbose:
                         print(f"{prop} = Bool('{prop}')")
-
                     smt_variables[prop] = Bool(prop)
                     if (root_prop != prop):
                         if verbose:
@@ -455,34 +461,43 @@ class STLConsistencyChecker:
                             s.add((smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] != float(self._sub_formulas[key][2])))
                             if verbose:
                                 print(f"s.add(({self._sub_formulas[key][0]}_t{t} != {self._sub_formulas[key][2]}))")
-                elif len(self._sub_formulas[key]) == 4 and self._sub_formulas[key][0] in {'G','F'} and t == 0:  # non serve che faccia il ciclo per ogni t
+                elif len(self._sub_formulas[key]) == 4 and self._sub_formulas[key][0] in {'G','F'}: #Ezio in the case of nested operation it is necessary to do all the t
+
                     int_a = int(self._sub_formulas[key][1])
                     int_b = int(self._sub_formulas[key][2])
                     if t + int_b < time_horizon:
-                        if verbose:
-                            print(f"{prop} = Bool('{prop}')")
-                        smt_variables[prop] = Bool(prop)
+
                         prop1 = self._sub_formulas[key][3]
-                        prop1_list = [smt_variables[f"{prop1}_t{t + i}"] for i in range(int_a, int_b + 1)]
-                        if self._sub_formulas[key][0] == 'G':
-                            if (root_prop != prop):
-                                s.add(smt_variables[prop] == And(prop1_list))
-                                if verbose:
-                                    print(f"s.add({prop} == And({prop1_list}))")
-                            else:
-                                s.add(And(prop1_list))
-                                if verbose:
-                                    print(f"s.add(And({prop1_list}))")
-                        elif self._sub_formulas[key][0] == 'F':
-                            if (root_prop != prop):
-                                s.add(smt_variables[prop] == Or(prop1_list))
-                                if verbose:
-                                    print(f"s.add({prop} == Or({prop1_list}))")
-                            else:
-                                s.add(Or(prop1_list))
-                                if verbose:
-                                    print(f"Or({prop1_list}))")
-                        print("")
+                        flag = 1
+                        for i in range(int_a, int_b + 1):
+                            if not f"{prop1}_t{t + i}" in smt_variables:
+                                flag = 0
+                                break
+                        if flag:
+                            if verbose:
+                                print(f"{prop} = Bool('{prop}')")
+                            smt_variables[prop] = Bool(prop)
+
+                            prop1_list = [smt_variables[f"{prop1}_t{t + i}"] for i in range(int_a, int_b + 1)]
+                            if self._sub_formulas[key][0] == 'G':
+                                if (root_prop != prop):
+                                    s.add(smt_variables[prop] == And(prop1_list))
+                                    if verbose:
+                                        print(f"s.add({prop} == And({prop1_list}))")
+                                else:
+                                    s.add(And(prop1_list))
+                                    if verbose:
+                                        print(f"s.add(And({prop1_list}))")
+                            elif self._sub_formulas[key][0] == 'F':
+                                if (root_prop != prop):
+                                    s.add(smt_variables[prop] == Or(prop1_list))
+                                    if verbose:
+                                        print(f"s.add({prop} == Or({prop1_list}))")
+                                else:
+                                    s.add(Or(prop1_list))
+                                    if verbose:
+                                        print(f"s.add(Or({prop1_list}))")
+
                 elif len(self._sub_formulas[key]) == 3 and self._sub_formulas[key][0] in {'&&', '||'}:
                     prop1 = f"{self._sub_formulas[key][1]}_t{t}"
                     prop2 = f"{self._sub_formulas[key][2]}_t{t}"
@@ -595,6 +610,13 @@ class STLConsistencyChecker:
                                       smt_variables[f"{key}_t{int_a}_C"]))
                             if verbose:
                                 print(f"s.add(And({prop}_A,{prop}_B,{key}_t{int_a}_C))")
+        if verbose:
+            print("")
+            print("================================")
+            print(f"Num of variables in SMT solver = {len(smt_variables.keys())}")
+            print("")
+            print("Solver statistics")
+            print(s.statistics())
 
         if s.check() == unsat:
             print("")
@@ -615,8 +637,8 @@ class STLConsistencyChecker:
 
 
 # Example STL expression
-stl_expression = " F [0,5] (! (a > 0) &&  b > 0)" #controlla not davanti ad a -> ora è ok
-#stl_expression = " F [0,5] ! (a > 0 &&  b > 0)"
+#stl_expression = " F [10,10000] (! (a > 0) &&  b > 0)" #controlla not davanti ad a -> ora è ok
+stl_expression = " F [0,5] (a > 0 && a < 0)"
 # Example STL expression
 #stl_expression = "! F [0,5] G [2,5] a > 0"
 #stl_expression = "!(a > 0)"
