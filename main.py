@@ -21,8 +21,8 @@
 # SOFTWARE.
 
 
-# STL Requirements Consistency Checking (ver 0.4)
-# Date: 25-04-2024
+# STL Requirements Consistency Checking (ver 0.41)
+# Date: 28-04-2024
 #
 #
 
@@ -42,6 +42,12 @@ class STLConsistencyChecker:
         self._binary_constraints = {}  # Protected variable
         self._sub_formulas       = {}  # Protected variable
         self._prop_count         = 0   # Protected variable
+
+    def _addSubFormula (self, sub_formula):
+        key_formula = f"_phi{self._prop_count}"
+        self._sub_formulas[key_formula] = sub_formula
+        self._prop_count = self._prop_count + 1
+        return key_formula
 
     def getVariableList (self):
         return self._variables
@@ -201,11 +207,7 @@ class STLConsistencyChecker:
         # Visit the expression within the temporal operator
         #print(f"Visiting Unary Temporal Operator: {operator}" + " with time Interval [" + time_interval_low + "," + time_interval_high + "]")
         ret = self.visit(expr)
-
-        prop0 = [operator, time_interval_low, time_interval_high, ret[0]]
-        prop = f"_phi{self._prop_count}"
-        self._sub_formulas[prop] = prop0
-        self._prop_count = self._prop_count + 1
+        prop = self._addSubFormula([operator, time_interval_low, time_interval_high, ret[0]])
         return prop, str(int(time_interval_high) + int(ret[1]))
 
     def visit_binary_temporal_operator(self, operator, time_interval_low, time_interval_high, left, right):
@@ -237,25 +239,14 @@ class STLConsistencyChecker:
         ret_right = self.visit(right)
 
         if operator in {'&&', '||'}:
-            prop0 = [operator, ret_left[0], ret_right[0]]
-            prop = f"_phi{self._prop_count}"
-            self._sub_formulas[prop] = prop0
-            self._prop_count = self._prop_count + 1
+            prop = self._addSubFormula([operator, ret_left[0], ret_right[0]])
         elif operator in {'->'}:
-            prop0 = ['!', ret_left[0]]
-            prop = f"_phi{self._prop_count}"
-            self._sub_formulas[prop] = prop0
-            self._prop_count = self._prop_count + 1
-            prop1 = ['||', prop, ret_right[0]]
-            prop = f"_phi{self._prop_count}"
-            self._sub_formulas[prop] = prop1
-            self._prop_count = self._prop_count + 1
+            prop = self._addSubFormula(['!', ret_left[0]])
+            prop1 = self._addSubFormula(['||', prop, ret_right[0]])
         elif operator in {'<->'}:
-            p = ret_left[0]
-            q = ret_right[0]
-            p_and_q = self.visit_binary_logical('&&', p, q)
-            np_and_nq = self.visit_binary_logical('&&', self.visit_unary_logical('!', p), self.visit_unary_logical('!', q))
-            prop = self.visit_binary_logical('||', p_and_q, np_and_nq)
+            formula1 = self._addSubFormula(['&&', ret_left[0], ret_right[0]])
+            formula2 = self._addSubFormula(['&&', self._addSubFormula(['!', ret_left[0]]), self._addSubFormula(['!', ret_right[0]])])
+            prop     = self._addSubFormula(['||', formula1, formula2])
         return prop, str(max(int(ret_left[1]), int(ret_right[1])))
 
     def visit_binary_relational(self, operator, left, right):
@@ -273,29 +264,21 @@ class STLConsistencyChecker:
             if operator in self._real_constraints[left].keys():
                 #print(f"'{operator}' is in {self._real_constraints[left].keys()}")
                 if right in self._real_constraints[left][operator].keys():
-                     prop = self._real_constraints[left][operator][right]
+                    prop = self._real_constraints[left][operator][right]
                      #print(prop)
                 else:
-                     prop = f"_phi{self._prop_count}"
-                     self._real_constraints[left][operator] = {right: prop}
-                     self._sub_formulas[prop] = [left, operator, right]
-                     self._prop_count = self._prop_count + 1
+                    prop = self._addSubFormula([left, operator, right])
+                    self._real_constraints[left][operator] = {right: prop}
             else:
                 #print(f"'{operator}' is not in {self._real_constraints[left].keys()}")
-                prop = f"_phi{self._prop_count}"
+                prop = self._addSubFormula([left, operator, right])
                 self._real_constraints[left][operator]={right:prop}
-                self._sub_formulas[prop] = [left, operator, right]
-                self._prop_count = self._prop_count + 1
-
         else:
             #print(f"Key '{left}' is not in the dictionary.")
             self._variables[left] = 'real'
             #print(f"Key '{left}' added in the dictionary.")
-            prop = f"_phi{self._prop_count}"
+            prop = self._addSubFormula([self.visit(left), operator, self.visit(right)])
             self._real_constraints[left] = {operator:{right:prop}}
-            self._sub_formulas[prop] = [self.visit(left), operator, self.visit(right)] #modificato mettendo i self.visit
-            self._prop_count = self._prop_count + 1
-
         return prop, '1'
 
 
@@ -313,10 +296,7 @@ class STLConsistencyChecker:
             #print(f"Key '{binary_var}' is not in the dictionary.")
             self._variables[binary_var] = 'binary'
             #print(f"Key '{binary_var}' added in the dictionary.")
-            prop = f"_phi{self._prop_count}"
-            self._binary_constraints[binary_var] = prop
-            self._sub_formulas[prop] = [binary_var]
-            self._prop_count = self._prop_count + 1
+            self._binary_constraints[binary_var] = self._addSubFormula([binary_var])
 
         return prop, '1'
 
@@ -654,7 +634,8 @@ stl_expression = " F [0,5] (a > 0 && a < 0)"
 #stl_expression = "G[2,5] x > 5 || G[1,3] x < 0"  #Giustamente dice che è sat, ma poi la witness che produce non ha senso
 #stl_expression = "G[2,5] (x > 5 || x < 0)"
 #stl_expression = "! a && a"
-
+#stl_expression =  "!a && !b && ((a && b) <-> (a || b)) "
+#stl_expression = "a -> b"
 
 # Create a checker and visit the parsed expression
 checker = STLConsistencyChecker()
@@ -672,3 +653,7 @@ propositions = checker.getBasicPropositionsList()
 expression = list(propositions.values())
 
 checker.solve(int(result[1]), result[0], True)
+
+
+
+
