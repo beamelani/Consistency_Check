@@ -173,6 +173,7 @@ class STLConsistencyChecker:
             if len(node) == 1:
                 # Single element (either a terminal or a unary expression)
                 if isinstance(node[0], str) and len(node[0]) == 1:
+                    print(node[0])
                     return self.visit_binary_variable(node[0])
                 return self.visit(node[0])
             elif len(node) == 3 and isinstance(node[0], str) and isinstance(node[1], str) and isinstance(node[2], str):
@@ -216,25 +217,18 @@ class STLConsistencyChecker:
         ret_left  = self.visit(left)
         ret_right = self.visit(right)
 
-        prop0 = [operator, time_interval_low, time_interval_high, ret_left[0], ret_right[0]]
-        prop = f"_phi{self._prop_count}"
-        self._sub_formulas[prop] = prop0
-        self._prop_count = self._prop_count + 1
+        prop = self._addSubFormula([operator, time_interval_low, time_interval_high, ret_left[0], ret_right[0]])
         return prop, str(int(time_interval_high) + max(int(ret_left[1]),int(ret_right[1])))
 
     def visit_unary_logical(self, operator, expr):
         # Visit both sides of the logical expression
         #print(f"Visiting Unary Logical Operator: {operator}")
         ret = self.visit(expr)
-        prop0 = [operator, ret[0]]
-        prop = f"_phi{self._prop_count}"
-        self._sub_formulas[prop] = prop0
-        self._prop_count = self._prop_count + 1
-        return prop, ret[1]
+        return self._addSubFormula([operator, ret[0]]), ret[1]
 
     def visit_binary_logical(self, operator, left, right):
         # Visit both sides of the logical expression
-        #print(f"Visiting Logical Operator: {operator}")
+        # print(f"Visiting Logical Operator: {operator}, {left}, {right}")
         ret_left = self.visit(left)
         ret_right = self.visit(right)
 
@@ -296,7 +290,8 @@ class STLConsistencyChecker:
             #print(f"Key '{binary_var}' is not in the dictionary.")
             self._variables[binary_var] = 'binary'
             #print(f"Key '{binary_var}' added in the dictionary.")
-            self._binary_constraints[binary_var] = self._addSubFormula([binary_var])
+            prop = self._addSubFormula(binary_var)
+            self._binary_constraints[binary_var] = prop
 
         return prop, '1'
 
@@ -618,7 +613,7 @@ class STLConsistencyChecker:
 
 # Example STL expression
 #stl_expression = " F [10,10000] (! (a > 0) &&  b > 0)" #controlla not davanti ad a -> ora è ok
-stl_expression = " F [0,5] (a > 0 && a < 0)"
+#stl_expression = " F [0,5] (a > 0 && a < 0)"
 # Example STL expression
 #stl_expression = "! F [0,5] G [2,5] a > 0"
 #stl_expression = "!(a > 0)"
@@ -635,7 +630,9 @@ stl_expression = " F [0,5] (a > 0 && a < 0)"
 #stl_expression = "G[2,5] (x > 5 || x < 0)"
 #stl_expression = "! a && a"
 #stl_expression =  "!a && !b && ((a && b) <-> (a || b)) "
-#stl_expression = "a -> b"
+#stl_expression = "a && !b && (a <-> b)"
+#stl_expression = "F [2,3] a < 0 && G [0,5] a > 0"
+stl_expression = "(a && (a -> (a || b)))"
 
 # Create a checker and visit the parsed expression
 checker = STLConsistencyChecker()
@@ -653,7 +650,6 @@ propositions = checker.getBasicPropositionsList()
 expression = list(propositions.values())
 
 checker.solve(int(result[1]), result[0], True)
-
 
 
 
