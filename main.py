@@ -235,8 +235,8 @@ class STLConsistencyChecker:
         if operator in {'&&', '||'}:
             prop = self._addSubFormula([operator, ret_left[0], ret_right[0]])
         elif operator in {'->'}:
-            prop = self._addSubFormula(['!', ret_left[0]])
-            prop1 = self._addSubFormula(['||', prop, ret_right[0]])
+            prop1 = self._addSubFormula(['!', ret_left[0]])
+            prop = self._addSubFormula(['||', prop1, ret_right[0]])
         elif operator in {'<->'}:
             formula1 = self._addSubFormula(['&&', ret_left[0], ret_right[0]])
             formula2 = self._addSubFormula(['&&', self._addSubFormula(['!', ret_left[0]]), self._addSubFormula(['!', ret_right[0]])])
@@ -632,7 +632,8 @@ class STLConsistencyChecker:
 #stl_expression =  "!a && !b && ((a && b) <-> (a || b)) "
 #stl_expression = "a && !b && (a <-> b)"
 #stl_expression = "F [2,3] a < 0 && G [0,5] a > 0"
-stl_expression = "(a && (a -> (a || b)))"
+#stl_expression = "(a && (a -> (a || b)))"
+stl_expression = "(G[0,2] a && (G[0,2] a -> F[0,2] a))" #This does not work
 
 # Create a checker and visit the parsed expression
 checker = STLConsistencyChecker()
@@ -650,6 +651,3 @@ propositions = checker.getBasicPropositionsList()
 expression = list(propositions.values())
 
 checker.solve(int(result[1]), result[0], True)
-
-
-
