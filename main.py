@@ -617,18 +617,26 @@ class STLConsistencyChecker:
 # Example STL expression
 #stl_expression = "F [0,5] G [2,5] a"
 #stl_expression = "!(a > 0)"
-#stl_expression = "(! x<0 && y>0) U[1,5] ( y > 6.07)"
+#stl_expression = "(! x<0 && y>0) U[1,5] ( y > 6.07)"   #non funziona
+#stl_expression = "G[0,5]((! x<0 && y>0) U[1,5] ( y > 6.07))"  #Non funziona
 #stl_expression = "G[0,5] ((x > 3) && (F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] ((x > 3) && (y < 2))"
 #stl_expression = " (x > 4) && ! (y > 3)"
 #stl_expression = "G[0,5] ((F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] (x > 5)"
 #stl_expression = "G[0,5] (F[7,9] (x > 3))"
-#stl_expression = "G[0,10](x U[2,5] y)" #Until è sistemato
+#stl_expression = "G[0,10](x U[2,5] y)" #funziona, ma witness sbagliata
+#stl_expression = "G[0,4](x U[1,3] y)" #non funziona
 #stl_expression = "x>0 U[2,7] y < 0"
-#stl_expression = "G[2,5] x > 5 || G[1,3] x < 0"  #Giustamente dice che è sat, ma poi la witness che produce non ha senso
-#stl_expression = "G[2,5] (x > 5 || x < 0)"
+#stl_expression = "G[2,5] x > 5 || G[1,3] x < 0"
+#stl_expression = "G[2,5] (x > 5 && x < 0)"
 #stl_expression = "! a && a"
+#stl_expression = "G[1,5] x>3 && G[2,3] x<2"
+#stl_expression = "G[2,3] (x>3 && x<2)"
+#stl_expression = "G[2,9] x<5 && G[3,5] x>7"
+#stl_expression = "G[3,5] (x<5 && x>7)"
+stl_expression = "(y>6) U[3,7] (y < 3)" #NON funziona
+
 
 #We can use the consistency checking to verify the equivalence of the formulas
 #For example De Morgan Laws
@@ -636,7 +644,7 @@ class STLConsistencyChecker:
 #stl_expression =  "!(!(a || b) <-> (!a && !b)) " #This formula should be unsat
 #stl_expression = "!(a <-> a)" #This formula should be unsat
 
-stl_expression = "!(G[0,5] G[2,4] a <-> G[2,9] a)" #This formula should be unsat
+#stl_expression = "!(G[0,5] G[2,4] a <-> G[2,9] a)" #This formula should be unsat
 
 #stl_expression = "F [2,3] a < 0 && G [0,5] a > 0"
 #stl_expression = "(a && (a -> (a || b)))"
