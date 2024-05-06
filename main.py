@@ -21,8 +21,8 @@
 # SOFTWARE.
 
 
-# STL Requirements Consistency Checking (ver 0.41)
-# Date: 28-04-2024
+# STL Requirements Consistency Checking (ver 0.43)
+# Date: 06-05-2024
 #
 #
 
@@ -43,11 +43,360 @@ class STLConsistencyChecker:
         self._sub_formulas       = {}  # Protected variable
         self._prop_count         = 0   # Protected variable
 
-    def _addSubFormula (self, sub_formula):
-        key_formula = f"_phi{self._prop_count}"
-        self._sub_formulas[key_formula] = sub_formula
+    def _checkFormulaType (self, sub_formula):
+        if len(sub_formula) == 1:
+            return "Literal"
+        elif len(sub_formula) == 2:
+            if sub_formula[0] in {'!'}:
+                return "Not"
+            elif sub_formula[0] in {'True'}:
+                return "True"
+            elif sub_formula[0] in {'False'}:
+                return "False"
+        elif len(sub_formula) == 3:
+            if sub_formula[1] in {'<', '<=', '>', '>=', '==', '!='}:
+                return "RConstraint"
+            elif sub_formula[0] == "&&":
+                return "And"
+            elif sub_formula[0] == "||":
+                return "Or"
+            elif sub_formula[0] == "->":
+                return "Implies"
+            elif sub_formula[0] == "<->":
+                return "Equivalence"
+        elif len(sub_formula) == 4:
+                if sub_formula[0] == "G":
+                    return "Always"
+                elif sub_formula[0] == "F":
+                    return "Eventually"
+        elif len(sub_formula) == 5:
+                if sub_formula[0] == "U":
+                    return "Until"
+        return "Not defined"
+
+    def _invertRConstraint (self, sub_formula):
+        if self._checkSubformulaType (sub_formula) == "RConstraint":
+            if sub_formula[1] == "<":
+                sub_formula[1] = ">="
+            elif sub_formula[1] == ">":
+                sub_formula[1] = "<="
+            elif sub_formula[1] == ">=":
+                sub_formula[1] = "<"
+            elif sub_formula[1] == "<=":
+                sub_formula[1] = ">"
+            elif sub_formula[1] == "==":
+                sub_formula[1] = "!="
+            elif sub_formula[1] == "!=":
+                sub_formula[1] = "=="
+        return sub_formula
+
+    # Ezio: These are some rules to simplify the formulas and to push the negation always on top
+    #
+    # Not case
+    #
+    # Not Not phi == phi
+    # Not True    == False
+    # Not False   == True
+    #
+    # And case
+    #
+    # phi and phi   == phi
+    # phi and True  == phi
+    # phi and False == False
+    #
+    # (G [a1,b2] phi) and (G [a2,b2] phi) == G[min(a1,a2),max(b1,b2)] phi  (if [a1,b1] intersect [a2,b2])
+    #
+    # (Not phi1 and Not phi2) == Not (phi1 or phi2)
+    # (Not phi1 and phi2) == Not (phi1 or Not phi2) == Not (phi2 implies phi1)
+    # (phi1 and Not phi2) == Not (Not phi1 or phi2) == Not (phi1 implies phi2)
+    #
+    # Or case
+    #
+    # phi   or phi   == phi
+    # phi   or True  == True
+    # True  or phi   == True
+    # False or phi  == phi
+    # phi   or False == phi
+    #
+    # (F [a1,b2] phi) and (F [a2,b2] phi) == F[min(a1,a2),max(b1,b2)] phi  (if [a1,b1] intersect [a2,b2])
+    #
+    # (Not phi1 or Not phi2) == Not (phi1 and phi2)
+    # (Not phi1 or phi2)     == (phi1 implies phi2)
+    # (phi1 or Not phi2)     == (phi2 implies phi1)
+    #
+    # Implies case
+    #
+    # True implies phi    == phi
+    # phi  implies True   == True
+    # False implies phi   == True
+    # phi   implies False == Not phi
+    #
+    # (Not phi1 implies Not phi2) == (Not Not phi1 or Not phi2) == (phi2 implies phi1)
+    # (Not phi1 implies phi2)     == (phi1 or phi2)
+    # (phi1 implies Not phi2)     == (Not phi1 or Not phi2) == Not (phi1 and phi2)
+    #
+    # (phi1 -> (phi1 -> phi2))    == (phi1 -> phi2)
+    # (phi1 -> phi1)              == True (Tautology)
+    # (phi1 -> (phi2 -> phi1))    == True (Tautology)
+    #
+    #
+    # Equivalence case
+    #
+    # (True <-> phi)  == (True -> phi) and (phi -> True)    == phi and True == phi
+    # (False <-> phi) == (False -> phi) and (phi -> False) == True and Not phi == Not phi
+    #
+    # (Not phi1 <-> Not phi2)     ==  (phi1 <-> phi2)
+    # (Not phi1 <-> phi2)         ==  (phi1 <-> Not phi2) == Not (phi1 <-> phi2)
+    #
+    # Globally case
+    #
+    # G [a,b] True  == True
+    # G [a,b] False == False
+    #
+    # G [a,b] Not phi             == Not F [a,b] phi
+    # F [a,b] Not phi             == Not G [a,b] phi
+    #
+    # Until case
+    #
+    # phi1  U_[a,b] True  = True
+    # phi1  U_[a,b] False = False
+    # True  U_[a,b] phi2  = F [a,b] phi2
+    # False U_[a,b] phi2  = False
+    #
+    # phi1 U_[a,b] phi2 = G [0,a] phi1 && F [a,b] phi2 && F [a,a] (phi1 U phi2)
+    #
+    # Not phi1 Until Not phi2    == Not (phi1 Release phi2)
+    #
+    # C_t7 = phi2_t7
+    # C_t6 = phi2_t6 or (phi1_t6 and C_t7)
+    # a or (!b and c) = ((b_7->a_6)->b_6)
+    #a or (a and !b) = a or !(a ->b) = (6(a -> b) -> a)
+    # C(n-1) = Not phi2 (n-1) or (phi1 (n-1) and C (n))
+    # C(n-1) = (phi2 (n-1) -> (phi1 (n-1) and C (n)))
+    # C(n-2) = (phi2 (n-2) -> (phi1 (n-2) and ((phi2 (n-1) -> (phi1 (n-1) and C (n)))))))
+    #
+    # C_t7 = phi2_t7
+    # C_t6 = phi2_t6 or (False and phi2_t7) = phi2_t6
+    # C_t5 = phi2_t5 or (False and phi2_t6) = phi2_t5
+    #
+    # False U_[a,b] phi2 = G [0,a] False && F [a,b] phi2 && F [a,a] (phi1 U phi2)
+    #
+    #
+    # G[a,b] phi1 && G [c,d] phi1 = G[min(a,c),max(b,d)] phi1 if [a,b] intersect [c,d]
+    #
+    #
+    #
+    #
+
+
+
+    def _findKeyOpTree(self, key, key_root, type):
+        if self._cmpForTypeByKey(key_root, type):
+            if self._sub_formulas[key_root][1] == key or self._sub_formulas[key_root][2] == key:
+                return True
+            else:
+                return self._findKeyOpTree(key,self._sub_formulas[key_root][1],type) or self._findKeyOpTree(key,self._sub_formulas[key_root][2],type)
+        return False
+
+    def _findKeyImpliesTree(self, key, key_root):
+        if self._cmpForTypeByKey(key_root, "Implies"):
+            if self._sub_formulas[key_root][1] == key:
+                return True
+            else:
+                return self._findKeyImpliesTree(key,self._sub_formulas[key_root][1]) or self._findKeyImpliesTree(key,self._sub_formulas[key_root][2])
+        return False
+
+    def _findFormulaKey (self, sub_formula):
+        for key in self._sub_formulas.keys():
+            if self._sub_formulas[key] == sub_formula:
+                return key
+        return None
+
+    def _insSubFormula (self, subformula):
+        print(f"Insert {subformula}")
+        key = f"_phi{self._prop_count}"
+        self._sub_formulas[key] = subformula
         self._prop_count = self._prop_count + 1
-        return key_formula
+        self.printSubFormulas()
+        return key
+
+    def _cmpForTypeByKey(self, key, type):
+        if self._checkFormulaType(self._sub_formulas[key]) == type:
+            return True
+        return False
+
+    def _addSubFormula (self, sub_formula):
+        # First search if the sub_formula is already present
+        # in the list of subformulas
+        print(f"Add {sub_formula}")
+        key = self._findFormulaKey(sub_formula)
+        if key is not None:
+            return key
+
+        simplify_flag = False
+
+        if simplify_flag:
+            match self._checkFormulaType(sub_formula):
+                case "Not":
+                    key = sub_formula[1]
+                    if self._cmpForTypeByKey(key, "Not"):
+                        sub_sub_formula = self._sub_formulas[key]
+                        return sub_sub_formula[1]
+                    elif self._cmpForTypeByKey(key, "True"):
+                        return self._addSubFormula(['False', '*'])
+                    elif self._cmpForTypeByKey(key, "False"):
+                        return self._addSubFormula(['True', '*'])
+                    #sub_sub_formula = self._sub_formulas[key]
+                    #if self._checkFormulaType(sub_sub_formula) == "Not":
+                    #    key = sub_sub_formula[1]
+                    #    return key
+                case "And":
+                    key1 = sub_formula[1]
+                    key2 = sub_formula[2]
+                    # a && a == a
+                    if key1 == key2:
+                        return key1
+
+                    if self._findKeyOpTree(key1, key2,"And"):
+                        return key2
+
+                    if self._findKeyOpTree(key2, key1,"And"):
+                        return key1
+
+                    if self._cmpForTypeByKey(key1, "True"):
+                        return key2
+                    elif self._cmpForTypeByKey(key2, "True"):
+                        return key1
+
+                    if self._cmpForTypeByKey(key1, "False"):
+                        return key1
+                    elif self._cmpForTypeByKey(key2, "False"):
+                        return key2
+
+                    # (Not phi1 and Not phi2) == Not (phi1 or phi2)
+                    if self._cmpForTypeByKey(key1, "Not") and \
+                            self._cmpForTypeByKey(key2, "Not"):
+                        phi1_key = self._sub_formulas[key1][1]
+                        phi2_key = self._sub_formulas[key2][1]
+                        return self._addSubFormula(['||', phi1_key, phi2_key])
+                    elif self._cmpForTypeByKey(key1, "Not") and \
+                            not self._cmpForTypeByKey(key2, "Not"):
+                        # (Not phi1 and phi2) == Not (phi1 or Not phi2) == Not (phi2 implies phi1)
+
+                        phi1_key = self._sub_formulas[key1][1]
+                        key = self._addSubFormula(['->', key2, phi1_key])
+                        return self._addSubFormula(['!', key])
+                    elif not self._cmpForTypeByKey(key1, "Not") and \
+                            self._cmpForTypeByKey(key2, "Not"):
+                        # (phi1 and Not phi2) == Not (Not phi1 or phi2) == Not (phi1 implies phi2)
+                        phi2_key = self._sub_formulas[key2][1]
+                        key = self._addSubFormula(['->', key1, phi2_key])
+                        return self._addSubFormula(['!', key])
+                case "Or":
+                    key1 = sub_formula[1]
+                    key2 = sub_formula[2]
+                    # a || a == a
+                    if key1 == key2:
+                        return key1
+
+                    if self._findKeyOpTree(key1, key2,"Or"):
+                        return key2
+
+                    if self._findKeyOpTree(key2, key1,"Or"):
+                        return key1
+
+                    if self._cmpForTypeByKey(key1, "True"):
+                        return key1
+                    elif self._cmpForTypeByKey(key2, "True"):
+                        return key2
+
+                    if self._cmpForTypeByKey(key1, "False"):
+                        return key2
+                    elif self._cmpForTypeByKey(key2, "False"):
+                        return key1
+
+                    # (Not phi1 or Not phi2) == Not (phi1 and phi2)
+                    if self._cmpForTypeByKey(key1, "Not") and self._cmpForTypeByKey(key2, "Not"):
+                        phi1_key = self._sub_formulas[key1][1]
+                        phi2_key = self._sub_formulas[key2][1]
+                        return self._addSubFormula(['&&', phi1_key, phi2_key])
+                    elif self._cmpForTypeByKey(key1, "Not") and not self._cmpForTypeByKey(key2, "Not"):
+                        # (Not phi1 or phi2)     == (phi1 implies phi2)
+                        phi1_key = self._sub_formulas[key1][1]
+                        return self._addSubFormula(['->', phi1_key, key2])
+                    elif not self._cmpForTypeByKey(key1, "Not") and self._cmpForTypeByKey(key2, "Not"):
+                        # (phi1 or Not phi2)     == (phi2 implies phi1)
+                        phi2_key = self._sub_formulas[key2][1]
+                        return self._addSubFormula(['->', phi2_key, key1])
+                case "Implies":
+                    key1 = sub_formula[1]
+                    key2 = sub_formula[2]
+                    if key1 == key2:
+                        return self._addSubFormula(['True', '*'])
+
+                    if self._findKeyImpliesTree(key1, key2):
+                        return key2
+
+                    # (Not phi1 implies Not phi2) == (Not Not phi1 or Not phi2) == (phi2 implies phi1)
+                    if self._cmpForTypeByKey(key1, "Not") and self._cmpForTypeByKey(key2, "Not"):
+                        phi1_key = self._sub_formulas[key1][1]
+                        phi2_key = self._sub_formulas[key2][1]
+                        return self._addSubFormula(['->',  phi2_key, phi1_key])
+                    elif self._cmpForTypeByKey(key1, "Not") and not self._cmpForTypeByKey(key2, "Not"):
+                        # (Not phi1 implies phi2)     == (phi1 or phi2)
+                        phi1_key = self._sub_formulas[key1][1]
+                        return self._addSubFormula(['||', phi1_key, key2])
+                    elif not self._cmpForTypeByKey(key1, "Not") and self._cmpForTypeByKey(key2, "Not"):
+                        # (phi1 implies Not phi2)     == (Not phi1 or Not phi2) == Not (phi1 and phi2)
+                        phi2_key = self._sub_formulas[key2][1]
+                        key = self._addSubFormula(['&&', key1, phi2_key])
+                        return self._addSubFormula(['!', key])
+                case "Equivalence":
+                    key1 = sub_formula[1]
+                    key2 = sub_formula[2]
+                    if key1 == key2:
+                        return self._addSubFormula(['True', '*'])
+                    if self._cmpForTypeByKey(key1, "Not") and self._cmpForTypeByKey(key2, "Not"):
+                        # (Not phi1 <-> Not phi2)     ==  (phi1 <-> phi2)
+                        phi1_key = self._sub_formulas[key1][1]
+                        phi2_key = self._sub_formulas[key2][1]
+                        return self._addSubFormula(['<->', phi1_key, phi2_key])
+                    elif self._cmpForTypeByKey(key1, "Not") and not self._cmpForTypeByKey(key2, "Not"):
+                        # (Not phi1 <-> phi2)         ==  (phi1 <-> Not phi2) == Not (phi1 <-> phi2)
+                        phi1_key = self._sub_formulas[key1][1]
+                        return self._addSubFormula(['<->', phi1_key, key2])
+                    elif not self._cmpForTypeByKey(key1, "Not") and self._cmpForTypeByKey(key2, "Not"):
+                        # (Not phi1 <-> phi2)         ==  (phi1 <-> Not phi2) == Not (phi1 <-> phi2)
+                        phi2_key = self._sub_formulas[key2][1]
+                        key = self._addSubFormula(['<->', key1, phi2_key])
+                case "Always":
+                    key = sub_formula[3]
+                    a = int(sub_formula[1])
+                    b = int(sub_formula[2])
+                    sub_sub_formula = self._sub_formulas[key]
+                    if self._checkFormulaType(sub_sub_formula) == "Not":
+                        key1 = sub_sub_formula[1]
+                        key = self._addSubFormula(['F', sub_formula[1], sub_formula[2], key1])
+                        return self._addSubFormula(['!', key])
+                case "Eventually":
+                    key = sub_formula[3]
+                    sub_sub_formula = self._sub_formulas[key]
+                    if self._checkFormulaType(sub_sub_formula) == "Not":
+                        key1 = sub_sub_formula[1]
+                        key = self._addSubFormula(['G', sub_formula[1], sub_formula[2], key1])
+                        return self._addSubFormula(['!', key])
+
+
+
+        # If the subformula is not found then add it
+
+        return self._insSubFormula(sub_formula)
+
+    def _encode_time(self, t, time_horizon):
+        # Convert the number in a string
+        t_str = str(t)
+        # Add 0 to complete the string
+        return t_str.zfill(len(str(time_horizon)))
 
     def getVariableList (self):
         return self._variables
@@ -64,6 +413,45 @@ class STLConsistencyChecker:
     def getNumProp (self):
         return self._prop_count
 
+
+    def _reachSubFormula (self, root, key):
+        if self._cmpForTypeByKey(root, "Literal"):
+            return False
+        elif self._cmpForTypeByKey(root, "True"):
+            return False
+        elif self._cmpForTypeByKey(root, "False"):
+            return False
+        elif self._cmpForTypeByKey(root, "RConstraint"):
+            return False
+        elif self._cmpForTypeByKey(root, "Not"):
+            if self._sub_formulas[root][1] == key:
+                return True
+            else:
+                return self._reachSubFormula(self._sub_formulas[root][1], key)
+        elif self._cmpForTypeByKey(root, "And") or self._cmpForTypeByKey(root, "Or") or self._cmpForTypeByKey(root, "Implies") or self._cmpForTypeByKey(root, "Equivalence"):
+            if self._sub_formulas[root][1] == key or self._sub_formulas[root][2] == key:
+                return True
+            else:
+                return self._reachSubFormula (self._sub_formulas[root][1], key) or self._reachSubFormula (self._sub_formulas[root][2], key)
+        elif self._cmpForTypeByKey(root, "Always") or self._cmpForTypeByKey(root, "Eventually"):
+            if self._sub_formulas[root][3] == key:
+                return True
+            else:
+                return self._reachSubFormula(self._sub_formulas[root][1], key)
+        elif self._cmpForTypeByKey(root, "Until"):
+            if self._sub_formulas[root][3] == key or self._sub_formulas[root][4] == key:
+                return True
+            else:
+                return self._reachSubFormula(self._sub_formulas[root][3], key) or self._reachSubFormula(self._sub_formulas[root][4], key)
+
+
+    def cleanUnreachableSubFormulas (self, key_root):
+        temp = self._sub_formulas.keys()
+        for key in temp:
+            if key != key_root and not self._reachSubFormula(key_root, key):
+               self._sub_formulas[key] = []
+
+
     def printSubFormulas (self):
         # Print the list of the subformulas
         print("")
@@ -73,28 +461,38 @@ class STLConsistencyChecker:
         for key in self._sub_formulas.keys():
             # Key is the name of the formula
             # Now we check the type of the formula
-            if len(self._sub_formulas[key]) == 1:
+            if self._checkFormulaType(self._sub_formulas[key]) == "Literal":
             # The subformula is a binary variable
                 print(f"{key} = {self._sub_formulas[key][0]} (Binary variable)")
-            elif len(self._sub_formulas[key]) == 3 and self._sub_formulas[key][1] in {'<', '<=', '>', '>=', '==', '!='}:
+            elif self._checkFormulaType(self._sub_formulas[key]) == "True":
+                print(f"{key} = {self._sub_formulas[key][0]} (Tautology)")
+            elif self._checkFormulaType(self._sub_formulas[key]) == "False":
+                print(f"{key} = {self._sub_formulas[key][0]} (Contradiction)")
+            elif self._checkFormulaType(self._sub_formulas[key]) == "RConstraint":
             # The subformula is a predicate over the real variable
                 print(f"{key} = {self._sub_formulas[key][0]} {self._sub_formulas[key][1]} {self._sub_formulas[key][2]} (Real constraint)")
-            elif len(self._sub_formulas[key]) == 4 and self._sub_formulas[key][0] == "G":
+            elif self._checkFormulaType(self._sub_formulas[key]) == "Always":
             # The subformula is always
                 print(f"{key} = {self._sub_formulas[key][0]} [{self._sub_formulas[key][1]}, {self._sub_formulas[key][2]}] {self._sub_formulas[key][3]} (Always)")
-            elif len(self._sub_formulas[key]) == 4 and self._sub_formulas[key][0] == "F":
+            elif self._checkFormulaType(self._sub_formulas[key]) == "Eventually":
             # The subformula is eventually
                 print(f"{key} = {self._sub_formulas[key][0]} [{self._sub_formulas[key][1]}, {self._sub_formulas[key][2]}] {self._sub_formulas[key][3]} (Eventually)")
-            elif len(self._sub_formulas[key]) == 5 and self._sub_formulas[key][0] == "U":
+            elif self._checkFormulaType(self._sub_formulas[key]) == "Until":
             # The subformula is until
                 print(f"{key} = {self._sub_formulas[key][3]} {self._sub_formulas[key][0]} [{self._sub_formulas[key][1]}, {self._sub_formulas[key][2]}] {self._sub_formulas[key][4]} (Until)")
-            elif len(self._sub_formulas[key]) == 3 and self._sub_formulas[key][0] == "&&":
+            elif self._checkFormulaType(self._sub_formulas[key]) == "And":
             #The subformula is an &&
                 print(f"{key} = {self._sub_formulas[key][1]} {self._sub_formulas[key][0]}  {self._sub_formulas[key][2]}   (And)")
-            elif len(self._sub_formulas[key]) == 3 and self._sub_formulas[key][0] == "||":
+            elif self._checkFormulaType(self._sub_formulas[key]) == "Or":
             #The subformula is an Or
                 print(f"{key} = {self._sub_formulas[key][1]} {self._sub_formulas[key][0]}  {self._sub_formulas[key][2]}   (Or)")
-            elif len(self._sub_formulas[key]) == 2 and self._sub_formulas[key][0] == "!":
+            elif self._checkFormulaType(self._sub_formulas[key]) == "Implies":
+                # The subformula is an Implies
+                print(f"{key} = {self._sub_formulas[key][1]} {self._sub_formulas[key][0]}  {self._sub_formulas[key][2]}   (Implies)")
+            elif self._checkFormulaType(self._sub_formulas[key]) == "Equivalence":
+                # The subformula is an Equivalent
+                print(f"{key} = {self._sub_formulas[key][1]} {self._sub_formulas[key][0]}  {self._sub_formulas[key][2]}   (Equivalent)")
+            elif self._checkFormulaType(self._sub_formulas[key]) == "Not":
             #The subformula is a Not
                 print(f"{key} = {self._sub_formulas[key][0]} {self._sub_formulas[key][1]}   (Not)")
         print("")
@@ -190,7 +588,7 @@ class STLConsistencyChecker:
                     return self.visit_unary_temporal_operator(node[0], node[2], node[4], node[6])
             elif isinstance(node[1], str):
                 #print(node[0])
-                if node[1] in {'U'}:  # Temporal operators with two arguments
+                if node[1] in {'U'}:  # Temporal operators with two argument
                     if (int(node[3]) > int(node[5])):
                         raise SyntaxError("The lower bound of the time interval is greater than the upper bound")
                     return self.visit_binary_temporal_operator(node[1], node[3], node[5], node[0], node[7])
@@ -232,15 +630,8 @@ class STLConsistencyChecker:
         ret_left = self.visit(left)
         ret_right = self.visit(right)
 
-        if operator in {'&&', '||'}:
+        if operator in {'&&', '||', '->', '<->'}:
             prop = self._addSubFormula([operator, ret_left[0], ret_right[0]])
-        elif operator in {'->'}:
-            prop1 = self._addSubFormula(['!', ret_left[0]])
-            prop = self._addSubFormula(['||', prop1, ret_right[0]])
-        elif operator in {'<->'}:
-            formula1 = self._addSubFormula(['&&', ret_left[0], ret_right[0]])
-            formula2 = self._addSubFormula(['&&', self._addSubFormula(['!', ret_left[0]]), self._addSubFormula(['!', ret_right[0]])])
-            prop     = self._addSubFormula(['||', formula1, formula2])
         return prop, str(max(int(ret_left[1]), int(ret_right[1])))
 
     def visit_binary_relational(self, operator, left, right):
@@ -307,7 +698,7 @@ class STLConsistencyChecker:
             print("")
         for key in self._variables:
             for t in range(time_horizon):
-                prop = f"{key}_t{t}"
+                prop = f"{key}_t{self._encode_time(t, time_horizon)}"
                 if variables[key] == 'real':
                     if verbose:
                         print(f"{prop} = Real('{prop}')")
@@ -364,7 +755,7 @@ class STLConsistencyChecker:
             if key != root_formula:
                 time_limit = time_horizon
             for t in range(time_limit):
-                prop = f"{key}_t{t}"
+                prop = f"{key}_t{self._encode_time(t, time_horizon)}"
                 #print(f"{prop}")
                 if len(self._sub_formulas[key]) == 1:
                     if verbose:
@@ -372,70 +763,70 @@ class STLConsistencyChecker:
                     smt_variables[prop] = Bool(prop)
                     if (root_prop != prop):
                         if verbose:
-                            print(f"s.add({prop} == {self._sub_formulas[key][0]}_t{t})")
-                        s.add(smt_variables[prop] == smt_variables[f"{self._sub_formulas[key][0]}_t{t}"])
+                            print(f"s.add({prop} == {self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)})")
+                        s.add(smt_variables[prop] == smt_variables[f"{self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)}"])
                     else:
                         if verbose:
-                            print(f"s.add({self._sub_formulas[key][0]}_t{t})")
-                        s.add(smt_variables[f"{self._sub_formulas[key][0]}_t{t}"])
+                            print(f"s.add({self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)})")
+                        s.add(smt_variables[f"{self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)}"])
                 elif len(self._sub_formulas[key]) == 3 and self._sub_formulas[key][1] in {'<', '<=', '>', '>=', '==', '!='}:
                     if verbose:
                         print(f"{prop} = Bool('{prop}')")
                     smt_variables[prop] = Bool(prop)
                     if self._sub_formulas[key][1] == '<':
                         if (root_prop != prop):
-                            s.add(smt_variables[prop] == (smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] < float(self._sub_formulas[key][2])))
+                            s.add(smt_variables[prop] == (smt_variables[f"{self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)}"] < float(self._sub_formulas[key][2])))
                             if verbose:
-                                print(f"s.add({smt_variables[prop]} == ({self._sub_formulas[key][0]}_t{t} < {self._sub_formulas[key][2]}))")
+                                print(f"s.add({smt_variables[prop]} == ({self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)} < {self._sub_formulas[key][2]}))")
                         else:
-                            s.add((smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] < float(self._sub_formulas[key][2])))
+                            s.add((smt_variables[f"{self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)}"] < float(self._sub_formulas[key][2])))
                             if verbose:
-                                print(f"s.add({self._sub_formulas[key][0]}_t{t} < {self._sub_formulas[key][2]})")
+                                print(f"s.add({self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)} < {self._sub_formulas[key][2]})")
                     elif self._sub_formulas[key][1] == '<=':
                         if (root_prop != prop):
-                            s.add(smt_variables[prop] == (smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] <= float(self._sub_formulas[key][2])))
+                            s.add(smt_variables[prop] == (smt_variables[f"{self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)}"] <= float(self._sub_formulas[key][2])))
                             if verbose:
-                                print(f"s.add({smt_variables[prop]} == ({self._sub_formulas[key][0]}_t{t} <= {self._sub_formulas[key][2]}))")
+                                print(f"s.add({smt_variables[prop]} == ({self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)} <= {self._sub_formulas[key][2]}))")
                         else:
-                            s.add((smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] <= float(self._sub_formulas[key][2])))
+                            s.add((smt_variables[f"{self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)}"] <= float(self._sub_formulas[key][2])))
                             if verbose:
-                                print(f"s.add({self._sub_formulas[key][0]}_t{t} <= {self._sub_formulas[key][2]})")
+                                print(f"s.add({self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)} <= {self._sub_formulas[key][2]})")
                     elif self._sub_formulas[key][1] == '>':
                         if (root_prop != prop):
-                            s.add(smt_variables[prop] == (smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] > float(self._sub_formulas[key][2])))
+                            s.add(smt_variables[prop] == (smt_variables[f"{self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)}"] > float(self._sub_formulas[key][2])))
                             if verbose:
-                                print(f"s.add({smt_variables[prop]} == ({self._sub_formulas[key][0]}_t{t} > {self._sub_formulas[key][2]}))")
+                                print(f"s.add({smt_variables[prop]} == ({self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)} > {self._sub_formulas[key][2]}))")
                         else:
-                            s.add((smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] > float(self._sub_formulas[key][2])))
+                            s.add((smt_variables[f"{self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)}"] > float(self._sub_formulas[key][2])))
                             if verbose:
-                                print(f"s.add(({self._sub_formulas[key][0]}_t{t} > {self._sub_formulas[key][2]}))")
+                                print(f"s.add(({self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)} > {self._sub_formulas[key][2]}))")
                     elif self._sub_formulas[key][1] == '>=':
                         if (root_prop != prop):
-                            s.add(smt_variables[prop] == (smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] >= float(self._sub_formulas[key][2])))
+                            s.add(smt_variables[prop] == (smt_variables[f"{self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)}"] >= float(self._sub_formulas[key][2])))
                             if verbose:
-                                print(f"s.add({smt_variables[prop]} == ({self._sub_formulas[key][0]}_t{t} >= {self._sub_formulas[key][2]}))")
+                                print(f"s.add({smt_variables[prop]} == ({self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)} >= {self._sub_formulas[key][2]}))")
                         else:
-                            s.add((smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] >= float(self._sub_formulas[key][2])))
+                            s.add((smt_variables[f"{self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)}"] >= float(self._sub_formulas[key][2])))
                             if verbose:
-                                print(f"s.add(({self._sub_formulas[key][0]}_t{t} >= {self._sub_formulas[key][2]}))")
+                                print(f"s.add(({self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)} >= {self._sub_formulas[key][2]}))")
                     elif self._sub_formulas[key][1] == '==':
                         if (root_prop != prop):
-                            s.add(smt_variables[prop] == (smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] == float(self._sub_formulas[key][2])))
+                            s.add(smt_variables[prop] == (smt_variables[f"{self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)}"] == float(self._sub_formulas[key][2])))
                             if verbose:
-                                print(f"s.add({smt_variables[prop]} == ({self._sub_formulas[key][0]}_t{t} == {self._sub_formulas[key][2]}))")
+                                print(f"s.add({smt_variables[prop]} == ({self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)} == {self._sub_formulas[key][2]}))")
                         else:
-                            s.add((smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] == float(self._sub_formulas[key][2])))
+                            s.add((smt_variables[f"{self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)}"] == float(self._sub_formulas[key][2])))
                             if verbose:
-                                print(f"s.add(({self._sub_formulas[key][0]}_t{t} == {self._sub_formulas[key][2]}))")
+                                print(f"s.add(({self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)} == {self._sub_formulas[key][2]}))")
                     elif self._sub_formulas[key][1] == '!=':
                         if (root_prop != prop):
-                            s.add(smt_variables[prop] == (smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] != float(self._sub_formulas[key][2])))
+                            s.add(smt_variables[prop] == (smt_variables[f"{self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)}"] != float(self._sub_formulas[key][2])))
                             if verbose:
-                                print(f"s.add({smt_variables[prop]} == ({self._sub_formulas[key][0]}_t{t} != {self._sub_formulas[key][2]}))")
+                                print(f"s.add({smt_variables[prop]} == ({self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)} != {self._sub_formulas[key][2]}))")
                         else:
-                            s.add((smt_variables[f"{self._sub_formulas[key][0]}_t{t}"] != float(self._sub_formulas[key][2])))
+                            s.add((smt_variables[f"{self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)}"] != float(self._sub_formulas[key][2])))
                             if verbose:
-                                print(f"s.add(({self._sub_formulas[key][0]}_t{t} != {self._sub_formulas[key][2]}))")
+                                print(f"s.add(({self._sub_formulas[key][0]}_t{self._encode_time(t, time_horizon)} != {self._sub_formulas[key][2]}))")
                 elif len(self._sub_formulas[key]) == 4 and self._sub_formulas[key][0] in {'G','F'}: #Ezio in the case of nested operation it is necessary to do all the t
 
                     int_a = int(self._sub_formulas[key][1])
@@ -445,7 +836,7 @@ class STLConsistencyChecker:
                         prop1 = self._sub_formulas[key][3]
                         flag = 1
                         for i in range(int_a, int_b + 1):
-                            if not f"{prop1}_t{t + i}" in smt_variables:
+                            if not f"{prop1}_t{self._encode_time(t+i, time_horizon)}" in smt_variables:
                                 flag = 0
                                 break
                         if flag:
@@ -453,7 +844,7 @@ class STLConsistencyChecker:
                                 print(f"{prop} = Bool('{prop}')")
                             smt_variables[prop] = Bool(prop)
 
-                            prop1_list = [smt_variables[f"{prop1}_t{t + i}"] for i in range(int_a, int_b + 1)]
+                            prop1_list = [smt_variables[f"{prop1}_t{self._encode_time(t+i, time_horizon)}"] for i in range(int_a, int_b + 1)]
                             if self._sub_formulas[key][0] == 'G':
                                 if (root_prop != prop):
                                     s.add(smt_variables[prop] == And(prop1_list))
@@ -473,9 +864,9 @@ class STLConsistencyChecker:
                                     if verbose:
                                         print(f"s.add(Or({prop1_list}))")
 
-                elif len(self._sub_formulas[key]) == 3 and self._sub_formulas[key][0] in {'&&', '||'}:
-                    prop1 = f"{self._sub_formulas[key][1]}_t{t}"
-                    prop2 = f"{self._sub_formulas[key][2]}_t{t}"
+                elif len(self._sub_formulas[key]) == 3 and self._sub_formulas[key][0] in {'&&', '||', '->', '<->'}:
+                    prop1 = f"{self._sub_formulas[key][1]}_t{self._encode_time(t, time_horizon)}"
+                    prop2 = f"{self._sub_formulas[key][2]}_t{self._encode_time(t, time_horizon)}"
                     if prop1 in smt_variables.keys() and prop2 in smt_variables.keys():
                         if verbose:
                             print(f"{prop} = Bool('{prop}')")
@@ -498,8 +889,26 @@ class STLConsistencyChecker:
                                 s.add(Or(smt_variables[prop1], smt_variables[prop2]))
                                 if verbose:
                                     print(f"s.add(Or({prop1},{prop2}))")
+                        elif self._sub_formulas[key][0] == '->':
+                            if (root_prop != prop):
+                                s.add(smt_variables[prop] == Implies(smt_variables[prop1], smt_variables[prop2]))
+                                if verbose:
+                                    print(f"s.add({prop} == Implies({prop1},{prop2}))")
+                            else:
+                                s.add(Implies(smt_variables[prop1], smt_variables[prop2]))
+                                if verbose:
+                                    print(f"s.add(Implies({prop1},{prop2}))")
+                        elif self._sub_formulas[key][0] == '<->':
+                            if (root_prop != prop):
+                                s.add(smt_variables[prop] == (smt_variables[prop1] == smt_variables[prop2]))
+                                if verbose:
+                                    print(f"s.add({prop} == ({prop1} == {prop2}))")
+                            else:
+                                s.add((smt_variables[prop1] == smt_variables[prop2]))
+                                if verbose:
+                                    print(f"s.add(({prop1} == {prop2}))")
                 elif len(self._sub_formulas[key]) == 2 and self._sub_formulas[key][0] in {'!'}:
-                    prop1 = f"{self._sub_formulas[key][1]}_t{t}"
+                    prop1 = f"{self._sub_formulas[key][1]}_t{self._encode_time(t, time_horizon)}"
                     if prop1 in smt_variables.keys():
                         if verbose:
                             print(f"{prop} = Bool('{prop}')")
@@ -532,42 +941,51 @@ class STLConsistencyChecker:
                     prop2 = self._sub_formulas[key][4]
 
                     if t + int_b < time_horizon:
+
+                        # We create
                         if verbose:
+                            print("")
                             print(f"{prop}_A = Bool('{prop}_A')")
                         smt_variables[f"{prop}_A"] = Bool(f"{prop}_A")
-                        prop_a_list = [smt_variables[f"{prop1}_t{t + i}"] for i in range(0, int_a + 1)]
+                        prop_a_list = [smt_variables[f"{prop1}_t{self._encode_time(t+i, time_horizon)}"] for i in range(0, int_a + 1)]
                         s.add(smt_variables[f"{prop}_A"] == And(prop_a_list))
                         if verbose:
                             print(f"s.add({prop}_A == And({prop_a_list}))")
-                            print(f"{prop}_B = Bool('{prop}_B')")
+
                         smt_variables[f"{prop}_B"] = Bool(f"{prop}_B")
-                        prop_b_list = [smt_variables[f"{prop2}_t{t + i}"] for i in range(int_a, int_b + 1)]
                         if verbose:
-                            print(f"s.add({prop2}_B == Or({prop_b_list}))")
-
-                        if not f"{key}_t{t + int_a}_C" in smt_variables.keys():
+                            print("")
+                            print(f"{prop}_B = Bool('{prop}_B')")
+                        prop_b_list = [smt_variables[f"{prop2}_t{self._encode_time(t+i, time_horizon)}"] for i in range(int_a, int_b + 1)]
+                        s.add(smt_variables[f"{prop}_B"] == Or(prop_b_list))
+                        if verbose:
+                            print(f"s.add({prop}_B == Or({prop_b_list}))")
+                            print("")
+                        if not f"{key}_t{self._encode_time(t + int_a, time_horizon)}_C" in smt_variables.keys():
                             if verbose:
-                                print(f"The variables {key}_t{t + int_a}_C is not in smt_variables")
+                                print(f"The variables {key}_t{self._encode_time(t + int_a, time_horizon)}_C is not in smt_variables")
 
-                            if not f"{key}_t{time_horizon - 1}_C" in smt_variables.keys():
+                            if not f"{key}_t{self._encode_time(time_horizon, time_horizon)}_C" in smt_variables.keys():
                                 if verbose:
-                                    print(f"{key}_t{time_horizon - 1}_C = Bool('{key}_t{time_horizon - 1}_C')")
-                                smt_variables[f"{key}_t{time_horizon - 1}_C"] = Bool(f"{key}_t{time_horizon - 1}_C")
-                                s.add(smt_variables[f"{key}_t{time_horizon - 1}_C"] == smt_variables[
-                                    f"{prop2}_t{time_horizon - 1}"])
+                                    print(f"{key}_t{self._encode_time(time_horizon-1, time_horizon)}_C = Bool('{key}_t{self._encode_time(time_horizon-1, time_horizon)}_C')")
+                                smt_variables[f"{key}_t{self._encode_time(time_horizon-1, time_horizon)}_C"] = Bool(f"{key}_t{self._encode_time(time_horizon-1, time_horizon)}_C")
+                                s.add(smt_variables[f"{key}_t{self._encode_time(time_horizon-1, time_horizon)}_C"] == smt_variables[f"{prop2}_t{self._encode_time(time_horizon-1, time_horizon)}"])
                                 if verbose:
-                                    print(f"s.add({key}_t{time_horizon - 1}_C == {prop2}_t{time_horizon - 1})")
+                                    print(f"s.add({key}_t{self._encode_time(time_horizon-1, time_horizon)}_C == {prop2}_t{self._encode_time(time_horizon-1, time_horizon)})")
+                            print("")
                             for i in range(t + int_a, time_horizon - 1):
-                                k = time_horizon - i
-                                if not f"{key}_t{k}_C" in smt_variables.keys():
+
+                                k = time_horizon - i - 2 + int_a
+                                #print(f"i = {i}, k = {k}")
+                                if not f"{key}_t{self._encode_time(k, time_horizon)}_C" in smt_variables.keys():
                                     if verbose:
-                                        print(f"{key}_t{k}_C = Bool('{key}_t{k}_C')")
-                                    smt_variables[f"{key}_t{k}_C"] = Bool(f"{key}_t{k}_C")
+                                        print(f"{key}_t{self._encode_time(k, time_horizon)}_C = Bool('{key}_t{self._encode_time(k, time_horizon)}_C')")
+                                    smt_variables[f"{key}_t{self._encode_time(k, time_horizon)}_C"] = Bool(f"{key}_t{self._encode_time(k, time_horizon)}_C")
                                     if verbose:
-                                        print(f"s.add({key}_t{k}_C == Or({prop2}_t{k},And({prop1}_t{k},{key}_t{k + 1}_C))")
-                                    s.add(smt_variables[f"{key}_t{k}_C"] == Or(smt_variables[f"{prop2}_t{k}"],
-                                                                               And(smt_variables[f"{prop1}_t{k}"],
-                                                                                   smt_variables[f"{key}_t{k + 1}_C"])))
+                                        print(f"s.add({key}_t{self._encode_time(k, time_horizon)}_C == Or({prop2}_t{self._encode_time(k, time_horizon)},And({prop1}_t{self._encode_time(k+1, time_horizon)},{key}_t{self._encode_time(k+1, time_horizon)}_C))")
+                                    s.add(smt_variables[f"{key}_t{self._encode_time(k, time_horizon)}_C"] == Or(smt_variables[f"{prop2}_t{self._encode_time(k, time_horizon)}"],
+                                                                               And(smt_variables[f"{prop1}_t{self._encode_time(k, time_horizon)}"],
+                                                                                   smt_variables[f"{key}_t{self._encode_time(k+1, time_horizon)}_C"])))
                         if verbose:
                             print("")
                         smt_variables[f"{prop}"] = Bool(f"{prop}")
@@ -577,14 +995,13 @@ class STLConsistencyChecker:
                         if (root_prop != prop):
                             s.add(
                                 smt_variables[f"{prop}"] == And(smt_variables[f"{prop}_A"], smt_variables[f"{prop}_B"],
-                                                                smt_variables[f"{key}_t{int_a}_C"]))
+                                                                smt_variables[f"{key}_t{self._encode_time(int_a, time_horizon)}_C"]))
                             if verbose:
-                                print(f"s.add({prop} == And({prop}_A,{prop}_B,{key}_t{int_a}_C))")
+                                print(f"s.add({prop} == And({prop}_A,{prop}_B,{key}_t{self._encode_time(int_a, time_horizon)}_C))")
                         else:
-                            s.add(And(smt_variables[f"{prop}_A"], smt_variables[f"{prop}_B"],
-                                      smt_variables[f"{key}_t{int_a}_C"]))
+                            s.add(And(smt_variables[f"{prop}_A"], smt_variables[f"{prop}_B"],smt_variables[f"{key}_t{self._encode_time(int_a, time_horizon)}_C"]))
                             if verbose:
-                                print(f"s.add(And({prop}_A,{prop}_B,{key}_t{int_a}_C))")
+                                print(f"s.add(And({prop}_A,{prop}_B,{key}_t{self._encode_time(int_a, time_horizon)}_C))")
         if verbose:
             print("")
             print("================================")
@@ -592,10 +1009,14 @@ class STLConsistencyChecker:
             print("")
             print("Solver statistics")
             print(s.statistics())
+            print(s)
+
+
 
         if s.check() == unsat:
             print("")
             print("The STL requirements are inconsistent.")
+            print(f"The unsat core is {s.unsat_core()}")
         else:
             print("")
             print("The STL requirements are consistent. This is a signal witness:")
@@ -612,43 +1033,66 @@ class STLConsistencyChecker:
 
 
 # Example STL expression
-#stl_expression = " F [10,10000] (! (a > 0) &&  b > 0)" #controlla not davanti ad a -> ora è ok
+#stl_expression = " F [10,100] (! (a > 0) &&  ! (b >= 0))" #controlla not davanti ad a -> ora è ok
+#stl_expression = "!((a <-> ! b) <-> ! (a <-> b))"
+#stl_expression = "a && a"
 #stl_expression = " F [0,5] (a > 0 && a < 0)"
 # Example STL expression
-#stl_expression = "F [0,5] G [2,5] a"
+#stl_expression = "F [0,5] G [2,5] ! a"
+#stl_expression = "(! ! a && a) && (! ! ! a)"
 #stl_expression = "!(a > 0)"
-#stl_expression = "(! x<0 && y>0) U[1,5] ( y > 6.07)"   #non funziona
-#stl_expression = "G[0,5]((! x<0 && y>0) U[1,5] ( y > 6.07))"  #Non funziona
+#stl_expression = "(! x<0 && y>0) U[1,5] ( y > 6.07)"
 #stl_expression = "G[0,5] ((x > 3) && (F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] ((x > 3) && (y < 2))"
 #stl_expression = " (x > 4) && ! (y > 3)"
 #stl_expression = "G[0,5] ((F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] (x > 5)"
 #stl_expression = "G[0,5] (F[7,9] (x > 3))"
-#stl_expression = "G[0,10](x U[2,5] y)" #funziona, ma witness sbagliata
-#stl_expression = "G[0,4](x U[1,3] y)" #non funziona
+#stl_expression = "G[0,10](x U[2,5] y)" #Until è sistemato
 #stl_expression = "x>0 U[2,7] y < 0"
-#stl_expression = "G[2,5] x > 5 || G[1,3] x < 0"
-#stl_expression = "G[2,5] (x > 5 && x < 0)"
+#stl_expression = "G[2,5] x > 5 || G[1,3] x < 0"  #Giustamente dice che è sat, ma poi la witness che produce non ha senso
+#stl_expression = "G[2,5] (x > 5 || x < 0)"
 #stl_expression = "! a && a"
-#stl_expression = "G[1,5] x>3 && G[2,3] x<2"
-#stl_expression = "G[2,3] (x>3 && x<2)"
-#stl_expression = "G[2,9] x<5 && G[3,5] x>7"
-#stl_expression = "G[3,5] (x<5 && x>7)"
+
+#stl_expression = "((a && (! b)) && a)"
+#!(a -> b) && a
+#! (a -> (a -> b))
+#a->(b->a)
+#!(a -> a -> b)
+#stl_expression = "c && d && b && a && (! b) && c"
+# "c && a && b && a && d && (! b) && c"
+# "d && !(c -> b)"
+# "!(d -> (c -> b))"
+# "!(b -> (a -> (d -> (c -> b))))"
+
+#stl_expression = "a U [2,5] b"
 stl_expression = "(y>6) U[3,7] (y < 3)" #NON funziona
+
+
+
 
 
 #We can use the consistency checking to verify the equivalence of the formulas
 #For example De Morgan Laws
 #stl_expression =  "!(!(a && b) <-> (!a || !b)) " #This formula should be unsat
 #stl_expression =  "!(!(a || b) <-> (!a && !b)) " #This formula should be unsat
-#stl_expression = "!(a <-> a)" #This formula should be unsat
+#stl_expression =  "!(a <-> a)"                   #This formula should be unsat
+#stl_expression =  "!(G[0,1] a <-> F[0,1] a)"
 
 #stl_expression = "!(G[0,5] G[2,4] a <-> G[2,9] a)" #This formula should be unsat
 
 #stl_expression = "F [2,3] a < 0 && G [0,5] a > 0"
 #stl_expression = "(a && (a -> (a || b)))"
 #stl_expression = "(G[0,2] a && (G[0,2] a -> F[0,2] a))"
+
+
+#stl_expression = "!(G[0,2]! a <-> ! F[0,2] a)" # This is problematic the parsing
+#stl_expression = "!(! G[0,2] a <-> F[0,2] ! a)"
+#stl_expression = "G[0,100] (x > 0.5 -> F [0,10] (y < 10)) && G[0,100] (x > 0.5 && y > 10)"
+
+#stl_expression = "(G[0,2] !b) && (G [0,4] (a -> F[0,2] b)) && (!b -> a)"
+
+#stl_expression = "!(G[0,2] a -> G[0,2] a)"
 
 # Create a checker and visit the parsed expression
 checker = STLConsistencyChecker()
@@ -660,9 +1104,12 @@ result = checker.visit(parsed_expr)
 print(f"Formula_horizon =  {result[1]}")
 print(f"Root sub_formula = {result[0]} ")
 checker.printSubFormulas()
+checker.cleanUnreachableSubFormulas (result[0])
+checker.printSubFormulas()
 formula_horizon = int(result[1])
 variables = checker.getVariableList()
 propositions = checker.getBasicPropositionsList()
 expression = list(propositions.values())
 
 checker.solve(int(result[1]), result[0], True)
+
