@@ -1033,27 +1033,25 @@ class STLConsistencyChecker:
 
 
 # Example STL expression
-#stl_expression = " F [10,100] (! (a > 0) &&  ! (b >= 0))" #controlla not davanti ad a -> ora è ok
+#stl_expression = " F [10,100] (! (a > 0) &&  ! (b >= 0))" #non funziona
 #stl_expression = "!((a <-> ! b) <-> ! (a <-> b))"
 #stl_expression = "a && a"
-#stl_expression = " F [0,5] (a > 0 && a < 0)"
-# Example STL expression
+stl_expression = " F [0,5] (a > 0 && a < 0)" #non funziona
 #stl_expression = "F [0,5] G [2,5] ! a"
 #stl_expression = "(! ! a && a) && (! ! ! a)"
 #stl_expression = "!(a > 0)"
 #stl_expression = "(! x<0 && y>0) U[1,5] ( y > 6.07)"
 #stl_expression = "G[0,5] ((x > 3) && (F[2,7] (y < 2)))"
 #stl_expression = "G[0,5] ((x > 3) && (y < 2))"
-#stl_expression = " (x > 4) && ! (y > 3)"
-#stl_expression = "G[0,5] ((F[2,7] (y < 2)))"
+#stl_expression = " (x > 4) && ! (y > 3)" #ok
+#stl_expression = "G[0,5] ((F[2,7] (y < 2)))" #non funziona
 #stl_expression = "G[0,5] (x > 5)"
-#stl_expression = "G[0,5] (F[7,9] (x > 3))"
-#stl_expression = "G[0,10](x U[2,5] y)" #Until è sistemato
-#stl_expression = "x>0 U[2,7] y < 0"
-#stl_expression = "G[2,5] x > 5 || G[1,3] x < 0"  #Giustamente dice che è sat, ma poi la witness che produce non ha senso
+#stl_expression = "G[0,5] (F[7,9] (x > 3))" #non funziona
+#stl_expression = "G[0,10](x U[2,5] y)" #non funziona
+#stl_expression = "x>0 U[2,7] y < 0" #okay
+#stl_expression = "G[2,5] x > 5 || G[1,3] x < 0" #non funziona
 #stl_expression = "G[2,5] (x > 5 || x < 0)"
-#stl_expression = "! a && a"
-
+#stl_expression = "! a && a" #ok
 #stl_expression = "((a && (! b)) && a)"
 #!(a -> b) && a
 #! (a -> (a -> b))
@@ -1064,10 +1062,9 @@ class STLConsistencyChecker:
 # "d && !(c -> b)"
 # "!(d -> (c -> b))"
 # "!(b -> (a -> (d -> (c -> b))))"
-
 #stl_expression = "a U [2,5] b"
-stl_expression = "(y>6) U[3,7] (y < 3)" #NON funziona
-
+#stl_expression = "(y>6) U[3,7] (y < 3)" #funziona
+#stl_expression = "F[0,5](x>3 || x<5)"  #Non funziona
 
 
 
