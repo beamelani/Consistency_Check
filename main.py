@@ -448,7 +448,7 @@ class STLConsistencyChecker:
     def cleanUnreachableSubFormulas (self, key_root):
         temp = self._sub_formulas.keys()
         for key in temp:
-            if key != key_root and not self._reachSubFormula(key_root, key):
+            if key != key_root and not self._reachSubFormula(key_root, key): #credo che questo crei problemi
                self._sub_formulas[key] = []
 
 
@@ -1036,7 +1036,8 @@ class STLConsistencyChecker:
 #stl_expression = " F [10,100] (! (a > 0) &&  ! (b >= 0))" #non funziona
 #stl_expression = "!((a <-> ! b) <-> ! (a <-> b))"
 #stl_expression = "a && a"
-stl_expression = " F [0,5] (a > 0 && a < 0)" #non funziona
+#stl_expression = " F [0,5] (a > 0)" # funziona
+#stl_expression = " F [0,5] (a > 0 && b>3)" # non funziona
 #stl_expression = "F [0,5] G [2,5] ! a"
 #stl_expression = "(! ! a && a) && (! ! ! a)"
 #stl_expression = "!(a > 0)"
@@ -1047,7 +1048,7 @@ stl_expression = " F [0,5] (a > 0 && a < 0)" #non funziona
 #stl_expression = "G[0,5] ((F[2,7] (y < 2)))" #non funziona
 #stl_expression = "G[0,5] (x > 5)"
 #stl_expression = "G[0,5] (F[7,9] (x > 3))" #non funziona
-#stl_expression = "G[0,10](x U[2,5] y)" #non funziona
+#stl_expression = "G[0,10](x U[2,5] y)" #witness non ok
 #stl_expression = "x>0 U[2,7] y < 0" #okay
 #stl_expression = "G[2,5] x > 5 || G[1,3] x < 0" #non funziona
 #stl_expression = "G[2,5] (x > 5 || x < 0)"
@@ -1101,7 +1102,7 @@ result = checker.visit(parsed_expr)
 print(f"Formula_horizon =  {result[1]}")
 print(f"Root sub_formula = {result[0]} ")
 checker.printSubFormulas()
-checker.cleanUnreachableSubFormulas (result[0])
+#checker.cleanUnreachableSubFormulas (result[0])
 checker.printSubFormulas()
 formula_horizon = int(result[1])
 variables = checker.getVariableList()
