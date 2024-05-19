@@ -19,10 +19,10 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import time
 
-
-# STL Requirements Consistency Checking (ver 0.43)
-# Date: 06-05-2024
+# STL Requirements Consistency Checking (ver 0.44)
+# Date: 19-05-2024
 #
 #
 
@@ -34,6 +34,212 @@ from pyparsing import (Optional, Combine, Literal, Word, alphas, nums, alphanums
 class SyntaxError(Exception):
     """Base class for other exceptions"""
     pass
+
+class Prover:
+
+    def __init__(self):
+        self._sequents = []
+
+    def terminate (self, formulas):
+        for seq in self._sequents:
+            seq.print()
+            if not seq.checkTermination(formulas):
+                return False
+        return True
+
+    def _check(self):
+        for seq in self._sequents:
+            if not seq.checkAxiom():
+                return False
+        return True
+
+    def printSequents(self):
+        print("=========================")
+        print("Sequents")
+        print("=========================")
+        for seq in self._sequents:
+            seq.print()
+        print("=========================")
+
+    def prove(self, formulas, root):
+        self._sequents = []
+
+        print(f"Creating root Sequent with formula {root}")
+        seq = Sequent(set(),set())
+
+        #I put the formula in the antecedent
+        seq.addAntecedent(root)
+
+        seq.print()
+        self._sequents.append(seq)
+        while not self.terminate(formulas):
+            for seq in self._sequents.copy():
+                ret = seq.removeReducibleFormulaConsequent(formulas)
+                print(f"ret is {ret}")
+                if len(ret) != 0:
+                    if len(ret) == 2:
+                        if ret[0] in {'!'}:
+                            seq.addAntecedent(ret[1])
+                            seq.print()
+                            self.printSequents()
+                            #choice = input("Choose an option: ")
+                    elif len(ret) == 3:
+                        if ret[0] == "&&":
+                            seq1 = seq.copy()
+                            seq.addConsequent(ret[1])
+                            seq1.addConsequent(ret[2])
+                            seq1.print()
+                            seq.print()
+                            self._sequents.append(seq1)
+                            self.printSequents()
+                            #choice = input("Choose an option: ")
+                        elif ret[0] == "||":
+                            seq.addConsequent(ret[1])
+                            seq.addConsequent(ret[2])
+                            self.printSequents()
+                            #choice = input("Choose an option: ")
+                        elif ret[0] == "->":
+                            seq.addAntecedent(ret[1])
+                            seq.addConsequent(ret[2])
+                            seq.print()
+                            self.printSequents()
+                            #choice = input("Choose an option: ")
+                ret = seq.removeReducibleFormulaAntecedent(formulas)
+                print(f"Antecedent ret is {ret}")
+                if len(ret) == 2:
+                    if ret[0] in {'!'}:
+                        seq.addConsequent(ret[1])
+                        seq.print()
+                        self.printSequents()
+                        #choice = input("Choose an option: ")
+                elif len(ret) == 3:
+                    if ret[0] == "&&":
+                        seq.addAntecedent(ret[1])
+                        seq.addAntecedent(ret[2])
+                        self.printSequents()
+                        #choice = input("Choose an option: ")
+                    elif ret[0] == "||":
+                        seq1 = seq.copy()
+                        seq.addAntecedent(ret[1])
+                        seq1.addAntecedent(ret[2])
+                        seq1.print()
+                        seq.print()
+                        self._sequents.append(seq1)
+                        self.printSequents()
+                        #choice = input("Choose an option: ")
+                    elif ret[0] == "->":
+                        seq1 = seq.copy()
+                        seq.print()
+                        print(f"Add {ret[2]} element")
+                        seq.addAntecedent(ret[2])
+                        seq.print()
+
+                        seq1.addConsequent(ret[1])
+
+                        self._sequents.append(seq1)
+                        self.printSequents()
+                        #choice = input("Choose an option: ")
+            self.printSequents()
+            #choice = input("Choose an option: ")
+
+            return self._check()
+
+
+
+
+
+class Sequent:
+
+    def __init__(self):
+        self._antecedent = set()
+        self._consequent = set()
+
+    def __init__(self, ants, cons):
+        self._antecedents = ants
+        self._consequents = cons
+
+    def copy (self):
+        return Sequent(self._antecedents.copy(), self._consequents.copy())
+
+    def addAntecedent (self, formula):
+        self._antecedents.add(formula)
+
+    def addConsequent (self, formula):
+        self._consequents.add(formula)
+
+    def removeAntecedent(self, formula):
+        self._antecedents.remove(formula)
+
+    def removeConsequent(self, formula):
+        self._consequents.remove(formula)
+
+    def removeReducibleFormulaConsequent(self, formulas):
+        for key in self._consequents:
+            if self._isReducible(formulas[key]):
+                self.removeConsequent(key)
+                return formulas[key]
+        return []
+
+    def removeReducibleFormulaAntecedent(self, formulas):
+        for key in self._antecedents:
+            if self._isReducible(formulas[key]):
+                self.removeAntecedent(key)
+                return formulas[key]
+        return []
+
+    def checkTermination(self, formulas):
+        if self.checkAxiom():
+            return True
+        for key in self._antecedents:
+            print(f"Antecedent {key}")
+            if self._isReducible(formulas[key]):
+                return False
+        for key in self._consequents:
+            print(f"Consequent {key}")
+            if self._isReducible(formulas[key]):
+                return False
+        return True
+
+    def print(self):
+        print(f"{sorted(self._antecedents)} |- {sorted(self._consequents)}   (Axiom = {self.checkAxiom()})")
+
+    def checkAxiom (self):
+        ret = self._antecedents & self._consequents
+        if len(ret) == 0:
+            return False
+        return True
+
+    def _isReducible(self, formula):
+        if len(formula) == 1:
+            return False
+        elif len(formula) == 2:
+            if formula[0] in {'!'}:
+                return True
+            elif formula[0] in {'True'}:
+                return False
+            elif formula[0] in {'False'}:
+                return False
+        elif len(formula) == 3:
+            if formula[1] in {'<', '<=', '>', '>=', '==', '!='}:
+                return False
+            elif formula[0] == "&&":
+                return True
+            elif formula[0] == "||":
+                return True
+            elif formula[0] == "->":
+                return True
+            elif formula[0] == "<->":
+                return True
+        elif len(formula) == 4:
+            if formula[0] == "G":
+                return False
+            elif formula[0] == "F":
+                return False
+        elif len(formula) == 5:
+            if formula[0] == "U":
+                return False
+        return False
+
 
 
 class STLConsistencyChecker:
@@ -189,6 +395,33 @@ class STLConsistencyChecker:
     #
     #
     #
+
+    def genExpSubFormula(self, key_root):
+        match self._checkFormulaType(self._sub_formulas[key_root]):
+            case "Literal":
+                return f"{self._sub_formulas[key_root][0]}"
+            case "Not":
+                return f"! ({self.genExpSubFormula(self._sub_formulas[key_root][1])})"
+            case "True":
+                return f"True"
+            case "False":
+                return f"False"
+            case "RConstraint":
+                return f"({self._sub_formulas[key_root][0]} {self._sub_formulas[key_root][1]} {self._sub_formulas[key_root][2]})"
+            case "And":
+                return f"({self.genExpSubFormula(self._sub_formulas[key_root][1])} && {self.genExpSubFormula(self._sub_formulas[key_root][2])})"
+            case "Or":
+                return f"({self.genExpSubFormula(self._sub_formulas[key_root][1])} || {self.genExpSubFormula(self._sub_formulas[key_root][2])})"
+            case "Implies":
+                return f"({self.genExpSubFormula(self._sub_formulas[key_root][1])} -> {self.genExpSubFormula(self._sub_formulas[key_root][2])})"
+            case "Equivalence":
+                return f"({self.genExpSubFormula(self._sub_formulas[key_root][1])} <-> {self.genExpSubFormula(self._sub_formulas[key_root][2])})"
+            case "Always":
+                return f"G [{self._sub_formulas[key_root][1]},{self._sub_formulas[key_root][2]}] ({self.genExpSubFormula(self._sub_formulas[key_root][3])})"
+            case "Eventually":
+                return f"F [{self._sub_formulas[key_root][1]},{self._sub_formulas[key_root][2]}] ({self.genExpSubFormula(self._sub_formulas[key_root][3])})"
+            case "Until":
+                return f"({self.genExpSubFormula(self._sub_formulas[key_root][3])}) U [{self._sub_formulas[key_root][1]},{self._sub_formulas[key_root][2]}] ({self.genExpSubFormula(self._sub_formulas[key_root][4])})"
 
     def _findKeyOpTree(self, key, key_root, type):
         if self._cmpForTypeByKey(key_root, type):
@@ -361,6 +594,7 @@ class STLConsistencyChecker:
                 case "Equivalence":
                     key1 = sub_formula[1]
                     key2 = sub_formula[2]
+                    # phi <-> phi = True
                     if key1 == key2:
                         return self._addSubFormula(['True', '*'])
                     if self._cmpForTypeByKey(key1, "Not") and self._cmpForTypeByKey(key2, "Not"):
@@ -455,7 +689,7 @@ class STLConsistencyChecker:
     def cleanUnreachableSubFormulas(self, key_root):
         temp = self._sub_formulas.keys()
         for key in temp:
-            if key != key_root and not self._reachSubFormula(key_root, key):  # credo che questo crei problemi
+            if key != key_root and not self._reachSubFormula(key_root, key):
                 self._sub_formulas[key] = []
 
     def printSubFormulas(self):
@@ -735,6 +969,11 @@ class STLConsistencyChecker:
             sorted_model[var] = filter_model2[var]
 
         return sorted_model
+
+    def prove (self, root):
+        prover = Prover()
+        prover.prove(self._sub_formulas, root)
+
 
     def solve(self, time_horizon, root_formula, verbose):
         # This hashtable will contains the variables for the SMT Solver
@@ -1091,45 +1330,42 @@ class STLConsistencyChecker:
 
 
 # Example STL expression
-# stl_expression = " F [10,100000] (! (a > 0) &&  ! (b >= 0))"
+# stl_expression = " F [10,100] (! (a > 0) &&  ! (b >= 0))" #controlla not davanti ad a -> ora è ok
 # stl_expression = "!((a <-> ! b) <-> ! (a <-> b))"
 # stl_expression = "a && a"
-# stl_expression = " F [0,5] (a > 0)"
-# stl_expression = " F [0,5] (a > 0 && b>3)"
+# stl_expression = " F [0,5] (a > 0 && a < 0)"
+# Example STL expression
 # stl_expression = "F [0,5] G [2,5] ! a"
 # stl_expression = "(! ! a && a) && (! ! ! a)"
 # stl_expression = "!(a > 0)"
 # stl_expression = "(! x<0 && y>0) U[1,5] ( y > 6.07)"
 # stl_expression = "G[0,5] ((x > 3) && (F[2,7] (y < 2)))"
 # stl_expression = "G[0,5] ((x > 3) && (y < 2))"
-# stl_expression = " (x > 4) && ! (y > 3)" #ok
+# stl_expression = " (x > 4) && ! (y > 3)"
 # stl_expression = "G[0,5] ((F[2,7] (y < 2)))"
 # stl_expression = "G[0,5] (x > 5)"
 # stl_expression = "G[0,5] (F[7,9] (x > 3))"
-# stl_expression = "G[0,10](x U[2,5] y)" #witness non ok
+# stl_expression = "G[0,10](x U[2,5] y)" #Until è sistemato
 # stl_expression = "x>0 U[2,7] y < 0"
-# stl_expression = "G[2,5] x > 5 || G[1,3] x < 0"
+# stl_expression = "G[2,5] x > 5 || G[1,3] x < 0"  #Giustamente dice che è sat, ma poi la witness che produce non ha senso
 # stl_expression = "G[2,5] (x > 5 || x < 0)"
-# stl_expression = "! a && a" #ok
+# stl_expression = "! a && a"
+
 # stl_expression = "((a && (! b)) && a)"
 # !(a -> b) && a
-# stl_expression = "(a && (a -> b)) && !b"
-# stl_expression = "(a && b && !b)"
-# stl_expression = "(G[0,10]a && (F[2,5](a && (a -> b)))) <-> (G[0,10] a && (F[2,5](a && b)))"
-# stl_expression = "a->(b->a) <-> (a->b)"
+# ! (a -> (a -> b))
+# a->(b->a)
 # !(a -> a -> b)
 # stl_expression = "c && d && b && a && (! b) && c"
 # "c && a && b && a && d && (! b) && c"
 # "d && !(c -> b)"
 # "!(d -> (c -> b))"
 # "!(b -> (a -> (d -> (c -> b))))"
-# stl_expression = "a U [2,5] b"
-# stl_expression = "(y>6) U[3,7] (y < 3)"
-# stl_expression = "F[0,5](x>3 || x<5)"
-# stl_expression = "G[0,5]((a && b) || (a && !b && c))"
-# stl_expression = "G[0,5](a || (b && c))" #49,118
-#stl_expression = "G[0,5]((a || b) && (a || c))" #55, 148
 
+# stl_expression = "a U [2,5] b"
+# stl_expression = "(y>6) U[3,7] (y < 3)" #NON funziona
+
+stl_expression = "!b || (!a && C)"
 
 # We can use the consistency checking to verify the equivalence of the formulas
 # For example De Morgan Laws
@@ -1144,15 +1380,23 @@ class STLConsistencyChecker:
 # stl_expression = "(a && (a -> (a || b)))"
 # stl_expression = "(G[0,2] a && (G[0,2] a -> F[0,2] a))"
 
-stl_expression = "!(G[0,2] (!a <-> ! F[0,2] a))" #like this it works, you need the parentheses after the globally
-# stl_expression = "!(G[0,2] ((!a) <-> (! F[0,2] a)))"
+
+# stl_expression = "!(G[0,2]! a <-> ! F[0,2] a)" # This is problematic the parsing
 # stl_expression = "!(! G[0,2] a <-> F[0,2] ! a)"
 # stl_expression = "G[0,100] (x > 0.5 -> F [0,10] (y < 10)) && G[0,100] (x > 0.5 && y > 10)"
 
 # stl_expression = "(G[0,2] !b) && (G [0,4] (a -> F[0,2] b)) && (!b -> a)"
 
-# stl_expression = "!(G[0,2] a -> G[0,2] a)"
+#stl_expression = "!(G[0,2] a -> G[0,2] a)"
 
+stl_expression = "a && b"
+
+#stl_expression = "a && b && (a -> !b) && (!b -> a)"
+
+# stl_expression = "!((a && b || b && c) <-> (a && b))"
+# ! (a -> (b -> ((b || a) -> (a && b))))
+# stl_expression = "!((b && (b || c)) <-> (b || (b && c)))"
+# stl_expression = "G[0,2] a && F[0,2] (! a)"
 # Create a checker and visit the parsed expression
 checker = STLConsistencyChecker()
 parsed_expr = checker.parseSTL(stl_expression)
@@ -1163,11 +1407,18 @@ result = checker.visit(parsed_expr)
 print(f"Formula_horizon =  {result[1]}")
 print(f"Root sub_formula = {result[0]} ")
 checker.printSubFormulas()
-# checker.cleanUnreachableSubFormulas (result[0])
-checker.printSubFormulas()
+
+#checker.cleanUnreachableSubFormulas(result[0])
+#checker.printSubFormulas()
+print(checker.prove(result[0]))
+
+
+
 formula_horizon = int(result[1])
 variables = checker.getVariableList()
 propositions = checker.getBasicPropositionsList()
 expression = list(propositions.values())
+
+print(checker.genExpSubFormula(f"{result[0]}"))
 
 checker.solve(int(result[1]), result[0], True)
