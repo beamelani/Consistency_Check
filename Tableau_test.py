@@ -130,7 +130,7 @@ def plot_tree(G):
 # Esempio di formula e costruzione dell'albero
 formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
 #formula = [[['G', '[', '0', ',', '3', ']', ['p']], '||', ['F', '[', '0', ',', '3', ']', ['q']]]]
-max_depth = 6
+max_depth = 5
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
 plot_tree(tree)
