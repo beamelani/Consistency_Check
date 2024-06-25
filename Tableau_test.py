@@ -4,10 +4,10 @@
 #1)aggiungere un controllo sugli istanti di tempo (per decomporre solo le sottoformule attive all'istante corrente)
 #2)aggiungere il salto temporale
 #3) aggiungere l'until
-#4) sistemare l'albero perché nonostante i children escano giusti (vengono stampati) l'albero (la fig) esce a caso
+#4) la funzione che crea l'albero fa un po' pena perché non le crea dall'alto verso il basso
 import networkx as nx
 import matplotlib.pyplot as plt
-
+import copy
 
 
 def formula_to_string(formula):
@@ -41,12 +41,15 @@ def decompose(node):
             elif node[i] =='||':
                 return decompose_or(node[i], node[0:i], node[i+1:])
         for i in range(len(node)):
-            if  isinstance(node[i][0], str) and node[i][0] in {'G'}:
+            if  isinstance(node[i][0], str) and node[i][0] in {'G'}: #aggiungi condizioni sul tempo
                 return decompose_G(node)
-            elif isinstance(node[i][0], str) and node[i][0] in {'F'}:
+            elif isinstance(node[i][0], str) and node[i][0] in {'F'}: #aggiungi condizioni sul tempo
                 return decompose_F(node[i],node[0:i], node[i+1:])
+        for i in range(len(node)):
+            if isinstance(node[i][0], str) and node[i][0] in {'OF', 'OG'}: #non basta per fare il jump, devo verificare anche altro
+                return decompose_jump(node)
     elif isinstance(node, str):
-        return decompose_identifier(node)
+        return None
 
 
 
@@ -82,7 +85,7 @@ def decompose_or(self, left, right):
     decomposed_node_2 = [right]
     return [decomposed_node_1, decomposed_node_2]
 
-def decompose_jump(self, right):
+def decompose_jump(node):
     return None
 
 def update_intervals(formula, increment):
@@ -97,13 +100,15 @@ def update_intervals(formula, increment):
         return new_formula
     return formula
 
+
 def build_decomposition_tree(root, max_depth):
     G = nx.DiGraph()
     G.add_node(formula_to_string(root))
     print(formula_to_string(root))
     def add_children(node, depth):
         if depth < max_depth:
-            children = decompose(node)
+            node_copy = copy.deepcopy(node)
+            children = decompose(node_copy)
             print(formula_to_string(children))
             if not children: #devo ancora aggiungere la regola per il salto temporale, aggiunta quella non ho children solo quando ho esplorato tutto il ramo
                 #new_value = update_intervals(node.value, 1)
@@ -111,14 +116,13 @@ def build_decomposition_tree(root, max_depth):
                 #G.add_node(new_node)
                 #G.add_edge(node, new_node)
                 #add_children(new_node, depth + 1)
-                depth=max_depth
-                add_children(node,depth)
+                depth = max_depth
+                add_children(node, depth)
             else:
                 for child in children:
                     G.add_node(formula_to_string(child))
                     G.add_edge(formula_to_string(node), formula_to_string(child))
                     add_children(child, depth + 1)
-
     add_children(root, 0)
     return G
 
@@ -131,11 +135,11 @@ def plot_tree(G):
     plt.show()
 
 # Esempio di formula e costruzione dell'albero
-formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
+#formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
 #formula = [[['G', '[', '0', ',', '3', ']', ['p']], '||', ['F', '[', '0', ',', '3', ']', ['q']]]]
 #formula = ['G', '[', '0', ',', '3', ']', ['p']]
 #formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
-#formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']], '||', ['G', '[', '0', ',', '5', ']', ['x']], '&&', ['F', '[', '0', ',', '2', ']', ['y']]]]
+formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']], '||', ['G', '[', '0', ',', '5', ']', ['x']], '&&', ['F', '[', '0', ',', '2', ']', ['y']]]]
 max_depth = 6
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
