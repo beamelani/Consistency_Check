@@ -1,3 +1,10 @@
+#Queste funzioni andranno poi aggiunte al main che contiene già il parser che restituisce la formula stl
+#nella forma utilizzata come input in questo codice.
+#Cose ancora da fare:
+#1)aggiungere un controllo sugli istanti di tempo (per decomporre solo le sottoformule attive all'istante corrente)
+#2)aggiungere il salto temporale
+#3) aggiungere l'until
+#4) sistemare l'albero perché nonostante i children escano giusti (vengono stampati) l'albero (la fig) esce a caso
 import networkx as nx
 import matplotlib.pyplot as plt
 
