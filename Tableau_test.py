@@ -4,9 +4,10 @@
 #1)aggiungere un controllo sugli istanti di tempo (per decomporre solo le sottoformule attive all'istante corrente)
 #2)aggiungere il salto temporale
 #3) aggiungere l'until
-#4) la funzione che crea l'albero fa un po' pena perché non le crea dall'alto verso il basso
+
 import networkx as nx
 import matplotlib.pyplot as plt
+from networkx.drawing.nx_pydot import graphviz_layout
 import copy
 
 
@@ -36,13 +37,18 @@ def decompose(node):
                 return None
             return decompose(node[0])
         for i in range(len(node)):
-            if node[i]=='&&':
+            if node[i] == '&&':
                 return decompose_and(node)
-            elif node[i] =='||':
+            elif node[i] == '||':
                 return decompose_or(node[i], node[0:i], node[i+1:])
         for i in range(len(node)):
-            if  isinstance(node[i][0], str) and node[i][0] in {'G'}: #aggiungi condizioni sul tempo
+            #if isinstance(node[i], list) and isinstance(node[i][1], str) and node[i][1] in {'U'} and node[i][2] in {'['}:
+                #node[i] = [['G', '[', '0', ',', node[i][3], ']', node[i][0]], ',', ['F', '[', node[i][3], ',', node[i][5], ']', node[i][7]], ',', ['F', '[', node[i][3], ',', node[i][3], ']', [node[i][0], 'U', node[i][7]]]]
+                #return [node]
+            if isinstance(node[i][0], str) and node[i][0] in {'G'}: #aggiungi condizioni sul tempo
                 return decompose_G(node)
+            #elif isinstance(node[i][0], list) and node[i][0][0] in {'G'} and node[i][0][0] not in {'O'}:
+                #return decompose_G(node[i][0])
             elif isinstance(node[i][0], str) and node[i][0] in {'F'}: #aggiungi condizioni sul tempo
                 return decompose_F(node[i],node[0:i], node[i+1:])
         for i in range(len(node)):
@@ -55,17 +61,17 @@ def decompose(node):
 
 def decompose_G(node):
     for i in range(len(node)):
-        if node[i][0]=='G':
-            node[i] = [node[i][6], ',', ['0G','[',node[i][2],',', node[i][4], ']',node[i][6]]]
+        if node[i][0] == 'G':
+            node[i] = [node[i][6], ',', ['0G', '[', node[i][2], ',', node[i][4], ']', node[i][6]]]
     return [node]
 
 
 def decompose_F(self, left, right):
     if len(left) > 0 and len(right) > 0:
-        decomposed_node_1 = [left, right, ',', self[6]]
-        decomposed_node_2 = [left, right, ',', ['OF', '[', self[2], ',', self[4], ']', self[6]]]
+        decomposed_node_1 = [left, right[1:], ',', self[6]]
+        decomposed_node_2 = [left, right[1:], ',', ['OF', '[', self[2], ',', self[4], ']', self[6]]]
     elif len(left) == 0 and len(right) > 0:
-        decomposed_node_1 = [self[6],right]
+        decomposed_node_1 = [self[6], right]
         decomposed_node_2 = [['OF', '[', self[2], ',', self[4], ']', self[6]], right]
     elif len(right) == 0 and len(left) > 0:
         decomposed_node_1 = [left, self[6]]
@@ -105,12 +111,13 @@ def build_decomposition_tree(root, max_depth):
     G = nx.DiGraph()
     G.add_node(formula_to_string(root))
     print(formula_to_string(root))
+
     def add_children(node, depth):
         if depth < max_depth:
             node_copy = copy.deepcopy(node)
             children = decompose(node_copy)
             print(formula_to_string(children))
-            if not children: #devo ancora aggiungere la regola per il salto temporale, aggiunta quella non ho children solo quando ho esplorato tutto il ramo
+            if not children:  # devo ancora aggiungere la regola per il salto temporale, aggiunta quella non ho children solo quando ho esplorato tutto il ramo
                 #new_value = update_intervals(node.value, 1)
                 #new_node = STLNode(new_value)
                 #G.add_node(new_node)
@@ -123,23 +130,29 @@ def build_decomposition_tree(root, max_depth):
                     G.add_node(formula_to_string(child))
                     G.add_edge(formula_to_string(node), formula_to_string(child))
                     add_children(child, depth + 1)
+
     add_children(root, 0)
     return G
 
+
 def plot_tree(G):
-    pos = nx.spring_layout(G)
+    pos = graphviz_layout(G, prog='dot')
     plt.figure(figsize=(12, 8))
     nx.draw(G, pos, with_labels=True, arrows=True, node_size=2000, node_color='lightblue',
             font_size=10, font_color='black', font_weight='bold', edge_color='gray')
     plt.title('Decomposition Tree')
     plt.show()
 
+
 # Esempio di formula e costruzione dell'albero
 #formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
 #formula = [[['G', '[', '0', ',', '3', ']', ['p']], '||', ['F', '[', '0', ',', '3', ']', ['q']]]]
 #formula = ['G', '[', '0', ',', '3', ']', ['p']]
-#formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
-formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']], '||', ['G', '[', '0', ',', '5', ']', ['x']], '&&', ['F', '[', '0', ',', '2', ']', ['y']]]]
+formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
+#formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']], '||', ['G', '[', '0', ',', '5', ']', ['x']], '&&', ['F', '[', '0', ',', '2', ']', ['y']]]]
+#formula = [[['a'], 'U', '[', '2', ',', '5', ']', ['b']]]
+#formula = [[['G', '[', '0', ',', '5', ']', ['x']], '&&', [['a'], 'U', '[', '2', ',', '5', ']', ['b']]]]
+#formula = [[[['a'], 'U', '[', '2', ',', '5', ']', ['b']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
 max_depth = 6
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
