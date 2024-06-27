@@ -4,6 +4,7 @@
 #1)aggiungere un controllo sugli istanti di tempo (per decomporre solo le sottoformule attive all'istante corrente)
 #2)aggiungere il salto temporale
 #3) aggiungere l'until
+#4) operatori annidati
 #ISSUE: si creano troppe liste annidate durante la decomposizione, diventa un problema gestirle
 
 import networkx as nx
@@ -25,6 +26,58 @@ def formula_to_string(formula):
     else:
         return str(formula)
 
+def extract_min_time(formula):
+    """
+    Estrae l'istante di tempo minimo da una formula STL, serve per sapere a quale istante mi trovo
+    durante la decomposizione
+    """
+    min_times = []
+
+    def traverse(formula):
+        if isinstance(formula, list):
+            if formula[0] in ('G', 'F'):
+                # Se l'elemento è un operatore temporale 'G' o 'F'
+                if len(formula) > 4 and formula[1] == '[' and formula[3] == ',' and formula[5] == ']':
+                    try:
+                        min_time = int(formula[2])
+                        min_times.append(min_time)
+                    except ValueError:
+                        pass
+                # Ricorsivamente attraversa i sottooperatori
+                for item in formula[4:]:
+                    traverse(item)
+            else:
+                # Altri operatori, ricorsivamente attraversa la lista
+                for item in formula:
+                    traverse(item)
+
+    traverse(formula)
+    #return sum(min_times) if min_times else None  #devo restituire la somma solo se sono annidati
+    return min(min_times) if min_times else None
+
+
+def modify_formula(formula, current_time):
+    """
+    La funzione prende una formula e valuta per ogni operatore se l'operatore sia attivo o meno
+    all'istante di tempo corrente, contrassegnando con _ gli operatori non attivi,
+    in modo che non vengano decomposti dalla funzione decompose
+
+    """
+    if isinstance(formula,list):
+        if len(formula) == 1:
+            return modify_formula(formula[0],current_time)
+        for i in range(len(formula)):
+            if isinstance(formula[i], list):
+                if len(formula[i]) > 1 and isinstance(formula[i][0], str):
+                    if formula[i][0].startswith('_') and formula[i][2]== str(current_time):
+                        formula[i][0] = formula[i][0][1:]  # Rimuove il prefisso '_'
+                    if formula[i][0].startswith('G') and formula[i][2] != str(current_time):
+                        formula[i][0] = '_G'
+                    if formula[i][0].startswith('F') and formula[i][2] != str(current_time):
+                        formula[i][0] = '_F'
+    return formula
+
+
 def flatten_list(nested_list):
     """
     Appiattisce una lista annidata rimuovendo un livello di annidamento.
@@ -38,7 +91,7 @@ def flatten_list(nested_list):
     return flat_list
 #voglio modificare decompose in modo che lavori sulla lista e poi trasformi il contenuto del nodo in una stringa
 #passandolo alla funzione formula_to_string
-def decompose(node):
+def decompose(node, current_time):
     # Determine the type of the node and call the appropriate visit method
     if isinstance(node, list):
         if len(node) == 1:
@@ -46,7 +99,7 @@ def decompose(node):
             if isinstance(node[0], str) and len(node[0]) == 1:
                 #return decompose_binary_variable(node[0])
                 return None
-            return decompose(node[0])
+            return decompose(node[0], current_time)
         for i in range(len(node)):
             if node[i] == '&&':
                 return decompose_and(node)
@@ -63,9 +116,8 @@ def decompose(node):
         for i in range(len(node)):
             if isinstance(node[i][0], str) and node[i][0] in {'F'}: #aggiungi condizioni sul tempo
                 return decompose_F(node[i], node[0:i], node[i+1:])
-        for i in range(len(flatten_list(node))):
-            if flatten_list(node)[i] not in {'G', 'F'}: #può andare se metto qualcosa davanti ai F e G inattivi in quel momento, tipo _F, _G
-                return decompose_jump(node)
+        if flatten_list(node) not in {'G', 'F'}: #può andare se metto qualcosa davanti ai F e G inattivi in quel momento, tipo _F, _G
+            return decompose_jump(node, current_time)
     elif isinstance(node, str):
         return None
 
@@ -107,7 +159,7 @@ def decompose_or(self, left, right):
     return [decomposed_node_1, decomposed_node_2]
 
 
-def decompose_jump(node):
+def decompose_jump(node,current_time):
     #questa funzione dovrà anche modificare il parametro che indica qual è l'istante temporale corrente
     return None
 
@@ -127,13 +179,14 @@ def update_intervals(formula, increment):
 
 def build_decomposition_tree(root, max_depth):
     G = nx.DiGraph()
+    time = extract_min_time(root)
     G.add_node(formula_to_string(root))
     print(formula_to_string(root))
 
-    def add_children(node, depth):
+    def add_children(node, depth, current_time):
         if depth < max_depth:
             node_copy = copy.deepcopy(node)
-            children = decompose(node_copy)
+            children = decompose(node_copy, current_time)
             print(formula_to_string(children))
             if not children:  # devo ancora aggiungere la regola per il salto temporale, aggiunta quella non ho children solo quando ho esplorato tutto il ramo
                 #new_value = update_intervals(node.value, 1)
@@ -142,14 +195,18 @@ def build_decomposition_tree(root, max_depth):
                 #G.add_edge(node, new_node)
                 #add_children(new_node, depth + 1)
                 depth = max_depth
-                add_children(node, depth)
+                add_children(node, depth, current_time)
             else:
                 for child in children:
                     G.add_node(formula_to_string(child))
                     G.add_edge(formula_to_string(node), formula_to_string(child))
-                    add_children(child, depth + 1)
-
-    add_children(root, 0)
+                    add_children(child, depth + 1, current_time)
+    root_copy =copy.deepcopy(root)
+    new_root = modify_formula(root_copy, time)
+    if new_root != root[0]:
+        G.add_node(formula_to_string(new_root))
+        G.add_edge(formula_to_string(root), formula_to_string(new_root))
+    add_children(new_root, 0, time)
     return G
 
 
@@ -163,7 +220,7 @@ def plot_tree(G):
 
 
 # Esempio di formula e costruzione dell'albero
-#formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
+formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
 #formula = [[['G', '[', '0', ',', '3', ']', ['p']], '||', ['F', '[', '0', ',', '3', ']', ['q']]]]
 #formula = ['G', '[', '0', ',', '3', ']', ['p']]
 #formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
@@ -171,7 +228,10 @@ def plot_tree(G):
 #formula = [[['a'], 'U', '[', '2', ',', '5', ']', ['b']]]
 #formula = [[['G', '[', '0', ',', '5', ']', ['x']], '&&', [['a'], 'U', '[', '2', ',', '5', ']', ['b']]]]
 #formula = [[[['a'], 'U', '[', '2', ',', '5', ']', ['b']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
-formula = [[['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
+#formula = [[['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
+#formula = [['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]
+#formula = [[['G', '[', '3', ',', '5', ']', ['b']], '&&', ['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]]
+#formula = [[['G', '[', '2', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
 max_depth = 6
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
