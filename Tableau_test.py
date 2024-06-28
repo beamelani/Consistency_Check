@@ -102,35 +102,41 @@ def decompose(node, current_time):
             return decompose(node[0], current_time)
         for i in range(len(node)):
             if node[i] == '&&':
-                return decompose_and(node)
+                return decompose_and(node, current_time)
             elif node[i] == '||':
-                return decompose_or(node[i], node[0:i], node[i+1:])
+                return decompose_or(node[i], node[0:i], node[i+1:], current_time)
         for i in range(len(node)):
             #if isinstance(node[i], list) and isinstance(node[i][1], str) and node[i][1] in {'U'} and node[i][2] in {'['}:
                 #node[i] = [['G', '[', '0', ',', node[i][3], ']', node[i][0]], ',', ['F', '[', node[i][3], ',', node[i][5], ']', node[i][7]], ',', ['F', '[', node[i][3], ',', node[i][3], ']', [node[i][0], 'U', node[i][7]]]]
                 #return [node]
             if isinstance(node[i][0], str) and node[i][0] in {'G'}: #aggiungi condizioni sul tempo
-                return decompose_G(node)
+                return decompose_G(node, current_time)
             #elif isinstance(node[i][0], list) and node[i][0][0] in {'G'} and node[i][0][0] not in {'O'}:
                 #return decompose_G(node[i][0])
         for i in range(len(node)):
             if isinstance(node[i][0], str) and node[i][0] in {'F'}: #aggiungi condizioni sul tempo
-                return decompose_F(node[i], node[0:i], node[i+1:])
-        if flatten_list(node) not in {'G', 'F'}: #può andare se metto qualcosa davanti ai F e G inattivi in quel momento, tipo _F, _G
-            return decompose_jump(node, current_time)
+                return decompose_F(node[i], node[0:i], node[i+1:], current_time)
+        k = 0
+        for i in range(len(flatten_list(node))):
+            if flatten_list(node)[i] not in {'G', 'F'}:
+                k = k+1
+                if k==len(flatten_list(node)):
+                    return decompose_jump(flatten_list(node), current_time)
     elif isinstance(node, str):
         return None
 
 
 
-def decompose_G(node):
+def decompose_G(node, current_time):
     for i in range(len(node)):
-        if node[i][0] == 'G': #qui aggiungi condizione and node[i][2]== time (perché decompongo G solo se è attivo)
-            node[i] = [node[i][6], ',', ['0G', '[', node[i][2], ',', node[i][4], ']', node[i][6]]]
-    return [node]
+        if isinstance(node[i], list) and node[i][0] == 'G' and node[i][2] == str(current_time): #qui aggiungi condizione and node[i][2]== time (perché decompongo G solo se è attivo)
+            node[i] = [node[i][6], ',', ['OG', '[', node[i][2], ',', node[i][4], ']', node[i][6]]]
+        elif isinstance(node[i], str) and node[i] == 'G':
+            node = [node[6], ',', ['OG', '[', node[i+2], ',', node[i+4], ']', node[i+6]]]
+    return [node], current_time
 
 
-def decompose_F(self, left, right):
+def decompose_F(self, left, right, current_time):
     if len(left) > 0 and len(right) > 0:
         decomposed_node_1 = [left[0: len(left)-1], ',', right[1:], ',', self[6]]
         decomposed_node_2 = [left[0: len(left)-1], right[1:], ',', ['OF', '[', self[2], ',', self[4], ']', self[6]]]
@@ -143,38 +149,39 @@ def decompose_F(self, left, right):
     elif len(right) == 0 and len(left) == 0:
         decomposed_node_1 = [self[6]]
         decomposed_node_2 = ['OF', '[', self[2], ',', self[4], ']', self[6]]
-    return [decomposed_node_1, decomposed_node_2]
+    return [decomposed_node_1, decomposed_node_2], current_time
 
 
-def decompose_and(node):
+def decompose_and(node, current_time):
     for i in range(len(node)):
         if node[i] == '&&':
             node[i] = ','
-    return [node] #parentesi perché il child deve avere dim=1, altrimenti viene interpretato come 2 children distinti
+    return [node], current_time #parentesi perché il child deve avere dim=1, altrimenti viene interpretato come 2 children distinti
 
 
-def decompose_or(self, left, right):
+def decompose_or(self, left, right, current_time):
     decomposed_node_1 = [left]
     decomposed_node_2 = [right]
-    return [decomposed_node_1, decomposed_node_2]
+    return [decomposed_node_1, decomposed_node_2], current_time
 
 
-def decompose_jump(node,current_time):
+def decompose_jump(node, current_time):
+    #forse è meglio passare alla funzione la lista flat e poi sarà la funzione a inserire le parentesi dove servono
     #questa funzione dovrà anche modificare il parametro che indica qual è l'istante temporale corrente
-    return None
+    new_node = []
+    for i in range(len(node)):
+        if node[i] in {'OG'}:
+            elemento = ['G', node[i+1], str(int(node[i+2])+1), node[i+3], node[i+4], node[i+5], [node[i+6]]]#probelma se argomento di G non è un solo elemento
+            new_node.append(elemento)
+        elif node[i] in {'OF'}:
+            elemento = ['F', node[i + 1], str(int(node[i + 2]) + 1), node[i + 3], node[i + 4], node[i + 5], [node[i + 6]]]  # i+6 compreso, verifica
+            new_node.append(elemento)
+        elif node[i] in {'_G', '_F'}:
+            elemento = [node[i:i+6]]
+            new_node.append(elemento)
+    current_time = current_time + 1
+    return new_node, current_time
 
-
-def update_intervals(formula, increment):
-    if "OG[" in formula or "OF[" in formula:
-        temporal_operator = formula[:2]  # OG or OF
-        interval = formula.split('[')[1].split(']')[0]
-        start, end = interval.split(',')
-        new_start = int(start) + increment
-        new_interval = f"[{new_start},{end}]"
-        phi = formula.split('](')[1][:-1]
-        new_formula = f"{temporal_operator[1:]}{new_interval}({phi})"  # G or F with updated interval
-        return new_formula
-    return formula
 
 
 def build_decomposition_tree(root, max_depth):
@@ -186,7 +193,7 @@ def build_decomposition_tree(root, max_depth):
     def add_children(node, depth, current_time):
         if depth < max_depth:
             node_copy = copy.deepcopy(node)
-            children = decompose(node_copy, current_time)
+            children = decompose(node_copy, current_time)[0]
             print(formula_to_string(children))
             if not children:  # devo ancora aggiungere la regola per il salto temporale, aggiunta quella non ho children solo quando ho esplorato tutto il ramo
                 #new_value = update_intervals(node.value, 1)
