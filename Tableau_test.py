@@ -130,9 +130,9 @@ def decompose(node, current_time):
 def decompose_G(node, current_time):
     for i in range(len(node)):
         if isinstance(node[i], list) and node[i][0] == 'G' and node[i][2] == str(current_time): #qui aggiungi condizione and node[i][2]== time (perché decompongo G solo se è attivo)
-            node[i] = [node[i][6], ',', ['OG', '[', node[i][2], ',', node[i][4], ']', node[i][6]]]
+            node[i] = [[node[i][6]], ',', ['OG', '[', node[i][2], ',', node[i][4], ']', [node[i][6]]]]
         elif isinstance(node[i], str) and node[i] == 'G':
-            node = [node[6], ',', ['OG', '[', node[i+2], ',', node[i+4], ']', node[i+6]]]
+            node = [[node[6]], ',', ['OG', '[', node[i+2], ',', node[i+4], ']', [node[i+6]]]]
     return [node], current_time
 
 
@@ -178,9 +178,9 @@ def decompose_jump(node, current_time):
             new_node.append(elemento)
         elif node[i] in {'_G', '_F'}:
             elemento = [node[i:i+6]]
-            new_node.append(elemento)
+            new_node.append(elemento) #così poi mancano le virgole tra i diversi elementi
     current_time = current_time + 1
-    return new_node, current_time
+    return [new_node], current_time
 
 
 
@@ -239,7 +239,7 @@ formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3
 #formula = [['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]
 #formula = [[['G', '[', '3', ',', '5', ']', ['b']], '&&', ['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]]
 #formula = [[['G', '[', '2', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
-max_depth = 6
+max_depth = 4
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
 plot_tree(tree)
