@@ -19,7 +19,7 @@ def formula_to_string(formula):
             return formula_to_string(formula[0])
         elif len(formula) == 3 and formula[1] in ['&&', '||']:
             return f"({formula_to_string(formula[0])} {formula[1]} {formula_to_string(formula[2])})"
-        elif isinstance(formula[0][0], str) and formula[0] in ['G', 'F','0G', 'OF']:
+        elif isinstance(formula[0][0], str) and formula[0] in ['G', 'F', 'OG', 'OF']:
             return f"{formula[0]}[{formula[2]},{formula[4]}]({formula_to_string(formula[6])})"
         else:
             return ''.join(map(formula_to_string, formula))
@@ -35,7 +35,7 @@ def extract_min_time(formula):
 
     def traverse(formula):
         if isinstance(formula, list):
-            if formula[0] in ('G', 'F'):
+            if formula[0] in ('G', 'F', 'OG', 'OF'):
                 # Se l'elemento è un operatore temporale 'G' o 'F'
                 if len(formula) > 4 and formula[1] == '[' and formula[3] == ',' and formula[5] == ']':
                     try:
@@ -129,10 +129,10 @@ def decompose(node, current_time):
 
 def decompose_G(node, current_time):
     for i in range(len(node)):
-        if isinstance(node[i], list) and node[i][0] == 'G' and node[i][2] == str(current_time): #qui aggiungi condizione and node[i][2]== time (perché decompongo G solo se è attivo)
+        if i < len(node) and isinstance(node[i], list) and node[i][0] == 'G' and node[i][2] == str(current_time): #qui aggiungi condizione and node[i][2]== time (perché decompongo G solo se è attivo)
             node[i] = [[node[i][6]], ',', ['OG', '[', node[i][2], ',', node[i][4], ']', [node[i][6]]]]
-        elif isinstance(node[i], str) and node[i] == 'G':
-            node = [[node[6]], ',', ['OG', '[', node[i+2], ',', node[i+4], ']', [node[i+6]]]]
+        elif i < len(node) and isinstance(node[i], str) and node[i] == 'G':
+            node = [[node[6]], ',', ['OG', '[', node[i+2], ',', node[i+4], ']', [node[6]]]]
     return [node], current_time
 
 
@@ -179,8 +179,8 @@ def decompose_jump(node, current_time):
         elif node[i] in {'_G', '_F'}:
             elemento = [node[i:i+6]]
             new_node.append(elemento) #così poi mancano le virgole tra i diversi elementi
-    current_time = current_time + 1
-    return [new_node], current_time
+    #current_time = current_time + 1
+    return [[new_node]]
 
 
 
@@ -193,6 +193,7 @@ def build_decomposition_tree(root, max_depth):
     def add_children(node, depth, current_time):
         if depth < max_depth:
             node_copy = copy.deepcopy(node)
+            current_time = extract_min_time(node_copy)
             children = decompose(node_copy, current_time)[0]
             print(formula_to_string(children))
             if not children:  # devo ancora aggiungere la regola per il salto temporale, aggiunta quella non ho children solo quando ho esplorato tutto il ramo
@@ -239,7 +240,7 @@ formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3
 #formula = [['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]
 #formula = [[['G', '[', '3', ',', '5', ']', ['b']], '&&', ['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]]
 #formula = [[['G', '[', '2', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
-max_depth = 4
+max_depth = 5
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
 plot_tree(tree)
