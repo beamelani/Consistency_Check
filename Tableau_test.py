@@ -114,13 +114,13 @@ def decompose(node, current_time):
             #elif isinstance(node[i][0], list) and node[i][0][0] in {'G'} and node[i][0][0] not in {'O'}:
                 #return decompose_G(node[i][0])
         for i in range(len(node)):
-            if isinstance(node[i][0], str) and node[i][0] in {'F'}: #aggiungi condizioni sul tempo
+            if isinstance(node[i][0], str) and node[i][0] in {'F'} and node[i][2] == str(current_time):
                 return decompose_F(node[i], node[0:i], node[i+1:], current_time)
         k = 0
         for i in range(len(flatten_list(node))):
-            if flatten_list(node)[i] not in {'G', 'F'}:
+            if flatten_list(node)[i] not in {'G', 'F'}: #basta perché i G e F ancora inattivi vengono scritti come _G, _F
                 k = k+1
-                if k==len(flatten_list(node)):
+                if k == len(flatten_list(node)):
                     return decompose_jump(flatten_list(node), current_time)
     elif isinstance(node, str):
         return None
@@ -129,14 +129,16 @@ def decompose(node, current_time):
 
 def decompose_G(node, current_time):
     for i in range(len(node)):
-        if i < len(node) and isinstance(node[i], list) and node[i][0] == 'G' and node[i][2] == str(current_time): #qui aggiungi condizione and node[i][2]== time (perché decompongo G solo se è attivo)
+        if i < len(node) and isinstance(node[i], list) and node[i][0] == 'G' and node[i][2] == str(current_time): #node[i][2]== time (perché decompongo G solo se è attivo)
             node[i] = [[node[i][6]], ',', ['OG', '[', node[i][2], ',', node[i][4], ']', [node[i][6]]]]
-        elif i < len(node) and isinstance(node[i], str) and node[i] == 'G':
+        elif i < len(node) and isinstance(node[i], str) and node[i] == 'G' and node[i+2] == str(current_time):
             node = [[node[6]], ',', ['OG', '[', node[i+2], ',', node[i+4], ']', [node[6]]]]
     return [node], current_time
 
 
 def decompose_F(self, left, right, current_time):
+    #Problema: questa funzione è pensata per termini che hanno virgole tra uno e l'altro ed elimina le virgole
+    #ma dopo il jump non ci sono più virgole tra i termini perchè non riesco ad inserirle e quindi la cosa non funziona
     if len(left) > 0 and len(right) > 0:
         decomposed_node_1 = [left[0: len(left)-1], ',', right[1:], ',', self[6]]
         decomposed_node_2 = [left[0: len(left)-1], right[1:], ',', ['OF', '[', self[2], ',', self[4], ']', self[6]]]
@@ -172,14 +174,20 @@ def decompose_jump(node, current_time):
     for i in range(len(node)):
         if node[i] in {'OG'}:
             elemento = ['G', node[i+1], str(int(node[i+2])+1), node[i+3], node[i+4], node[i+5], [node[i+6]]]#probelma se argomento di G non è un solo elemento
+            if new_node:
+                new_node.append(',')
             new_node.append(elemento)
         elif node[i] in {'OF'}:
             elemento = ['F', node[i + 1], str(int(node[i + 2]) + 1), node[i + 3], node[i + 4], node[i + 5], [node[i + 6]]]  # i+6 compreso, verifica
+            if new_node:
+                new_node.append(',')
             new_node.append(elemento)
         elif node[i] in {'_G', '_F'}:
             elemento = [node[i:i+6]]
+            if new_node:  #condizione per cui aggiungo la virgola prima di aggiungere l'elemento solo se la lista non è vuota
+                new_node.append(',')
             new_node.append(elemento) #così poi mancano le virgole tra i diversi elementi
-    #current_time = current_time + 1
+    #current_time = current_time + 1 #non serve, lo ricalcolo nella funzione add children prima di passarlo alla funzione decompose
     return [[new_node]]
 
 
@@ -240,7 +248,7 @@ formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3
 #formula = [['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]
 #formula = [[['G', '[', '3', ',', '5', ']', ['b']], '&&', ['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]]
 #formula = [[['G', '[', '2', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
-max_depth = 5
+max_depth = 7
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
 plot_tree(tree)
