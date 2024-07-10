@@ -1,11 +1,10 @@
 #Queste funzioni andranno poi aggiunte al main che contiene già il parser che restituisce la formula stl
 #nella forma utilizzata come input in questo codice.
 #Cose ancora da fare:
-#1)aggiungere un controllo sugli istanti di tempo (per decomporre solo le sottoformule attive all'istante corrente)
-#2)aggiungere il salto temporale
-#3) aggiungere l'until
-#4) operatori annidati
-#ISSUE: si creano troppe liste annidate durante la decomposizione, diventa un problema gestirle
+#1)aggiungere un controllo sugli istanti di tempo (c'è, ma non funziona bene)
+#2) aggiungere l'until
+#3) operatori annidati
+
 
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -65,16 +64,23 @@ def modify_formula(formula, current_time):
     """
     if isinstance(formula,list):
         if len(formula) == 1:
-            return modify_formula(formula[0],current_time)
+            return modify_formula(formula[0], current_time)
         for i in range(len(formula)):
             if isinstance(formula[i], list):
                 if len(formula[i]) > 1 and isinstance(formula[i][0], str):
-                    if formula[i][0].startswith('_') and formula[i][2]== str(current_time):
+                    if formula[i][0].startswith('_') and formula[i][2] == str(current_time) and formula[i+6][0] not in {'G', 'F', '_G', '_F'}:
                         formula[i][0] = formula[i][0][1:]  # Rimuove il prefisso '_'
-                    if formula[i][0].startswith('G') and formula[i][2] != str(current_time):
+                    if formula[i][0].startswith('G') and formula[i][2] != str(current_time) and formula[i+6][0] not in {'G', 'F', '_G', '_F'}:
                         formula[i][0] = '_G'
-                    if formula[i][0].startswith('F') and formula[i][2] != str(current_time):
+                    if formula[i][0].startswith('F') and formula[i][2] != str(current_time) and formula[i+6][0] not in {'G', 'F', '_G', '_F'}:
                         formula[i][0] = '_F'
+            else:
+                if formula[i].startswith('_') and formula[i+2] == str(current_time) and formula[i+6][0] not in {'G', 'F', '_G', '_F'}:
+                    formula[i] = formula[i][1]  # Rimuove il prefisso '_'
+                if formula[i].startswith('G') and formula[i+2] != str(current_time) and formula[i+6][0] not in {'G', 'F', '_G', '_F'}:
+                    formula[i] = '_G'
+                if formula[i].startswith('F') and formula[i+2] != str(current_time) and formula[i+6][0] not in {'G', 'F', '_G', '_F'}:
+                    formula[i] = '_F'
     return formula
 
 
@@ -114,8 +120,10 @@ def decompose(node, current_time):
             #elif isinstance(node[i][0], list) and node[i][0][0] in {'G'} and node[i][0][0] not in {'O'}:
                 #return decompose_G(node[i][0])
         for i in range(len(node)):
-            if isinstance(node[i][0], str) and node[i][0] in {'F'} and node[i][2] == str(current_time):
+            if isinstance(node[i], list) and isinstance(node[i][0], str) and node[i][0] in {'F'} and node[i][2] == str(current_time):
                 return decompose_F(node[i], node[0:i], node[i+1:], current_time)
+            elif isinstance(node[i], str) and node[i] in {'F'} and node[2] == str(current_time):
+                return decompose_F(node, [], [], current_time)
         k = 0
         for i in range(len(flatten_list(node))):
             if flatten_list(node)[i] not in {'G', 'F'}: #basta perché i G e F ancora inattivi vengono scritti come _G, _F
@@ -206,7 +214,10 @@ def build_decomposition_tree(root, max_depth):
             node_copy = copy.deepcopy(node)
             current_time = extract_min_time(node_copy)
             node_label = " ".join([formula_to_string(node), str(counter)])
-            children = decompose(node_copy, current_time)[0]
+            children = decompose(node_copy, current_time)
+            if children: #serve perché se children è vuoto non posso estrarre children[0]
+                children = children[0]
+            #children = decompose(node_copy, current_time)[0]
             print(formula_to_string(children))
             if not children:
                 depth = max_depth
@@ -243,7 +254,7 @@ def plot_tree(G):
 
 
 # Esempio di formula e costruzione dell'albero
-formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
+#formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
 #formula = [[['G', '[', '0', ',', '3', ']', ['p']], '||', ['F', '[', '0', ',', '3', ']', ['q']]]]
 #formula = ['G', '[', '0', ',', '3', ']', ['p']]
 #formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
@@ -252,10 +263,10 @@ formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3
 #formula = [[['G', '[', '0', ',', '5', ']', ['x']], '&&', [['a'], 'U', '[', '2', ',', '5', ']', ['b']]]]
 #formula = [[[['a'], 'U', '[', '2', ',', '5', ']', ['b']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
 #formula = [[['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
-#formula = [['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]
+formula = [['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]
 #formula = [[['G', '[', '3', ',', '5', ']', ['b']], '&&', ['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]]
 #formula = [[['G', '[', '2', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
-max_depth = 8
+max_depth = 5
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
 plot_tree(tree)
