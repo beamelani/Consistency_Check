@@ -195,34 +195,41 @@ def decompose_jump(node, current_time):
 def build_decomposition_tree(root, max_depth):
     G = nx.DiGraph()
     time = extract_min_time(root)
-    G.add_node(formula_to_string(root))
+    counter = 0
+    root_label = " ".join([formula_to_string(root), str(counter)])
+    #G.add_node(formula_to_string(root))
+    G.add_node(root_label)
     print(formula_to_string(root))
 
-    def add_children(node, depth, current_time):
+    def add_children(node, depth, current_time, counter):
         if depth < max_depth:
             node_copy = copy.deepcopy(node)
             current_time = extract_min_time(node_copy)
+            node_label = " ".join([formula_to_string(node), str(counter)])
             children = decompose(node_copy, current_time)[0]
             print(formula_to_string(children))
-            if not children:  # devo ancora aggiungere la regola per il salto temporale, aggiunta quella non ho children solo quando ho esplorato tutto il ramo
-                #new_value = update_intervals(node.value, 1)
-                #new_node = STLNode(new_value)
-                #G.add_node(new_node)
-                #G.add_edge(node, new_node)
-                #add_children(new_node, depth + 1)
+            if not children:
                 depth = max_depth
-                add_children(node, depth, current_time)
+                add_children(node, depth, current_time, counter)
             else:
                 for child in children:
-                    G.add_node(formula_to_string(child))
-                    G.add_edge(formula_to_string(node), formula_to_string(child))
-                    add_children(child, depth + 1, current_time)
+                    counter = counter + 1
+                    child_label = " ".join([formula_to_string(child), str(counter)])
+                    #G.add_node(formula_to_string(child))
+                    G.add_node(child_label)
+                    #G.add_edge(formula_to_string(node), formula_to_string(child))
+                    G.add_edge(node_label, child_label)
+                    add_children(child, depth + 1, current_time, counter)
     root_copy =copy.deepcopy(root)
     new_root = modify_formula(root_copy, time)
     if new_root != root[0]:
-        G.add_node(formula_to_string(new_root))
-        G.add_edge(formula_to_string(root), formula_to_string(new_root))
-    add_children(new_root, 0, time)
+        counter = counter + 1
+        new_root_label = " ".join([formula_to_string(new_root), str(counter)])
+        #G.add_node(formula_to_string(new_root))
+        #G.add_edge(formula_to_string(root), formula_to_string(new_root))
+        G.add_node(new_root_label)
+        G.add_edge(root_label, new_root_label)
+    add_children(new_root, 0, time, counter)
     return G
 
 
