@@ -1,7 +1,7 @@
 #Queste funzioni andranno poi aggiunte al main che contiene già il parser che restituisce la formula stl
 #nella forma utilizzata come input in questo codice.
 #Cose ancora da fare:
-#1)aggiungere un controllo sugli istanti di tempo (c'è, ma non funziona bene)
+#1)aggiungere un controllo sugli istanti di tempo (c'è, ma non funziona bene) il current time per operatori annidati!!
 #2) aggiungere l'until
 #3) operatori annidati
 
@@ -34,7 +34,7 @@ def extract_min_time(formula):
 
     def traverse(formula):
         if isinstance(formula, list):
-            if formula[0] in ('G', 'F', 'OG', 'OF'):
+            if formula[0] in ('G', 'F', 'OG', 'OF') and formula[6][0] not in ('G', 'F', 'OG', 'OF'):
                 # Se l'elemento è un operatore temporale 'G' o 'F'
                 if len(formula) > 4 and formula[1] == '[' and formula[3] == ',' and formula[5] == ']':
                     try:
@@ -45,6 +45,12 @@ def extract_min_time(formula):
                 # Ricorsivamente attraversa i sottooperatori
                 for item in formula[4:]:
                     traverse(item)
+            elif formula[0] in ('G', 'F', 'OG', 'OF') and formula[6][0] in ('G', 'F', 'OG', 'OF'):
+                try:
+                    min_time = int(formula[2]) + int(formula[6][2])
+                    min_times.append(min_time)
+                except ValueError:
+                    pass
             else:
                 # Altri operatori, ricorsivamente attraversa la lista
                 for item in formula:
@@ -60,28 +66,34 @@ def modify_formula(formula, current_time):
     La funzione prende una formula e valuta per ogni operatore se l'operatore sia attivo o meno
     all'istante di tempo corrente, contrassegnando con _ gli operatori non attivi,
     in modo che non vengano decomposti dalla funzione decompose
-
     """
-    if isinstance(formula,list):
+    if isinstance(formula, list):
         if len(formula) == 1:
             return modify_formula(formula[0], current_time)
         for i in range(len(formula)):
-            if isinstance(formula[i], list):
-                if len(formula[i]) > 1 and isinstance(formula[i][0], str):
-                    if formula[i][0].startswith('_') and formula[i][2] == str(current_time) and formula[i+6][0] not in {'G', 'F', '_G', '_F'}:
-                        formula[i][0] = formula[i][0][1:]  # Rimuove il prefisso '_'
-                    if formula[i][0].startswith('G') and formula[i][2] != str(current_time) and formula[i+6][0] not in {'G', 'F', '_G', '_F'}:
-                        formula[i][0] = '_G'
-                    if formula[i][0].startswith('F') and formula[i][2] != str(current_time) and formula[i+6][0] not in {'G', 'F', '_G', '_F'}:
-                        formula[i][0] = '_F'
-            else:
-                if formula[i].startswith('_') and formula[i+2] == str(current_time) and formula[i+6][0] not in {'G', 'F', '_G', '_F'}:
-                    formula[i] = formula[i][1]  # Rimuove il prefisso '_'
-                if formula[i].startswith('G') and formula[i+2] != str(current_time) and formula[i+6][0] not in {'G', 'F', '_G', '_F'}:
-                    formula[i] = '_G'
-                if formula[i].startswith('F') and formula[i+2] != str(current_time) and formula[i+6][0] not in {'G', 'F', '_G', '_F'}:
-                    formula[i] = '_F'
-    return formula
+            if isinstance(formula[i], str) and formula[i][0] in {'G', 'F'} and i+6 <= len(formula) and formula[i+6][0] in {'G', 'F'} and int(formula[i+2]) + int(formula[i+6][2]) > current_time: #caso annidato
+                formula[i] = '_' + formula[i]
+                formula[i+6][0] = '_' + formula[i+6][0]
+            elif isinstance(formula[i], str) and formula[i][0] in {'_G', '_F'} and i + 6 <= len(formula) and formula[i + 6][0] in {'_G', '_F'} and int(formula[i+2]) + int(formula[i+6][2]) <= current_time: #caso annidato
+                formula[i][0] = formula[i][0].lstrip('_')
+                formula[i + 6][0] = formula[i+6][0].lstrip('_')
+            elif isinstance(formula[i], list) and formula[i][0] in {'G', 'F'} and len(formula[i])>= 6 and formula[i][6][0] in {'G', 'F'} and int(formula[i][2]) + int(formula[i][6][2]) > current_time:
+                formula[i][0] = '_' + formula[i][0]
+                formula[i][6][0] = '_' + formula[i][6][0]
+            elif isinstance(formula[i], list) and formula[i][0] in {'_G', '_F'} and len(formula[i])>= 6 and formula[i][6][0] in {'_G', '_F'} and int(formula[i][2]) + int(formula[i][6][2]) <= current_time:
+                formula[i][0] = formula[i][0].lstrip('_')
+                formula[i][6][0] = formula[i][6][0].lstrip('_')
+            elif isinstance(formula[i], list) and i+1 < len(formula) and formula[i+1] in {'&&', '||', ','} and formula[i][0] in {'G', 'F', '_G','_F'}:
+                if formula[i][0] in {'G', 'F'} and int(formula[i][2]) > current_time:
+                    formula[i][0] = '_' + formula[i][0]
+                elif formula[i][0] in {'_G', '_F'} and int(formula[i][2]) <= current_time:
+                    formula[i][0] = formula[i][0].lstrip('_')
+            elif isinstance(formula[i], list) and i-1 > 0 and formula[i-1] in {'&&', '||', ','} and formula[i][0] in {'G', 'F', '_G','_F'}:
+                if formula[i][0] in {'G', 'F'} and int(formula[i][2]) > current_time:
+                    formula[i][0] = '_' + formula[i][0]
+                elif formula[i][0] in {'_G', '_F'} and int(formula[i][2]) <= current_time:
+                    formula[i][0] = formula[i][0].lstrip('_')
+    return (formula)
 
 
 def flatten_list(nested_list):
@@ -254,7 +266,7 @@ def plot_tree(G):
 
 
 # Esempio di formula e costruzione dell'albero
-#formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
+formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
 #formula = [[['G', '[', '0', ',', '3', ']', ['p']], '||', ['F', '[', '0', ',', '3', ']', ['q']]]]
 #formula = ['G', '[', '0', ',', '3', ']', ['p']]
 #formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
@@ -263,7 +275,7 @@ def plot_tree(G):
 #formula = [[['G', '[', '0', ',', '5', ']', ['x']], '&&', [['a'], 'U', '[', '2', ',', '5', ']', ['b']]]]
 #formula = [[[['a'], 'U', '[', '2', ',', '5', ']', ['b']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
 #formula = [[['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
-formula = [['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]
+#formula = [['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]
 #formula = [[['G', '[', '3', ',', '5', ']', ['b']], '&&', ['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]]
 #formula = [[['G', '[', '2', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
 max_depth = 5
