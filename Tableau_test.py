@@ -77,23 +77,23 @@ def modify_formula(formula, current_time):
             elif isinstance(formula[i], str) and formula[i][0] in {'_G', '_F'} and i + 6 <= len(formula) and formula[i + 6][0] in {'_G', '_F'} and int(formula[i+2]) + int(formula[i+6][2]) <= current_time: #caso annidato
                 formula[i][0] = formula[i][0].lstrip('_')
                 formula[i + 6][0] = formula[i+6][0].lstrip('_')
-            elif isinstance(formula[i], list) and formula[i][0] in {'G', 'F'} and len(formula[i])>= 6 and formula[i][6][0] in {'G', 'F'} and int(formula[i][2]) + int(formula[i][6][2]) > current_time:
+            elif isinstance(formula[i], list) and isinstance(formula[i][0], str) and formula[i][0] in {'G', 'F'} and len(formula[i])>= 6 and formula[i][6][0] in {'G', 'F'} and int(formula[i][2]) + int(formula[i][6][2]) > current_time:
                 formula[i][0] = '_' + formula[i][0]
                 formula[i][6][0] = '_' + formula[i][6][0]
-            elif isinstance(formula[i], list) and formula[i][0] in {'_G', '_F'} and len(formula[i])>= 6 and formula[i][6][0] in {'_G', '_F'} and int(formula[i][2]) + int(formula[i][6][2]) <= current_time:
+            elif isinstance(formula[i], list) and isinstance(formula[i][0], str) and formula[i][0] in {'_G', '_F'} and len(formula[i])>= 6 and formula[i][6][0] in {'_G', '_F'} and int(formula[i][2]) + int(formula[i][6][2]) <= current_time:
                 formula[i][0] = formula[i][0].lstrip('_')
                 formula[i][6][0] = formula[i][6][0].lstrip('_')
-            elif isinstance(formula[i], list) and i+1 < len(formula) and formula[i+1] in {'&&', '||', ','} and formula[i][0] in {'G', 'F', '_G','_F'}:
+            elif isinstance(formula[i], list) and i+1 < len(formula) and formula[i+1] in {'&&', '||', ','} and isinstance(formula[i][0], str) and formula[i][0] in {'G', 'F', '_G','_F'}:
                 if formula[i][0] in {'G', 'F'} and int(formula[i][2]) > current_time:
                     formula[i][0] = '_' + formula[i][0]
                 elif formula[i][0] in {'_G', '_F'} and int(formula[i][2]) <= current_time:
                     formula[i][0] = formula[i][0].lstrip('_')
-            elif isinstance(formula[i], list) and i-1 > 0 and formula[i-1] in {'&&', '||', ','} and formula[i][0] in {'G', 'F', '_G','_F'}:
+            elif isinstance(formula[i], list) and i-1 > 0 and formula[i-1] in {'&&', '||', ','} and isinstance(formula[i][0], str) and formula[i][0] in {'G', 'F', '_G','_F'} and formula [i][6][0] not in {'G', 'F', '_G', '_F'}:
                 if formula[i][0] in {'G', 'F'} and int(formula[i][2]) > current_time:
                     formula[i][0] = '_' + formula[i][0]
                 elif formula[i][0] in {'_G', '_F'} and int(formula[i][2]) <= current_time:
                     formula[i][0] = formula[i][0].lstrip('_')
-    return (formula)
+    return formula
 
 
 def flatten_list(nested_list):
@@ -127,6 +127,8 @@ def decompose(node, current_time):
             #if isinstance(node[i], list) and isinstance(node[i][1], str) and node[i][1] in {'U'} and node[i][2] in {'['}:
                 #node[i] = [['G', '[', '0', ',', node[i][3], ']', node[i][0]], ',', ['F', '[', node[i][3], ',', node[i][5], ']', node[i][7]], ',', ['F', '[', node[i][3], ',', node[i][3], ']', [node[i][0], 'U', node[i][7]]]]
                 #return [node]
+            if isinstance(node[i][0], str) and len(node) >= 6 and node[i][0] in {'G', 'F'} and isinstance(node[6], list) and node[6][0] in {'F', 'G'}:
+                return decompose_nested(node[i:i+7], node[i+6])
             if isinstance(node[i][0], str) and node[i][0] in {'G'}: #aggiungi condizioni sul tempo
                 return decompose_G(node, current_time)
             #elif isinstance(node[i][0], list) and node[i][0][0] in {'G'} and node[i][0][0] not in {'O'}:
@@ -186,10 +188,11 @@ def decompose_or(self, left, right, current_time):
     decomposed_node_2 = [right]
     return [decomposed_node_1, decomposed_node_2], current_time
 
+def decompose_nested(self, argument):
+    decomposed_node = [argument,  ]
+    return [decomposed_node]
 
-def decompose_jump(node, current_time):
-    #forse è meglio passare alla funzione la lista flat e poi sarà la funzione a inserire le parentesi dove servono
-    #questa funzione dovrà anche modificare il parametro che indica qual è l'istante temporale corrente
+def decompose_jump(node, current_time): #bisogna aggiungere casi nested
     new_node = []
     for i in range(len(node)):
         if node[i] in {'OG'}:
@@ -203,11 +206,12 @@ def decompose_jump(node, current_time):
                 new_node.append(',')
             new_node.append(elemento)
         elif node[i] in {'_G', '_F'}:
-            elemento = [node[i:i+6]]
+            elemento = node[i:i+6]
             if new_node:  #condizione per cui aggiungo la virgola prima di aggiungere l'elemento solo se la lista non è vuota
                 new_node.append(',')
             new_node.append(elemento) #così poi mancano le virgole tra i diversi elementi
-    #current_time = current_time + 1 #non serve, lo ricalcolo nella funzione add children prima di passarlo alla funzione decompose
+    current_time = current_time + 1
+    new_node = modify_formula(new_node, current_time)
     return [[new_node]]
 
 
@@ -242,6 +246,8 @@ def build_decomposition_tree(root, max_depth):
                     G.add_node(child_label)
                     #G.add_edge(formula_to_string(node), formula_to_string(child))
                     G.add_edge(node_label, child_label)
+                    #current_time = extract_min_time(child)
+                    #child = modify_formula(child, current_time)
                     add_children(child, depth + 1, current_time, counter)
     root_copy =copy.deepcopy(root)
     new_root = modify_formula(root_copy, time)
@@ -266,7 +272,7 @@ def plot_tree(G):
 
 
 # Esempio di formula e costruzione dell'albero
-formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
+formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '2', ',', '3', ']', ['q']]]]
 #formula = [[['G', '[', '0', ',', '3', ']', ['p']], '||', ['F', '[', '0', ',', '3', ']', ['q']]]]
 #formula = ['G', '[', '0', ',', '3', ']', ['p']]
 #formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
@@ -276,9 +282,9 @@ formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3
 #formula = [[[['a'], 'U', '[', '2', ',', '5', ']', ['b']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
 #formula = [[['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
 #formula = [['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]
-#formula = [[['G', '[', '3', ',', '5', ']', ['b']], '&&', ['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]]
+#formula = [[['G', '[', '0', ',', '5', ']', ['b']], '&&', ['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]]
 #formula = [[['G', '[', '2', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
-max_depth = 5
+max_depth = 7
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
 plot_tree(tree)
