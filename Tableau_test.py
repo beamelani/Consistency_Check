@@ -208,21 +208,40 @@ def decompose_nested(self, argument, current_time):
 def decompose_jump(node, current_time): #bisogna aggiungere casi nested
     new_node = []
     for i in range(len(node)):
-        if node[i] in {'OG'}:
+        #CASI NON NESTED
+        if node[i] in {'OG'} and len(node) >= i+6 and node[i+6] not in {'OF', 'OG'}:
             elemento = ['G', node[i+1], str(int(node[i+2])+1), node[i+3], node[i+4], node[i+5], [node[i+6]]]#probelma se argomento di G non è un solo elemento
             if new_node:
                 new_node.append(',')
             new_node.append(elemento)
-        elif node[i] in {'OF'}:
+        elif node[i] in {'OF'} and len(node) >= i+6 and node[i+6] not in {'OF', 'OG'}:
             elemento = ['F', node[i + 1], str(int(node[i + 2]) + 1), node[i + 3], node[i + 4], node[i + 5], [node[i + 6]]]  # i+6 compreso, verifica
             if new_node:
                 new_node.append(',')
             new_node.append(elemento)
-        elif node[i] in {'_G', '_F'}:
+        elif node[i] in {'_G', '_F'} and len(node) >= i+6 and node[i+6] not in {'_F', '_G'}:
             elemento = node[i:i+7]
             if new_node:  #condizione per cui aggiungo la virgola prima di aggiungere l'elemento solo se la lista non è vuota
                 new_node.append(',')
             new_node.append(elemento) #così poi mancano le virgole tra i diversi elementi
+        #CASI NESTED
+        elif node[i] in {'OG'} and len(node) >= i+6 and node[i+6] in {'OF', 'OG'}:
+            node[i+6] = node[i+6].lstrip('O')
+            elemento = ['G', node[i + 1], str(int(node[i + 2]) + 1), node[i + 3], node[i + 4], node[i + 5], [node[i + 6:]]] #non so se fare fino alla fine va sempre bene
+            if new_node:
+                new_node.append(',')
+            new_node.append(elemento)
+        elif node[i] in {'OF'} and len(node) >= i + 6 and node[i + 6] in {'OF', 'OG'}:
+            node[i+6] = node[i+6].lstrip('O')
+            elemento = ['F', node[i + 1], str(int(node[i + 2]) + 1), node[i + 3], node[i + 4], node[i + 5], node[i + 6:]]  # non so se fare fino alla fine va sempre bene
+            if new_node:
+                new_node.append(',')
+            new_node.append(elemento)
+        elif node[i] in {'_G', '_F'} and len(node) >= i+6 and node[i+6] in {'_F', '_G'}:
+            elemento = node[i:i + 13]
+            if new_node:
+                new_node.append(',')
+            new_node.append(elemento)
     current_time = current_time + 1
     new_node = modify_formula(new_node, current_time)
     return [[new_node]]
@@ -297,7 +316,7 @@ def plot_tree(G):
 formula = [['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]
 #formula = [[['G', '[', '0', ',', '5', ']', ['b']], '&&', ['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]]
 #formula = [[['G', '[', '2', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
-max_depth = 2
+max_depth = 5
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
 plot_tree(tree)
