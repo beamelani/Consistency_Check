@@ -143,7 +143,7 @@ def decompose(node, current_time):
         for i in range(len(flatten_list(node))): #check per vedere che tutto sia stato decomposto prima di fare il jump temporale
             if flatten_list(node)[i] not in {'G', 'F'}: #basta perché i G e F ancora inattivi vengono scritti come _G, _F
                 k = k+1
-                if k == len(flatten_list(node)):
+                if k == len(flatten_list(node)): #metti controllo sul tempo
                     return decompose_jump(flatten_list(node), current_time)
     elif isinstance(node, str):
         return None
@@ -208,12 +208,12 @@ def decompose_jump(node, current_time): #bisogna aggiungere casi nested
     new_node = []
     for i in range(len(node)):
         #CASI NON NESTED
-        if node[i] in {'OG'} and len(node) >= i+6 and node[i+6] not in {'OF', 'OG'}:
+        if node[i] in {'OG'} and len(node) >= i+6 and node[i+6] not in {'OF', 'OG'} and int(node[i+2]) < int(node[i+4]):
             elemento = ['G', node[i+1], str(int(node[i+2])+1), node[i+3], node[i+4], node[i+5], [node[i+6]]]#probelma se argomento di G non è un solo elemento
             if new_node:
                 new_node.append(',')
             new_node.append(elemento)
-        elif node[i] in {'OF'} and len(node) >= i+6 and node[i+6] not in {'OF', 'OG'}:
+        elif node[i] in {'OF'} and len(node) >= i+6 and node[i+6] not in {'OF', 'OG'} and int(node[i+2]) < int(node[i+4]):
             elemento = ['F', node[i + 1], str(int(node[i + 2]) + 1), node[i + 3], node[i + 4], node[i + 5], [node[i + 6]]]  # i+6 compreso, verifica
             if new_node:
                 new_node.append(',')
@@ -224,13 +224,13 @@ def decompose_jump(node, current_time): #bisogna aggiungere casi nested
                 new_node.append(',')
             new_node.append(elemento) #così poi mancano le virgole tra i diversi elementi
         #CASI NESTED
-        elif node[i] in {'OG'} and len(node) >= i+6 and node[i+6] in {'OF', 'OG'}:
+        elif node[i] in {'OG'} and len(node) >= i+6 and node[i+6] in {'OF', 'OG'} and int(node[i+2]) < int(node[i+4]):
             node[i+6] = node[i+6].lstrip('O')
             elemento = ['G', node[i + 1], str(int(node[i + 2]) + 1), node[i + 3], node[i + 4], node[i + 5], [node[i + 6:]]] #non so se fare fino alla fine va sempre bene
             if new_node:
                 new_node.append(',')
             new_node.append(elemento)
-        elif node[i] in {'OF'} and len(node) >= i + 6 and node[i + 6] in {'OF', 'OG'}:
+        elif node[i] in {'OF'} and len(node) >= i + 6 and node[i + 6] in {'OF', 'OG'} and int(node[i+2]) < int(node[i+4]):
             node[i+6] = node[i+6].lstrip('O')
             elemento = ['F', node[i + 1], str(int(node[i + 2]) + 1), node[i + 3], node[i + 4], node[i + 5], node[i + 6:]]  # non so se fare fino alla fine va sempre bene
             if new_node:
@@ -263,12 +263,12 @@ def build_decomposition_tree(root, max_depth):
             children = decompose(node_copy, current_time)
             if children: #serve perché se children è vuoto non posso estrarre children[0]
                 children = children[0]
-            print(formula_to_string(children))
-            if not children:
-                depth = max_depth
-                add_children(node, depth, current_time, counter)
+            if len(flatten_list(children[0])) > 0:
+                print(formula_to_string(children))
             else:
-                for child in children:
+                print('No more children in this branch')
+                return
+            for child in children:
                     counter = counter + 1
                     child_label = " ".join([formula_to_string(child), str(counter)])
                     G.add_node(child_label)
@@ -295,7 +295,7 @@ def plot_tree(G):
 
 
 # Esempio di formula e costruzione dell'albero
-#formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '2', ',', '3', ']', ['q']]]]
+formula = [[['G', '[', '0', ',', '2', ']', ['p']], '&&', ['F', '[', '1', ',', '3', ']', ['q']]]]
 #formula = [[['G', '[', '0', ',', '3', ']', ['p']], '||', ['F', '[', '0', ',', '3', ']', ['q']]]]
 #formula = ['G', '[', '0', ',', '3', ']', ['p']]
 #formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
@@ -304,10 +304,10 @@ def plot_tree(G):
 #formula = [[['G', '[', '0', ',', '5', ']', ['x']], '&&', [['a'], 'U', '[', '2', ',', '5', ']', ['b']]]]
 #formula = [[[['a'], 'U', '[', '2', ',', '5', ']', ['b']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
 #formula = [[['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
-formula = [['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]
+#formula = [['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]
 #formula = [[['G', '[', '0', ',', '5', ']', ['b']], '&&', ['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]]
 #formula = [[['G', '[', '2', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
-max_depth = 5
+max_depth = 9
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
 plot_tree(tree)
