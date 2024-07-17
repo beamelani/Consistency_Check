@@ -1,9 +1,9 @@
 #Queste funzioni andranno poi aggiunte al main che contiene già il parser che restituisce la formula stl
 #nella forma utilizzata come input in questo codice.
 #Cose ancora da fare:
-#1)aggiungere un controllo sugli istanti di tempo (c'è, ma non funziona bene) il current time per operatori annidati!!
+#1)aggiungere un controllo sugli istanti di tempo per fermarsi quando si esaurusce l'intervallo
 #2) aggiungere l'until
-#3) operatori annidati
+
 
 
 import networkx as nx
