@@ -1,0 +1,20 @@
+[project]
+name = "stl-consistency"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "Beatrice Melani", email = "beatrice.melani@polimi.it"},
+]
+dependencies = [
+    "matplotlib>=3.9.1",
+    "networkx>=3.3",
+    "pydot==2.0.0",
+    "z3-solver>=4.13.0.0",
+]
+requires-python = ">=3.11.*"
+readme = "README.md"
+license = {text = "MIT"}
+
+
+[tool.pdm]
+distribution = false
