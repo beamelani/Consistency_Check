@@ -255,7 +255,8 @@ def build_decomposition_tree(root, max_depth):
     G.add_node(root_label)
     print(formula_to_string(root))
 
-    def add_children(node, depth, current_time, counter):
+    def add_children(node, depth, current_time):
+        nonlocal counter
         if depth < max_depth:
             node_copy = copy.deepcopy(node)
             current_time = extract_min_time(node_copy)
@@ -273,7 +274,7 @@ def build_decomposition_tree(root, max_depth):
                     child_label = " ".join([formula_to_string(child), str(counter)])
                     G.add_node(child_label)
                     G.add_edge(node_label, child_label)
-                    add_children(child, depth + 1, current_time, counter)
+                    add_children(child, depth + 1, current_time)
     root_copy =copy.deepcopy(root)
     new_root = modify_formula(root_copy, time)
     if new_root != root[0]:
@@ -281,7 +282,7 @@ def build_decomposition_tree(root, max_depth):
         new_root_label = " ".join([formula_to_string(new_root), str(counter)])
         G.add_node(new_root_label)
         G.add_edge(root_label, new_root_label)
-    add_children(new_root, 0, time, counter)
+    add_children(new_root, 0, time)
     return G
 
 
