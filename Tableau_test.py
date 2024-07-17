@@ -80,7 +80,7 @@ def modify_formula(formula, current_time):
             elif isinstance(formula[i], list) and isinstance(formula[i][0], str) and formula[i][0] in {'G', 'F'} and len(formula[i])>= 6 and formula[i][6][0] in {'G', 'F'} and int(formula[i][2]) + int(formula[i][6][2]) > current_time:
                 formula[i][0] = '_' + formula[i][0]
                 formula[i][6][0] = '_' + formula[i][6][0]
-            elif isinstance(formula[i], list) and isinstance(formula[i][0], str) and formula[i][0] in {'_G', '_F'} and len(formula[i])>= 6 and formula[i][6][0] in {'_G', '_F'} and int(formula[i][2]) + int(formula[i][6][2]) <= current_time:
+            elif isinstance(formula[i], list) and isinstance(formula[i][0], str) and formula[i][0] in {'_G', '_F'} and len(formula[i]) >= 6 and formula[i][6][0] in {'_G', '_F'} and int(formula[i][2]) + int(formula[i][6][2]) <= current_time:
                 formula[i][0] = formula[i][0].lstrip('_')
                 formula[i][6][0] = formula[i][6][0].lstrip('_')
             elif isinstance(formula[i], list) and i+1 < len(formula) and formula[i+1] in {'&&', '||', ','} and isinstance(formula[i][0], str) and formula[i][0] in {'G', 'F', '_G','_F'}:
@@ -206,7 +206,7 @@ def decompose_jump(node, current_time): #bisogna aggiungere casi nested
                 new_node.append(',')
             new_node.append(elemento)
         elif node[i] in {'_G', '_F'}:
-            elemento = node[i:i+6]
+            elemento = node[i:i+7]
             if new_node:  #condizione per cui aggiungo la virgola prima di aggiungere l'elemento solo se la lista non è vuota
                 new_node.append(',')
             new_node.append(elemento) #così poi mancano le virgole tra i diversi elementi
@@ -284,7 +284,7 @@ formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '2', ',', '3
 #formula = [['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]
 #formula = [[['G', '[', '0', ',', '5', ']', ['b']], '&&', ['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]]
 #formula = [[['G', '[', '2', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
-max_depth = 7
+max_depth = 5
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
 plot_tree(tree)
