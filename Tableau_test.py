@@ -12,6 +12,7 @@ from networkx.drawing.nx_pydot import graphviz_layout
 import copy
 
 
+#Scrive la lista come stringa per metterla come nome del nodo
 def formula_to_string(formula):
     if isinstance(formula, list):
         if len(formula) == 1:
@@ -24,6 +25,7 @@ def formula_to_string(formula):
             return ''.join(map(formula_to_string, formula))
     else:
         return str(formula)
+
 
 def extract_min_time(formula):
     """
@@ -107,15 +109,14 @@ def flatten_list(nested_list):
         else:
             flat_list.append(item)
     return flat_list
-#voglio modificare decompose in modo che lavori sulla lista e poi trasformi il contenuto del nodo in una stringa
-#passandolo alla funzione formula_to_string
+
+
 def decompose(node, current_time):
     # Determine the type of the node and call the appropriate visit method
     if isinstance(node, list):
         if len(node) == 1:
             # Single element (either a terminal or a unary expression)
             if isinstance(node[0], str) and len(node[0]) == 1:
-                #return decompose_binary_variable(node[0])
                 return None
             return decompose(node[0], current_time)
         for i in range(len(node)):
@@ -159,8 +160,6 @@ def decompose_G(node, current_time):
 
 
 def decompose_F(self, left, right, current_time):
-    #Problema: questa funzione è pensata per termini che hanno virgole tra uno e l'altro ed elimina le virgole
-    #ma dopo il jump non ci sono più virgole tra i termini perchè non riesco ad inserirle e quindi la cosa non funziona
     if len(left) > 0 and len(right) > 0:
         decomposed_node_1 = [left[0: len(left)-1], ',', right[1:], ',', self[6]]
         decomposed_node_2 = [left[0: len(left)-1], right[1:], ',', ['OF', '[', self[2], ',', self[4], ']', self[6]]]
@@ -253,7 +252,6 @@ def build_decomposition_tree(root, max_depth):
     time = extract_min_time(root)
     counter = 0
     root_label = " ".join([formula_to_string(root), str(counter)])
-    #G.add_node(formula_to_string(root))
     G.add_node(root_label)
     print(formula_to_string(root))
 
@@ -265,7 +263,6 @@ def build_decomposition_tree(root, max_depth):
             children = decompose(node_copy, current_time)
             if children: #serve perché se children è vuoto non posso estrarre children[0]
                 children = children[0]
-            #children = decompose(node_copy, current_time)[0]
             print(formula_to_string(children))
             if not children:
                 depth = max_depth
@@ -274,20 +271,14 @@ def build_decomposition_tree(root, max_depth):
                 for child in children:
                     counter = counter + 1
                     child_label = " ".join([formula_to_string(child), str(counter)])
-                    #G.add_node(formula_to_string(child))
                     G.add_node(child_label)
-                    #G.add_edge(formula_to_string(node), formula_to_string(child))
                     G.add_edge(node_label, child_label)
-                    #current_time = extract_min_time(child)
-                    #child = modify_formula(child, current_time)
                     add_children(child, depth + 1, current_time, counter)
     root_copy =copy.deepcopy(root)
     new_root = modify_formula(root_copy, time)
     if new_root != root[0]:
         counter = counter + 1
         new_root_label = " ".join([formula_to_string(new_root), str(counter)])
-        #G.add_node(formula_to_string(new_root))
-        #G.add_edge(formula_to_string(root), formula_to_string(new_root))
         G.add_node(new_root_label)
         G.add_edge(root_label, new_root_label)
     add_children(new_root, 0, time, counter)
