@@ -14,7 +14,7 @@ import copy
 
 
 #Scrive la lista come stringa per metterla come nome del nodo
-def formula_to_string(formula):
+def formula_to_string(formula):  #HA DEI PROBLEMI
     if isinstance(formula, list):
         if len(formula) == 1:
             return formula_to_string(formula[0])
@@ -37,7 +37,7 @@ def extract_min_time(formula):
 
     def traverse(formula):
         if isinstance(formula, list):
-            if formula[0] in ('G', 'F', 'OG', 'OF') and formula[6][0] not in ('G', 'F', 'OG', 'OF'):
+            if formula[0] in ('G', 'F', 'OG', 'OF', '_G', '_F') and formula[6][0] not in ('G', 'F', 'OG', 'OF', '_G', '_F'):
                 # Se l'elemento è un operatore temporale 'G' o 'F'
                 if len(formula) > 4 and formula[1] == '[' and formula[3] == ',' and formula[5] == ']':
                     try:
@@ -48,7 +48,7 @@ def extract_min_time(formula):
                 # Ricorsivamente attraversa i sottooperatori
                 for item in formula[4:]:
                     traverse(item)
-            elif formula[0] in ('G', 'F', 'OG', 'OF') and formula[6][0] in ('G', 'F', 'OG', 'OF'):
+            elif formula[0] in ('G', 'F', 'OG', 'OF', '_G', '_F') and formula[6][0] in ('G', 'F', 'OG', 'OF', '_G', '_F'):
                 try:
                     min_time = int(formula[2]) + int(formula[6][2])
                     min_times.append(min_time)
@@ -74,7 +74,7 @@ def modify_formula(formula, current_time):
         if len(formula) == 1:
             return modify_formula(formula[0], current_time)
         for i in range(len(formula)):
-            if isinstance(formula[i], str) and formula[i][0] in {'G', 'F'} and i+6 <= len(formula) and formula[i+6][0] in {'G', 'F'} and int(formula[i+2]) + int(formula[i+6][2]) > current_time: #caso annidato
+            if isinstance(formula[i], str) and formula[i][0] in {'G', 'F'} and i+6 <= len(formula) and isinstance(formula[i+6][0], str) and formula[i+6][0] in {'G', 'F'} and int(formula[i+2]) + int(formula[i+6][2]) > current_time: #caso annidato
                 formula[i] = '_' + formula[i]
                 formula[i+6][0] = '_' + formula[i+6][0]
             elif isinstance(formula[i], str) and formula[i][0] in {'_G', '_F'} and i + 6 <= len(formula) and formula[i + 6][0] in {'_G', '_F'} and int(formula[i+2]) + int(formula[i+6][2]) <= current_time: #caso annidato
@@ -129,15 +129,18 @@ def decompose(node, current_time):
             #if isinstance(node[i], list) and isinstance(node[i][1], str) and node[i][1] in {'U'} and node[i][2] in {'['}:
                 #node[i] = [['G', '[', '0', ',', node[i][3], ']', node[i][0]], ',', ['F', '[', node[i][3], ',', node[i][5], ']', node[i][7]], ',', ['F', '[', node[i][3], ',', node[i][3], ']', [node[i][0], 'U', node[i][7]]]]
                 #return [node]
-            #Questo vale se l'operatore interno annidato non ha una parentesi a parte (vorrei eliminare questa evenienza)
-            if isinstance(node[i][0], str) and len(node) >= 6 and node[i][0] in {'G', 'F'} and len(node) > i+6 and isinstance(node[i+6], list) and node[6][0] in {'F', 'G'}:
+            #Questo vale solo a volte, perché?
+            if isinstance(node[i][0], str) and len(node) >= 6 and node[i][0] in {'G', 'F'} and len(node) > i+6 and isinstance(node[i+6], list) and node[i+6][0] in {'F', 'G'}:
                 if i != 0:
                     return decompose_nested(node[i:i+7], node[i+6], node[0:i-1], node[i+8:], current_time)
                 if i == 0:
                     return decompose_nested(node[i:i+7], node[i+6], [], node[i+8:], current_time)
             #Questo vale se l'operatore interno annidato ha una sua sottolista
             if isinstance(node[i][0], str) and isinstance(node[i], list) and len(node[i]) >= 6 and node[i][0] in {'G', 'F'} and isinstance(node[i][6], list) and isinstance(node[i][6][0], str) and node[i][6][0] in {'G', 'F'}:
-                return decompose_nested(node[i], node[i][6], node[0:i-1], node[i+2:], current_time)
+                if i != 0:
+                    return decompose_nested(node[i], node[i][6], node[0:i-1], node[i+2:], current_time)
+                elif i == 0:
+                    return decompose_nested(node[i], node[i][6], [], node[i + 2:], current_time)
             if isinstance(node[i][0], str) and node[i][0] in {'G'}: #NB: Fai in modo che non si attivi per un annidato
                 return decompose_G(node, current_time)
             #elif isinstance(node[i][0], list) and node[i][0][0] in {'G'} and node[i][0][0] not in {'O'}:
@@ -154,11 +157,20 @@ def decompose(node, current_time):
                 if i == 0:
                     return decompose_F(node[i:i+7], [], node[i+8:], current_time)
         k = 0
+        o = 0
         for i in range(len(flatten_list(node))): #check per vedere che tutto sia stato decomposto prima di fare il jump temporale
             if flatten_list(node)[i] not in {'G', 'F'}: #basta perché i G e F ancora inattivi vengono scritti come _G, _F
                 k = k+1
-                if k == len(flatten_list(node)): #metti controllo sul tempo
+                if flatten_list(node)[i] in {'OG', 'OF'}:
+                    o = o+1
+                if k == len(flatten_list(node)) and o != 0:
                     return decompose_jump(flatten_list(node), current_time)
+                elif k == len(flatten_list(node)) and o == 0:
+                    #metto la o per cotrollare se la formula ha operatori OG o OF, perché se ha solo op _G, _F e
+                    # lettere, non devo fare salto temp, devo solo rimuovere lettere e attivare operatori _. Questa
+                    # soluzione non va bene perché toglie _, ma non toglie le lettere
+                    node = modify_formula(node, current_time)
+                    return [[node]]
     elif isinstance(node, str):
         return None
 
@@ -175,12 +187,16 @@ def decompose_G(node, current_time):
 
 def decompose_F(self, left, right, current_time):
     if len(left) > 0 and len(right) > 0:
+        left = left[0] #controlla che non creino problemi
+        right = right[0]
         decomposed_node_1 = [left, ',', right, ',', self[6]]
         decomposed_node_2 = [left, right, ',', ['OF', '[', self[2], ',', self[4], ']', self[6]]]
     elif len(left) == 0 and len(right) > 0:
+        right = right[0]
         decomposed_node_1 = [self[6], ',', right]
         decomposed_node_2 = [['OF', '[', self[2], ',', self[4], ']', self[6]], ',', right]
     elif len(right) == 0 and len(left) > 0:
+        left = left[0]
         decomposed_node_1 = [left, ',', self[6]]
         decomposed_node_2 = [left, ',', ['OF', '[', self[2], ',', self[4], ']', self[6]]]
     elif len(right) == 0 and len(left) == 0:
@@ -267,10 +283,15 @@ def decompose_jump(node, current_time): #bisogna aggiungere casi nested
                 if new_node:  #condizione per cui aggiungo la virgola prima di aggiungere l'elemento solo se la lista non è vuota
                     new_node.append(',')
                 new_node.append(elemento) #così poi mancano le virgole tra i diversi elementi
+            elif i == 0:
+                elemento = node[i:i+7]
+                if new_node:
+                    new_node.append(',')
+                new_node.append(elemento)
         #CASI NESTED
         elif node[i] in {'OG'} and len(node) >= i+6 and node[i+6] in {'OF', 'OG'} and int(node[i+2]) < int(node[i+4]):
             node[i+6] = node[i+6].lstrip('O')
-            elemento = ['G', node[i + 1], str(int(node[i + 2]) + 1), node[i + 3], node[i + 4], node[i + 5], [node[i + 6:]]] #non so se fare fino alla fine va sempre bene
+            elemento = ['G', node[i + 1], str(int(node[i + 2]) + 1), node[i + 3], node[i + 4], node[i + 5], node[i + 6:]] #non so se fare fino alla fine va sempre bene
             if new_node:
                 new_node.append(',')
             new_node.append(elemento)
@@ -311,6 +332,7 @@ def build_decomposition_tree(root, max_depth):
             if children: #serve perché se children è vuoto non posso estrarre children[0]
                 children = children[0]
             if children and len(flatten_list(children[0])) > 0:
+                print(children)
                 print(formula_to_string(children))
             else:
                 print('No more children in this branch')
@@ -342,21 +364,21 @@ def plot_tree(G):
 
 
 # Esempio di formula e costruzione dell'albero
-#formula = [[['G', '[', '0', ',', '2', ']', ['p']], '&&', ['F', '[', '1', ',', '3', ']', ['q']]]]
-#formula = [[['G', '[', '0', ',', '3', ']', ['p']], '||', ['F', '[', '0', ',', '3', ']', ['q']]]]
-#formula = ['G', '[', '0', ',', '3', ']', ['p']]
-#formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
-#formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']], '||', ['G', '[', '0', ',', '5', ']', ['x']], '&&', ['F', '[', '0', ',', '2', ']', ['y']]]]
+#OK formula = [[['G', '[', '0', ',', '2', ']', ['p']], '&&', ['F', '[', '1', ',', '3', ']', ['q']]]]
+#OK formula = [[['G', '[', '0', ',', '3', ']', ['p']], '||', ['F', '[', '0', ',', '3', ']', ['q']]]]
+#OK formula = ['G', '[', '0', ',', '3', ']', ['p']]
+#OK formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
+#OK formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']], '||', ['G', '[', '0', ',', '5', ']', ['x']], '&&', ['F', '[', '0', ',', '2', ']', ['y']]]]
 #formula = [[['a'], 'U', '[', '2', ',', '5', ']', ['b']]]
 #formula = [[['G', '[', '0', ',', '5', ']', ['x']], '&&', [['a'], 'U', '[', '2', ',', '5', ']', ['b']]]]
 #formula = [[[['a'], 'U', '[', '2', ',', '5', ']', ['b']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
-#formula = [[['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
-#formula = [['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]
-#formula = [['G', '[', '1', ',', '10', ']', ['F', '[', '1', ',', '7', ']', ['a']]]]
-#formula = [[['G', '[', '0', ',', '5', ']', ['b']], '&&', ['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]] #NON FUNZIONA
-# NON FUNZIONA BENE MI SA formula = [[['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]], '&&' , ['G', '[', '0', ',', '5', ']', ['b']]]]
+#OK formula = [[['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
+#OK formula = [['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]] #OK
+#formula = [['G', '[', '1', ',', '10', ']', ['F', '[', '1', ',', '7', ']', ['a']]]] #children sono ok, ma la funzione formula_to_string tronca l'espressione non so perché
+#OK formula = [[['G', '[', '0', ',', '5', ']', ['b']], '&&', ['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]] #NON FUNZIONA
+#OK formula = [[['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]], '&&' , ['G', '[', '0', ',', '5', ']', ['b']]]]
 #formula = [[['G', '[', '2', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
-max_depth = 12
+max_depth = 5
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
 plot_tree(tree)
