@@ -131,7 +131,10 @@ def decompose(node, current_time):
                 #return [node]
             #Questo vale se l'operatore interno annidato non ha una parentesi a parte (vorrei eliminare questa evenienza)
             if isinstance(node[i][0], str) and len(node) >= 6 and node[i][0] in {'G', 'F'} and len(node) > i+6 and isinstance(node[i+6], list) and node[6][0] in {'F', 'G'}:
-                return decompose_nested(node[i:i+7], node[i+6], node[0:i-1], node[i+8:], current_time)
+                if i != 0:
+                    return decompose_nested(node[i:i+7], node[i+6], node[0:i-1], node[i+8:], current_time)
+                if i == 0:
+                    return decompose_nested(node[i:i+7], node[i+6], [], node[i+8:], current_time)
             #Questo vale se l'operatore interno annidato ha una sua sottolista
             if isinstance(node[i][0], str) and isinstance(node[i], list) and len(node[i]) >= 6 and node[i][0] in {'G', 'F'} and isinstance(node[i][6], list) and node[i][6][0] in {'G', 'F'}:
                 return decompose_nested(node[i], node[i][6], node[0:i-1], node[i+2:], current_time)
@@ -341,8 +344,8 @@ def plot_tree(G):
 #formula = [[['G', '[', '0', ',', '5', ']', ['x']], '&&', [['a'], 'U', '[', '2', ',', '5', ']', ['b']]]]
 #formula = [[[['a'], 'U', '[', '2', ',', '5', ']', ['b']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
 #formula = [[['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
-#formula = [['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]
-formula = [[['G', '[', '0', ',', '5', ']', ['b']], '&&', ['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]] #NON FUNZIONA
+formula = [['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]
+#formula = [[['G', '[', '0', ',', '5', ']', ['b']], '&&', ['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]] #NON FUNZIONA
 #formula = [[['G', '[', '2', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
 max_depth = 8
 tree = build_decomposition_tree(formula, max_depth)
