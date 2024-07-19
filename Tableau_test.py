@@ -167,9 +167,8 @@ def decompose(node, current_time):
                     return decompose_jump(flatten_list(node), current_time)
                 elif k == len(flatten_list(node)) and o == 0:
                     #metto la o per cotrollare se la formula ha operatori OG o OF, perché se ha solo op _G, _F e
-                    # lettere, non devo fare salto temp, devo solo rimuovere lettere e attivare operatori _. Questa
-                    # soluzione non va bene perché toglie _, ma non toglie le lettere
-                    node = modify_formula(node, current_time)
+                    # lettere, non devo fare salto temp, devo solo rimuovere lettere e attivare operatori _.
+                    node = activate_formula(node, [])
                     return [[node]]
     elif isinstance(node, str):
         return None
@@ -313,6 +312,28 @@ def decompose_jump(node, current_time): #bisogna aggiungere casi nested
     return [[new_node]]
 
 
+def activate_formula(formula, new_formula):
+    min_time = extract_min_time((formula))
+    for i in range(len(formula)):
+        #Caso non nested
+        if isinstance(formula[i], list):
+            activate_formula(formula[i], new_formula)
+        if isinstance(formula[i], str) and formula[i] in {'_G', 'F'} and int(formula[i+2]) == min_time and formula[i+6][0] not in {'_G', '_F'}:
+            formula[i] = formula[i].lstrip('_')
+            elemento = formula[i:i+7]
+            if new_formula:
+                new_formula.append(',')
+            new_formula.append(elemento)
+        #Caso nested
+        if isinstance(formula[i], str) and formula[i] in {'_G', 'F'} and int(formula[i+2]) == min_time and formula[i+6][0] in {'_G', '_F'}:
+            formula[i] = formula[i].lstrip('_')
+            formula[i+6][0] = formula[i+6][0].lstrip('_')
+            elemento = formula[i:i + 7]
+            if new_formula:
+                new_formula.append(',')
+            new_formula.append(elemento)
+    return new_formula
+
 
 def build_decomposition_tree(root, max_depth):
     G = nx.DiGraph()
@@ -377,8 +398,8 @@ def plot_tree(G):
 #formula = [['G', '[', '1', ',', '10', ']', ['F', '[', '1', ',', '7', ']', ['a']]]] #children sono ok, ma la funzione formula_to_string tronca l'espressione non so perché
 #OK formula = [[['G', '[', '0', ',', '5', ']', ['b']], '&&', ['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]] #NON FUNZIONA
 #OK formula = [[['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]], '&&' , ['G', '[', '0', ',', '5', ']', ['b']]]]
-#formula = [[['G', '[', '2', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]]
-max_depth = 5
+formula = [[['G', '[', '2', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]] #OK
+max_depth = 8
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
 plot_tree(tree)
