@@ -27,6 +27,23 @@ def formula_to_string(formula):  #HA DEI PROBLEMI
     else:
         return str(formula)
 
+def formula_to_string2(formula):
+    if isinstance(formula, list):
+        if len(formula) == 1:
+            return formula_to_string2(formula[0])
+        elif len(formula) == 3 and formula[1] in ['&&', '||']:
+            # Caso di operatori logici '&&' e '||'
+            return f"({formula_to_string2(formula[0])} {formula[1]} {formula_to_string2(formula[2])})"
+        elif len(formula) == 4 and isinstance(formula[0], str) and formula[0] in ['G', 'F', 'OG', 'OF']:
+            # Caso di operatori temporali 'G', 'F', 'OG', 'OF'
+            return f"{formula[0]}[{formula[1]},{formula[2]}]({formula_to_string2(formula[3])})"
+        else:
+            # Caso generale per liste
+            return ''.join(map(formula_to_string2, formula))
+    else:
+        # Caso base: non è una lista, quindi converte in stringa
+        return str(formula)
+
 
 def extract_min_time(formula):
     """
@@ -147,10 +164,14 @@ def decompose(node, current_time):
                 #return decompose_G(node[i][0])
         for i in range(len(node)):
             if isinstance(node[i], list) and isinstance(node[i][0], str) and node[i][0] in {'F'}:
-                if i != 0:
+                if i != 0 and len(node[i]) == 7:
                     return decompose_F(node[i], node[0:i-1], node[i+2:], current_time)
-                if i == 0:
+                elif i != 0 and len(node[i]) > 7:
+                    return decompose_F(node[i][0:7], node[0:i - 1], node[i][8:] + node[i+1:], current_time)
+                if i == 0 and len(node[i]) == 7:
                     return decompose_F(node[i], [], node[i + 2:], current_time)
+                elif i == 0 and len(node[i]) > 7:
+                    return decompose_F(node[i][0:7], [], node[i][8:] + node[i+1:], current_time)
             elif isinstance(node[i], str) and node[i] in {'F'}:
                 if i != 0:
                     return decompose_F(node[i:i+7], node[0:i], node[i+8:], current_time)#left e right erano vuote per qualche ragione???
@@ -186,16 +207,19 @@ def decompose_G(node, current_time):
 
 def decompose_F(self, left, right, current_time):
     if len(left) > 0 and len(right) > 0:
-        left = left[0] #controlla che non creino problemi
-        right = right[0]
+        if len(left) == len(right) == 1:
+            left = left[0] #controlla che non creino problemi
+            right = right[0]
         decomposed_node_1 = [left, ',', right, ',', self[6]]
         decomposed_node_2 = [left, right, ',', ['OF', '[', self[2], ',', self[4], ']', self[6]]]
     elif len(left) == 0 and len(right) > 0:
-        right = right[0]
+        if len(right) == 1:
+            right = right[0]
         decomposed_node_1 = [self[6], ',', right]
         decomposed_node_2 = [['OF', '[', self[2], ',', self[4], ']', self[6]], ',', right]
     elif len(right) == 0 and len(left) > 0:
-        left = left[0]
+        if len(left) == 1:
+            left = left[0]
         decomposed_node_1 = [left, ',', self[6]]
         decomposed_node_2 = [left, ',', ['OF', '[', self[2], ',', self[4], ']', self[6]]]
     elif len(right) == 0 and len(left) == 0:
@@ -260,7 +284,7 @@ def decompose_nested(self, argument, pre, post, current_time): #pre, post sono c
         elif post and not pre:
             post = post[0]
             decomposed_node = [decomposed_node1, ',', post]
-    return decomposed_node, current_time
+    return [decomposed_node], current_time
 
 def decompose_jump(node, current_time): #bisogna aggiungere casi nested
     new_node = []
@@ -339,28 +363,28 @@ def build_decomposition_tree(root, max_depth):
     G = nx.DiGraph()
     time = extract_min_time(root)
     counter = 0
-    root_label = " ".join([formula_to_string(root), str(counter)])
+    root_label = " ".join([formula_to_string2(root), str(counter)])
     G.add_node(root_label)
-    print(formula_to_string(root))
+    print(formula_to_string2(root))
 
     def add_children(node, depth, current_time):
         nonlocal counter
         if depth < max_depth:
             node_copy = copy.deepcopy(node)
             current_time = extract_min_time(node_copy)
-            node_label = " ".join([formula_to_string(node), str(counter)])
+            node_label = " ".join([formula_to_string2(node), str(counter)])
             children = decompose(node_copy, current_time)
             if children: #serve perché se children è vuoto non posso estrarre children[0]
                 children = children[0]
             if children and len(flatten_list(children[0])) > 0:
                 print(children)
-                print(formula_to_string(children))
+                print(formula_to_string2(children))
             else:
                 print('No more children in this branch')
                 return
             for child in children:
                     counter = counter + 1
-                    child_label = " ".join([formula_to_string(child), str(counter)])
+                    child_label = " ".join([formula_to_string2(child), str(counter)])
                     G.add_node(child_label)
                     G.add_edge(node_label, child_label)
                     add_children(child, depth + 1, current_time)
@@ -368,7 +392,7 @@ def build_decomposition_tree(root, max_depth):
     new_root = modify_formula(root_copy, time)
     if new_root != root[0]:
         counter = counter + 1
-        new_root_label = " ".join([formula_to_string(new_root), str(counter)])
+        new_root_label = " ".join([formula_to_string2(new_root), str(counter)])
         G.add_node(new_root_label)
         G.add_edge(root_label, new_root_label)
     add_children(new_root, 0, time)
@@ -385,21 +409,21 @@ def plot_tree(G):
 
 
 # Esempio di formula e costruzione dell'albero
-#OK formula = [[['G', '[', '0', ',', '2', ']', ['p']], '&&', ['F', '[', '1', ',', '3', ']', ['q']]]]
-#OK formula = [[['G', '[', '0', ',', '3', ']', ['p']], '||', ['F', '[', '0', ',', '3', ']', ['q']]]]
-#OK formula = ['G', '[', '0', ',', '3', ']', ['p']]
-#OK formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
-#OK formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']], '||', ['G', '[', '0', ',', '5', ']', ['x']], '&&', ['F', '[', '0', ',', '2', ']', ['y']]]]
+#formula = [[['G', '[', '0', ',', '2', ']', ['p']], '&&', ['F', '[', '1', ',', '3', ']', ['q']]]] #ok
+#formula = [[['G', '[', '0', ',', '3', ']', ['p']], '||', ['F', '[', '0', ',', '3', ']', ['q']]]] #ok
+#formula = ['G', '[', '0', ',', '3', ']', ['p']] #ok
+#formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]] #OK
+#formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']], '||', ['G', '[', '0', ',', '5', ']', ['x']], '&&', ['F', '[', '0', ',', '2', ']', ['y']]]]  #OK
 #formula = [[['a'], 'U', '[', '2', ',', '5', ']', ['b']]]
 #formula = [[['G', '[', '0', ',', '5', ']', ['x']], '&&', [['a'], 'U', '[', '2', ',', '5', ']', ['b']]]]
 #formula = [[[['a'], 'U', '[', '2', ',', '5', ']', ['b']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
 #OK formula = [[['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
 #OK formula = [['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]] #OK
-#formula = [['G', '[', '1', ',', '10', ']', ['F', '[', '1', ',', '7', ']', ['a']]]] #children sono ok, ma la funzione formula_to_string tronca l'espressione non so perché
-#OK formula = [[['G', '[', '0', ',', '5', ']', ['b']], '&&', ['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]] #NON FUNZIONA
-#OK formula = [[['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]], '&&' , ['G', '[', '0', ',', '5', ']', ['b']]]]
-formula = [[['G', '[', '2', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]] #OK
-max_depth = 8
+#formula = [['G', '[', '1', ',', '10', ']', ['F', '[', '1', ',', '7', ']', ['a']]]] #OK
+#formula = [[['G', '[', '0', ',', '5', ']', ['b']], '&&', ['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]] #OK
+#formula = [[['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]], '&&' , ['G', '[', '0', ',', '5', ']', ['b']]]] #ok
+#formula = [[['G', '[', '2', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]] #OK
+max_depth = 6
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
 plot_tree(tree)
