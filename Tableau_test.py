@@ -185,7 +185,8 @@ def decompose(node, current_time):
                 if flatten_list(node)[i] in {'OG', 'OF'}:
                     o = o+1
                 if k == len(flatten_list(node)) and o != 0:
-                    return decompose_jump(flatten_list(node), current_time)
+                    #return decompose_jump(flatten_list(node), current_time)
+                    return decompose_jump2(node, current_time)  #Riscrivi la funzione per accettare la lista non flat
                 elif k == len(flatten_list(node)) and o == 0:
                     #metto la o per cotrollare se la formula ha operatori OG o OF, perché se ha solo op _G, _F e
                     # lettere, non devo fare salto temp, devo solo rimuovere lettere e attivare operatori _.
@@ -199,9 +200,9 @@ def decompose(node, current_time):
 def decompose_G(node, current_time):
     for i in range(len(node)):
         if i < len(node) and isinstance(node[i], list) and node[i][0] == 'G' and node[i][2] == str(current_time): #node[i][2]== time (perché decompongo G solo se è attivo)
-            node[i] = [[node[i][6]], ',', ['OG', '[', node[i][2], ',', node[i][4], ']', [node[i][6]]]]
+            node[i] = [node[i][6], ',', ['OG', '[', node[i][2], ',', node[i][4], ']', node[i][6]]]
         elif i < len(node) and isinstance(node[i], str) and node[i] == 'G' and node[i+2] == str(current_time):
-            node = [[node[6]], ',', ['OG', '[', node[i+2], ',', node[i+4], ']', [node[6]]]]
+            node = [node[6], ',', ['OG', '[', node[i+2], ',', node[i+4], ']', node[6]]]
     return [node], current_time
 
 
@@ -273,18 +274,18 @@ def decompose_nested(self, argument, pre, post, current_time): #pre, post sono c
         decomposed_node1 = [argument[0], '[', str(int(self[2]) + int(argument[2])), ',', str(int(self[2]) + int(argument[4])), ']', argument[6], ',', self]
         decomposed_node1[0] = decomposed_node1[0].lstrip('O')
         if not pre and not post:
-            decomposed_node = [decomposed_node1]
+            decomposed_node = [[decomposed_node1]]
         elif pre and post:
             pre = pre[0]
             post = post[0]
-            decomposed_node = [pre, ',', decomposed_node1, ',', post]
+            decomposed_node = [[pre, ',', decomposed_node1, ',', post]]
         elif pre and not post:
             pre = pre[0]
-            decomposed_node = [pre, ',', decomposed_node1]
+            decomposed_node = [[pre, ',', decomposed_node1]]
         elif post and not pre:
             post = post[0]
-            decomposed_node = [decomposed_node1, ',', post]
-    return [decomposed_node], current_time
+            decomposed_node = [[decomposed_node1, ',', post]]
+    return decomposed_node, current_time
 
 def decompose_jump(node, current_time): #bisogna aggiungere casi nested
     new_node = []
@@ -314,13 +315,13 @@ def decompose_jump(node, current_time): #bisogna aggiungere casi nested
         #CASI NESTED
         elif node[i] in {'OG'} and len(node) >= i+6 and node[i+6] in {'OF', 'OG'} and int(node[i+2]) < int(node[i+4]):
             node[i+6] = node[i+6].lstrip('O')
-            elemento = ['G', node[i + 1], str(int(node[i + 2]) + 1), node[i + 3], node[i + 4], node[i + 5], node[i + 6:]] #non so se fare fino alla fine va sempre bene
+            elemento = ['G', node[i + 1], str(int(node[i + 2]) + 1), node[i + 3], node[i + 4], node[i + 5], node[i + 6:]] #non so se fare fino alla fine va sempre bene--> No leva
             if new_node:
                 new_node.append(',')
             new_node.append(elemento)
         elif node[i] in {'OF'} and len(node) >= i + 6 and node[i + 6] in {'OF', 'OG'} and int(node[i+2]) < int(node[i+4]):
             node[i+6] = node[i+6].lstrip('O')
-            elemento = ['F', node[i + 1], str(int(node[i + 2]) + 1), node[i + 3], node[i + 4], node[i + 5], node[i + 6:]]  # non so se fare fino alla fine va sempre bene
+            elemento = ['F', node[i + 1], str(int(node[i + 2]) + 1), node[i + 3], node[i + 4], node[i + 5], node[i + 6:]]  # non so se fare fino alla fine va sempre bene--> No leva
             if new_node:
                 new_node.append(',')
             new_node.append(elemento)
@@ -335,7 +336,56 @@ def decompose_jump(node, current_time): #bisogna aggiungere casi nested
     new_node = modify_formula(new_node, current_time)
     return [[new_node]]
 
-
+def decompose_jump2(node, current_time): #modificale per accettare lista non flat
+    new_node = []
+    for i in range(len(node)):
+        #CASI NON NESTED
+        if isinstance(node[i][0], str) and node[i][0] in {'OG', 'OF'} and len(node[i]) >= 6 and node[i][6][0] not in {'OG', 'OF'} and (i != 6 or (i==6 and node[0] not in {'OF', 'OG'})):
+            if node[i][0] in {'OG'}:
+                elemento = ['G', '[', str(int(node[i][2])+1), ',', node[i][4], ']', node[i][6]]
+                if new_node:
+                    new_node.append(',')
+                new_node.append(elemento)
+            elif node[i][0] in {'OF'}:
+                elemento = ['F', '[', str(int(node[i][2]) + 1), ',', node[i][4], ']', node[i][6]]
+                if new_node:
+                    new_node.append(',')
+                new_node.append(elemento)
+        elif len(node[i]) > 2 and isinstance(node[i][2], list) and node[i][2][0] in {'OG'} and len(node[i][2]) >= 6 and node[i][2][6][0] not in {'OF', 'OG'} and int(node[i][2][2]) < int(node[i][2][4]):
+            elemento = ['G', '[', str(int(node[i][2][2])+1), ',', node[i][2][4], ']', node[i][2][6]]
+            if new_node:
+                new_node.append(',')
+            new_node.append(elemento)
+        elif isinstance(node[i][0], str) and node[i][0] in {'_G', '_F'} and len(node[i]) >= 6 and node[i][6][0] not in {'_F', '_G'} and (i != 6 or (i == 6 and node[0] not in {'_F', '_G'})):
+            elemento = node[i]
+            if new_node:  #condizione per cui aggiungo la virgola prima di aggiungere l'elemento solo se la lista non è vuota
+                new_node.append(',')
+            new_node.append(elemento) #così poi mancano le virgole tra i diversi elementi
+        #CASI NESTED
+        elif isinstance(node[i], list) and node[i][0] in {'OG', 'OF'} and node[i][6][0] in {'OF', 'OG'} and int(node[i][2]) < int(node[i][4]):
+            node[i][6][0] = node[i][6][0].lstrip('O')
+            if node[i][0] in {'OG'}:
+                elemento = ['G', '[', str(int(node[i][2])+1), ',', node[i][4], ']', node[i][6]]
+            elif node[i][0] in {'OF'}:
+                elemento = ['F', '[', str(int(node[i][2])+1), ',', node[i][4], ']', node[i][6]]
+            if new_node:
+                new_node.append(',')
+            new_node.append(elemento)
+        elif isinstance(node[i], str) and node[i] in {'OG', 'OF'} and node[i+6][0] in {'OG', 'OF'}:
+            node[i] = node[i].lstrip('O')
+            node[i+6][0] = node[i+6][0].lstrip('O')
+            elemento = [node[i], '[', str(int(node[i+2])+1), ',', node[i+4], ']', node[i+6]]
+            if new_node:
+                new_node.append(',')
+            new_node.append(elemento)
+        elif node[i][0] in {'_G', '_F'} and len(node[i]) >= 6 and node[i][6][0] in {'_F', '_G'}:
+            elemento = [node[i][0], '[', node[i][2], ',', node[i][4], ']', node[i][6]]
+            if new_node:
+                new_node.append(',')
+            new_node.append(elemento)
+    current_time = current_time + 1
+    new_node = modify_formula(new_node, current_time)
+    return [[new_node]]
 def activate_formula(formula, new_formula):
     min_time = extract_min_time((formula))
     for i in range(len(formula)):
@@ -417,11 +467,11 @@ def plot_tree(G):
 #formula = [[['a'], 'U', '[', '2', ',', '5', ']', ['b']]]
 #formula = [[['G', '[', '0', ',', '5', ']', ['x']], '&&', [['a'], 'U', '[', '2', ',', '5', ']', ['b']]]]
 #formula = [[[['a'], 'U', '[', '2', ',', '5', ']', ['b']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
-#OK formula = [[['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
-#OK formula = [['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]] #OK
+#formula = [[['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]] #ok
+#formula = [['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]] #OK
 #formula = [['G', '[', '1', ',', '10', ']', ['F', '[', '1', ',', '7', ']', ['a']]]] #OK
-#formula = [[['G', '[', '0', ',', '5', ']', ['b']], '&&', ['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]] #OK
-#formula = [[['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]], '&&' , ['G', '[', '0', ',', '5', ']', ['b']]]] #ok
+formula = [[['G', '[', '0', ',', '5', ']', ['b']], '&&', ['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]] #OK
+#formula = [[['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]], '&&' , ['G', '[', '0', ',', '5', ']', ['b']]]] #no
 #formula = [[['G', '[', '2', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]] #OK
 max_depth = 6
 tree = build_decomposition_tree(formula, max_depth)
