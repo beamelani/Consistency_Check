@@ -14,18 +14,7 @@ import copy
 
 
 #Scrive la lista come stringa per metterla come nome del nodo
-def formula_to_string(formula):  #HA DEI PROBLEMI
-    if isinstance(formula, list):
-        if len(formula) == 1:
-            return formula_to_string(formula[0])
-        elif len(formula) == 3 and formula[1] in ['&&', '||']:
-            return f"({formula_to_string(formula[0])} {formula[1]} {formula_to_string(formula[2])})"
-        elif isinstance(formula[0][0], str) and formula[0] in ['G', 'F', 'OG', 'OF']:
-            return f"{formula[0]}[{formula[2]},{formula[4]}]({formula_to_string(formula[6])})"
-        else:
-            return ''.join(map(formula_to_string, formula))
-    else:
-        return str(formula)
+
 
 def formula_to_string2(formula):
     if isinstance(formula, list):
@@ -160,21 +149,19 @@ def decompose(node, current_time):
                     return decompose_nested(node[i], node[i][6], [], node[i + 2:])
             if isinstance(node[i][0], str) and node[i][0] in {'G'}: #NB: Fai in modo che non si attivi per un annidato
                 return decompose_G(node)
-            #elif isinstance(node[i][0], list) and node[i][0][0] in {'G'} and node[i][0][0] not in {'O'}:
-                #return decompose_G(node[i][0])
         for i in range(len(node)):
             if isinstance(node[i], list) and isinstance(node[i][0], str) and node[i][0] in {'F'}:
                 if i != 0 and len(node[i]) == 7:
                     return decompose_F(node[i], node[0:i-1], node[i+2:])
                 elif i != 0 and len(node[i]) > 7:
-                    return decompose_F(node[i][0:7], node[0:i - 1], node[i][8:] + node[i+1:], current_time)
+                    return decompose_F(node[i][0:7], node[0:i - 1], node[i][8:] + node[i+1:])
                 if i == 0 and len(node[i]) == 7:
                     return decompose_F(node[i], [], node[i + 2:])
                 elif i == 0 and len(node[i]) > 7:
                     return decompose_F(node[i][0:7], [], node[i][8:] + node[i+1:])
             elif isinstance(node[i], str) and node[i] in {'F'}:
                 if i != 0:
-                    return decompose_F(node[i:i+7], node[0:i], node[i+8:])#left e right erano vuote per qualche ragione???
+                    return decompose_F(node[i:i+7], node[0:i], node[i+8:])
                 if i == 0:
                     return decompose_F(node[i:i+7], [], node[i+8:])
         k = 0
@@ -185,8 +172,7 @@ def decompose(node, current_time):
                 if flatten_list(node)[i] in {'OG', 'OF'}:
                     o = o+1
                 if k == len(flatten_list(node)) and o != 0:
-                    #return decompose_jump(flatten_list(node), current_time)
-                    return decompose_jump2(node, current_time)  #Riscrivi la funzione per accettare la lista non flat
+                    return decompose_jump(node, current_time)
                 elif k == len(flatten_list(node)) and o == 0:
                     #metto la o per cotrollare se la formula ha operatori OG o OF, perché se ha solo op _G, _F e
                     # lettere, non devo fare salto temp, devo solo rimuovere lettere e attivare operatori _.
@@ -208,21 +194,46 @@ def decompose_G(node):
 
 def decompose_F(self, left, right):
     if len(left) > 0 and len(right) > 0:
-        if len(left) == len(right) == 1:
-            left = left[0] #controlla che non creino problemi
-            right = right[0]
-        decomposed_node_1 = [left, ',', right, ',', self[6]]
-        decomposed_node_2 = [left, right, ',', ['OF', '[', self[2], ',', self[4], ']', self[6]]]
-    elif len(left) == 0 and len(right) > 0:
-        if len(right) == 1:
-            right = right[0]
-        decomposed_node_1 = [self[6], ',', right]
-        decomposed_node_2 = [['OF', '[', self[2], ',', self[4], ']', self[6]], ',', right]
-    elif len(right) == 0 and len(left) > 0:
-        if len(left) == 1:
+        if len(left) == 1 and isinstance(left[0], list):
             left = left[0]
-        decomposed_node_1 = [left, ',', self[6]]
-        decomposed_node_2 = [left, ',', ['OF', '[', self[2], ',', self[4], ']', self[6]]]
+        if len(right) == 1 and isinstance(right[0], list):
+            right = right[0]
+        #decomposed_node_1 = [left, ',', right, ',', self[6]]
+        #decomposed_node_2 = [left, right, ',', ['OF', '[', self[2], ',', self[4], ']', self[6]]]
+        decomposed_node_1 = copy.deepcopy(left)
+        decomposed_node_1.append(',')
+        decomposed_node_1.append(right)
+        decomposed_node_1.append(',')
+        decomposed_node_1.append(self[6])
+        decomposed_node_2 = copy.deepcopy(left)
+        decomposed_node_2.append(',')
+        decomposed_node_2.append(right)
+        decomposed_node_2.append(',')
+        decomposed_node_2.append(['OF', '[', self[2], ',', self[4], ']', self[6]])
+    elif len(left) == 0 and len(right) > 0:
+        if len(right) == 1 and isinstance(right[0], list):
+            right = right[0]
+        #decomposed_node_1 = [self[6], ',', right]
+        #decomposed_node_2 = [['OF', '[', self[2], ',', self[4], ']', self[6]], ',', right]
+        decomposed_node_1 = copy.deepcopy(self[6])
+        decomposed_node_1.append(',')
+        decomposed_node_1.append(right)
+        decomposed_node_2 = ['OF', '[', self[2], ',', self[4], ']', self[6]]
+        decomposed_node_2.append(',')
+        decomposed_node_2.append(right)
+    elif len(right) == 0 and len(left) > 0:
+        if len(left) == 1 and isinstance(left[0], list):
+            left = left[0]
+        #decomposed_node_1 = [left, ',', self[6]]
+        # decomposed_node_2 = [left, ',', ['OF', '[', self[2], ',', self[4], ']', self[6]]]
+        decomposed_node_1 = copy.deepcopy(left)
+        decomposed_node_1.append(',')
+        decomposed_node_1.append(self[6])
+        decomposed_node_2 = copy.deepcopy(left)
+        if isinstance(decomposed_node_2[0], str): #controlla che non crei problemi. Devi farlo anche a decomposed_node_1????
+            decomposed_node_2 = [decomposed_node_2]
+        decomposed_node_2.append(',')
+        decomposed_node_2.append(['OF', '[', self[2], ',', self[4], ']', self[6]])
     elif len(right) == 0 and len(left) == 0:
         decomposed_node_1 = [self[6]]
         decomposed_node_2 = ['OF', '[', self[2], ',', self[4], ']', self[6]]
@@ -288,62 +299,11 @@ def decompose_nested(self, argument, pre, post): #pre, post sono ciò che sta pr
     return decomposed_node
 
 
-def decompose_jump(node, current_time): #bisogna aggiungere casi nested
+def decompose_jump(node, current_time):
     new_node = []
     for i in range(len(node)):
         #CASI NON NESTED
-        if node[i] in {'OG'} and len(node) >= i+6 and node[i+6] not in {'OF', 'OG'} and int(node[i+2]) < int(node[i+4]):
-            elemento = ['G', node[i+1], str(int(node[i+2])+1), node[i+3], node[i+4], node[i+5], [node[i+6]]]#probelma se argomento di G non è un solo elemento
-            if new_node:
-                new_node.append(',')
-            new_node.append(elemento)
-        elif node[i] in {'OF'} and len(node) >= i+6 and node[i+6] not in {'OF', 'OG'} and int(node[i+2]) < int(node[i+4]):
-            elemento = ['F', node[i + 1], str(int(node[i + 2]) + 1), node[i + 3], node[i + 4], node[i + 5], [node[i + 6]]]  # i+6 compreso, verifica
-            if new_node:
-                new_node.append(',')
-            new_node.append(elemento)
-        elif node[i] in {'_G', '_F'} and len(node) >= i+6 and node[i+6] not in {'_F', '_G'}:
-            if i != 0 and node[i-1] not in {']'}: #non voglio che sia l'operatore interno di un op annidato
-                elemento = node[i:i+7]
-                if new_node:  #condizione per cui aggiungo la virgola prima di aggiungere l'elemento solo se la lista non è vuota
-                    new_node.append(',')
-                new_node.append(elemento) #così poi mancano le virgole tra i diversi elementi
-            elif i == 0:
-                elemento = node[i:i+7]
-                if new_node:
-                    new_node.append(',')
-                new_node.append(elemento)
-        #CASI NESTED
-        elif node[i] in {'OG'} and len(node) >= i+6 and node[i+6] in {'OF', 'OG'} and int(node[i+2]) < int(node[i+4]):
-            node[i+6] = node[i+6].lstrip('O')
-            elemento = ['G', node[i + 1], str(int(node[i + 2]) + 1), node[i + 3], node[i + 4], node[i + 5], node[i + 6:]] #non so se fare fino alla fine va sempre bene--> No leva
-            if new_node:
-                new_node.append(',')
-            new_node.append(elemento)
-        elif node[i] in {'OF'} and len(node) >= i + 6 and node[i + 6] in {'OF', 'OG'} and int(node[i+2]) < int(node[i+4]):
-            node[i+6] = node[i+6].lstrip('O')
-            elemento = ['F', node[i + 1], str(int(node[i + 2]) + 1), node[i + 3], node[i + 4], node[i + 5], node[i + 6:]]  # non so se fare fino alla fine va sempre bene--> No leva
-            if new_node:
-                new_node.append(',')
-            new_node.append(elemento)
-        elif node[i] in {'_G', '_F'} and len(node) >= i+6 and node[i+6] in {'_F', '_G'}:
-            #node[i + 12] = [node[i + 12]]
-            #elemento = node[i:i + 13]
-            elemento = [node[i], '[', node[i+2], ',', node[i+4], ']', node[i+6:i+13]]
-            if new_node:
-                new_node.append(',')
-            new_node.append(elemento)
-    current_time = current_time + 1
-    new_node = modify_formula(new_node, current_time)
-    return [[new_node]]
-
-
-
-def decompose_jump2(node, current_time): #modificale per accettare lista non flat
-    new_node = []
-    for i in range(len(node)):
-        #CASI NON NESTED
-        if isinstance(node[i][0], str) and node[i][0] in {'OG', 'OF'} and len(node[i]) >= 6 and int(node[i][2]) < int(node[i][4]) and node[i][6][0] not in {'OG', 'OF'} and (i != 6 or (i==6 and node[0] not in {'OF', 'OG'})):
+        if isinstance(node[i][0], str) and node[i][0] in {'OG', 'OF'} and len(node[i]) >= 6 and int(node[i][2]) < int(node[i][4]) and node[i][6][0] not in {'OG', 'OF'} and (i != 6 or (i==6 and node[i-1] in {','})): #ultima condizione perché non voglio che l'elemento sia la parte interna di un operatore annidato
             if node[i][0] in {'OG'}:
                 elemento = ['G', '[', str(int(node[i][2])+1), ',', node[i][4], ']', node[i][6]]
                 if new_node:
@@ -369,7 +329,7 @@ def decompose_jump2(node, current_time): #modificale per accettare lista non fla
             elemento = node[i]
             if new_node:  #condizione per cui aggiungo la virgola prima di aggiungere l'elemento solo se la lista non è vuota
                 new_node.append(',')
-            new_node.append(elemento) #così poi mancano le virgole tra i diversi elementi
+            new_node.append(elemento)
         elif isinstance(node[i], list) and len(node[i]) > 2 and isinstance(node[i][2][0], str) and node[i][2][0] in {'OG'} and int(node[i][2][2]) < int(node[i][2][4]):
             elemento = ['G', '[', str(int(node[i][2][2])+1), ',', node[i][2][4], ']', node[i][2][6]]
             if new_node:
@@ -476,18 +436,18 @@ def plot_tree(G):
 #formula = [[['G', '[', '0', ',', '2', ']', ['p']], '&&', ['F', '[', '1', ',', '3', ']', ['q']]]] #ok
 #formula = [[['G', '[', '0', ',', '3', ']', ['p']], '||', ['F', '[', '0', ',', '3', ']', ['q']]]] #ok
 #formula = ['G', '[', '0', ',', '3', ']', ['p']] #ok
-formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]] #NON funziona, devi fare in modo che quando scomponi F non si crea un altro livello. Non voglio [...], q, ma voglio [...,q]
+#formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]] #ok
 #formula = [[['G', '[', '0', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']], '||', ['G', '[', '0', ',', '5', ']', ['x']], '&&', ['F', '[', '0', ',', '2', ']', ['y']]]]  #OK
 #formula = [[['a'], 'U', '[', '2', ',', '5', ']', ['b']]]
 #formula = [[['G', '[', '0', ',', '5', ']', ['x']], '&&', [['a'], 'U', '[', '2', ',', '5', ']', ['b']]]]
 #formula = [[[['a'], 'U', '[', '2', ',', '5', ']', ['b']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]]
 #formula = [[['F', '[', '0', ',', '3', ']', ['q']], '&&', ['G', '[', '0', ',', '5', ']', ['x']]]] #ok
 #formula = [['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]] #OK
-#formula = [['G', '[', '1', ',', '10', ']', ['F', '[', '1', ',', '7', ']', ['a']]]] #OK
+#formula = [['G', '[', '1', ',', '10', ']', ['F', '[', '1', ',', '7', ']', ['a']]]] #OK, ma non si legge niente, nodi troppo vicini
 #formula = [[['G', '[', '0', ',', '5', ']', ['b']], '&&', ['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]]]] #OK
 #formula = [[['F', '[', '0', ',', '5', ']', ['G', '[', '1', ',', '7', ']', ['a']]], '&&' , ['G', '[', '0', ',', '5', ']', ['b']]]] #OK
-#formula = [[['G', '[', '2', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]] #OK
-max_depth = 11
+formula = [[['G', '[', '2', ',', '3', ']', ['p']], '&&', ['F', '[', '0', ',', '3', ']', ['q']]]] #OK
+max_depth = 10
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
 plot_tree(tree)
