@@ -11,6 +11,9 @@ F come sopra
 """
 #NB: usa .extend invece di .append per riassemblare la lista dopo averne decomposta una parte
 
+#PRIMA scrivo la funzione decompose e verifico che funzioni, poi cerco di integrarla alla funzione add children per
+#creare l'albero
+
 import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
@@ -22,7 +25,14 @@ def extract_min_time(formula):
     Estrae l'istante di tempo minimo da una formula STL, serve per sapere a quale istante mi trovo
     durante la decomposizione
     """
-    return
+    min_times = []
+    if isinstance(formula, list):
+        if len(formula) == 1:
+            return extract_min_time(formula[0])
+        for i in range(1, len(formula)):
+            min_time = formula[i][1]
+            min_times.append(min_time)
+    return min(min_times)
 
 def formula_to_string(formula):
     """
@@ -39,22 +49,54 @@ def decompose(node, current_time):
     :param current_time: istante di tempo attuale, per capire quali operatori sono attivi e quali no
     :return: ritorna la lista decomposta (i.e. il successivo nodo del tree
     """
+    if isinstance(node, list):
+        if len(node) == 1:
+            return decompose(node[0], current_time)
+        if node[0] == '&&':
+            return decompose_and()
+        elif node[0] == '||':
+            return decompose_or()
+        elif node[0] == 'G':
+            return decompose_G()
+        elif node[0] == 'F':
+            return decompose_F()
+        elif node[0] == 'U':
+            return decompose_U()
+        elif node[0] == ',':
+            for j in range(1,len(node)):
+                if node[j][0] == 'G':
+                    return decompose_G()
+                elif node[j][0] == 'F':
+                    return decompose_F()
+                elif node[j][0] == 'U':
+                    return decompose_U()
+
     return
+
 
 
 def decompose_G():
     return
 
 
-def decompose_until():
+def decompose_F():
     return
 
 
-def decompose_and():
+def decompose_U():
+    return
+
+
+def decompose_and(node):
+    #dovrei restituire la stessa lista, ma con ',' al posto di '&&'?
+    #oppure è meglio restituire il decompose dei singoli elementi che sono in and?
+    #Ma scegliendo questa seconda opzione come faccio poi ad unire le decomposizioni dei singoli elmenti in una
+    #sola lista??
     return
 
 
 def decompose_or():
+    for i in range(len(node)):
     return
 
 
@@ -70,6 +112,7 @@ def decompose_jump():
     return
 
 #Queste funzioni sono copiate dal vecchio codice, andranno riadattate
+"""
 def build_decomposition_tree(root, max_depth):
     G = nx.DiGraph()
     time = extract_min_time(root)
@@ -116,9 +159,11 @@ def plot_tree(G):
     plt.title('Decomposition Tree')
     plt.show()
 
-
+"""
 formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]]
 max_depth = 10
-tree = build_decomposition_tree(formula, max_depth)
-print(tree)
-plot_tree(tree)
+min_time = extract_min_time(formula)
+decompose(formula,min_time)
+#tree = build_decomposition_tree(formula, max_depth)
+#print(tree)
+#plot_tree(tree)
