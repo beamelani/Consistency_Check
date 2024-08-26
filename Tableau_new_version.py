@@ -53,9 +53,9 @@ def decompose(node, current_time):
         if len(node) == 1:
             return decompose(node[0], current_time)
         if node[0] == '&&':
-            return decompose_and()
+            return decompose_and(node)
         elif node[0] == '||':
-            return decompose_or()
+            return decompose_or(node)
         elif node[0] == 'G':
             return decompose_G()
         elif node[0] == 'F':
@@ -63,41 +63,61 @@ def decompose(node, current_time):
         elif node[0] == 'U':
             return decompose_U()
         elif node[0] == ',':
-            for j in range(1,len(node)):
-                if node[j][0] == 'G':
-                    return decompose_G()
-                elif node[j][0] == 'F':
-                    return decompose_F()
-                elif node[j][0] == 'U':
+            for j in range(1, len(node)):
+                if node[j][0] == 'G' and node[j][1] == str(min_time):
+                    result = decompose_G(node[j]) #meglio passare una copia???
+                    new_node = copy.deepcopy(node)
+                    new_node.extend(result)
+                    del new_node[j]
+                    print(new_node)
+                    return new_node
+                elif node[j][0] == 'F'and node[j][1] == str(min_time):
+                    result = decompose_F(node[j], node, j)
+                    print(result[0])
+                    print(result[1])
+                    return result
+                elif node[j][0] == 'U'and node[j][1] == str(min_time):
                     return decompose_U()
 
     return
 
 
 
-def decompose_G():
-    return
+def decompose_G(node):
+    node = [['O', node], node[3]]
+    return node
 
 
-def decompose_F():
-    return
+def decompose_F(node, formula, index):
+    node_1 = [['0', node]]
+    node_2 = [node[3]]
+    formula_1 = copy.deepcopy(formula)
+    formula_2 = copy.deepcopy(formula)
+    del formula_1[index]
+    del formula_2[index]
+    formula_1.extend(node_1)
+    formula_2.extend(node_2)
+    return [formula_1, formula_2]
 
 
 def decompose_U():
     return
 
 
-def decompose_and(node):
-    #dovrei restituire la stessa lista, ma con ',' al posto di '&&'?
-    #oppure è meglio restituire il decompose dei singoli elementi che sono in and?
-    #Ma scegliendo questa seconda opzione come faccio poi ad unire le decomposizioni dei singoli elmenti in una
-    #sola lista??
-    return
-
-
-def decompose_or():
+def decompose_and(node): #voglio che tolga TUTTI gli '&&'
     for i in range(len(node)):
-    return
+        if isinstance(node[i], list):
+            decompose_and(node[i])
+        elif node[i] == '&&':
+            node[i] = ','
+    print(node)
+    return [node]
+
+
+def decompose_or(node): #voglio che resituisca come liste SEPARATE le diverse sottoformule unite da || (perché dovranno essere children diversi nell'albero)
+    for element in node[1:]:
+        print(element)
+        yield element
 
 
 def decompose_nested():
@@ -160,10 +180,12 @@ def plot_tree(G):
     plt.show()
 
 """
-formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]]
+#formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]]
+formula = [[',', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]]
 max_depth = 10
 min_time = extract_min_time(formula)
-decompose(formula,min_time)
+result = decompose(formula, min_time)
+print(result)
 #tree = build_decomposition_tree(formula, max_depth)
 #print(tree)
 #plot_tree(tree)
