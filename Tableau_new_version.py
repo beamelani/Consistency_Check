@@ -56,30 +56,52 @@ def decompose(node, current_time):
             return decompose_and(node)
         elif node[0] == '||':
             return decompose_or(node)
-        elif node[0] == 'G':
+        #Se il nodo iniziale ha solo un elemento (quindi non è un and o or di più sottoformule) lo decompongo con i 5 elif di seguito
+        elif node[0] == 'G' and node[3][0] not in {'F', 'G'}: #non credo che in questi serva controllare il tempo perché se ho un solo elemento è sicuramente attivo perché considero solo il suo intervallo temp
             return decompose_G()
-        elif node[0] == 'F':
+        elif node[0] == 'F' and node[3][0] not in {'F', 'G'}:
             return decompose_F()
         elif node[0] == 'U':
             return decompose_U()
+        #Caso nested
+        elif node[0] in {'F', 'G'} and node[3][0] in {'F', 'G'}:
+            return decompose_nested()
+        #Jump
+        elif node[0] == 'O': #se c'è un solo elemento non servono altre condizioni
+            return decompose_jump(node)
+        #Scrivo un nodo come una virgola (un and) di tutti gli elementi del nodo
         elif node[0] == ',':
             for j in range(1, len(node)):
-                if node[j][0] == 'G' and node[j][1] == str(min_time):
+                # Devo controllare se è un G, se è attivo (lowerb=current_time) e se non è nested
+                # perché se è nested devo controllare se è attivo sommando i lb degli intervalli e poi di nuovo
+                # sommare i lb degli intervalli quando estraggo l'argomento
+                if node[j][0] == 'G' and node[j][1] == str(min_time) and node[j][3][0] not in {'G', 'F'}:
                     result = decompose_G(node[j]) #meglio passare una copia???
                     new_node = copy.deepcopy(node)
                     new_node.extend(result)
                     del new_node[j]
                     print(new_node)
                     return new_node
-                elif node[j][0] == 'F'and node[j][1] == str(min_time):
+                elif node[j][0] == 'F' and node[j][1] == str(min_time) and node[j][3][0] not in {'G', 'F'}:
                     result = decompose_F(node[j], node, j)
                     print(result[0])
                     print(result[1])
                     return result
                 elif node[j][0] == 'U'and node[j][1] == str(min_time):
                     return decompose_U()
-
-    return
+                #Caso Nested:
+                elif node[j][0] in {'G', 'F'} and node[j][3][0] in {'G', 'F'} and int(node[j][1]) + int(node[j][3][1]) == min_time:
+                    return decompose_nested(node[j])
+        else: #se arrivo qui vuol dire che non sono entrata in nessun return e quindi non c'era nulla da decomporre
+            #perché era gia tutto decomposto o non ancora attivo
+            counter = 0
+            for i in range(1, len(node)): #controllo che ci sia almeno un 0, altrimenti non serve fare jump
+                if node[i][0] == 'O':
+                    counter += 1
+            if counter > 0:
+                return decompose_jump(node)
+#Bisogna ancora aggiungere il JUMP
+    return None #se non c'è niente da decomporre
 
 
 
@@ -124,11 +146,21 @@ def decompose_nested():
     return
 
 
-def decompose_jump():
+def decompose_jump(node):
     """
 
     :return: se niente può essere decomposto e c'è almeno un operatore O, devo fare il salto temporale
     """
+    #Caso 1: ho un solo operatore, è quindi O è in posizione 0
+    #Modifica questa versione (perché siccome devi togliere anche le cose come ['p'], è più facile scrivere la funzione
+    #in modo che crei un nuovo nodo prendendo dal vecchio solo le cose che ci interessano, invece di modificare il nodo esistente
+    if node[0] == 'O' and int(node[1][1]) < int(node[1][2]):
+        node = node[1] #tolgo 'O'
+        node[1][1] = str(int(node[1][1])+1)
+    elif node [0] == ',':
+        for i in range(1, len(node)):
+            if node[i][0] == 'O' and int(node[i][1][1]) < int(node[i][1][2]):
+                node[i] = node[i][1:]
     return
 
 #Queste funzioni sono copiate dal vecchio codice, andranno riadattate
@@ -182,6 +214,7 @@ def plot_tree(G):
 """
 #formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]]
 formula = [[',', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]]
+formula = [['G', '0', '3', ['F', '1', '4', ['p']]]]
 max_depth = 10
 min_time = extract_min_time(formula)
 result = decompose(formula, min_time)
