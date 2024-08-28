@@ -29,10 +29,22 @@ def extract_min_time(formula):
     if isinstance(formula, list):
         if len(formula) == 1:
             return extract_min_time(formula[0])
-        for i in range(1, len(formula)):
-            min_time = formula[i][1]
-            min_times.append(min_time)
-    return min(min_times)
+        if formula[0] in {'&&', '||', ','}:
+            for i in range(1, len(formula)):
+                if formula[i][3][0] not in {'G', 'F'}: #caso non nested
+                    min_time = formula[i][1]
+                    min_times.append(min_time)
+                else:
+                    min_time = str(int(formula[i][1]) + int(formula[i][3][1]))
+                    min_times.append(min_time)
+        elif formula [0] in {'G', 'F', 'U'}: #formula ha un solo elemento
+            if formula[3][0] not in {'G', 'F'}: #caso non nested
+                min_time = formula[1]
+                min_times.append(min_time)
+            else:
+                min_time = str(int(formula[1]) + int(formula[3][1]))
+                min_times.append(min_time)
+    return int(min(min_times))
 
 def formula_to_string(formula):
     """
@@ -58,14 +70,15 @@ def decompose(node, current_time):
             return decompose_or(node)
         #Se il nodo iniziale ha solo un elemento (quindi non è un and o or di più sottoformule) lo decompongo con i 5 elif di seguito
         elif node[0] == 'G' and node[3][0] not in {'F', 'G'}: #non credo che in questi serva controllare il tempo perché se ho un solo elemento è sicuramente attivo perché considero solo il suo intervallo temp
-            return decompose_G()
+            result = decompose_G(node, 1)
+            print(result)
         elif node[0] == 'F' and node[3][0] not in {'F', 'G'}:
-            return decompose_F()
+            return decompose_F(node, [], 0)
         elif node[0] == 'U':
             return decompose_U()
         #Caso nested
         elif node[0] in {'F', 'G'} and node[3][0] in {'F', 'G'}:
-            return decompose_nested()
+            return decompose_nested(node, [], 0)
         #Jump
         elif node[0] == 'O': #se c'è un solo elemento non servono altre condizioni
             return decompose_jump(node)
@@ -76,7 +89,7 @@ def decompose(node, current_time):
                 # perché se è nested devo controllare se è attivo sommando i lb degli intervalli e poi di nuovo
                 # sommare i lb degli intervalli quando estraggo l'argomento
                 if node[j][0] == 'G' and node[j][1] == str(min_time) and node[j][3][0] not in {'G', 'F'}:
-                    result = decompose_G(node[j]) #meglio passare una copia???
+                    result = decompose_G(node[j], 0) #meglio passare una copia???
                     new_node = copy.deepcopy(node)
                     new_node.extend(result)
                     del new_node[j]
@@ -87,11 +100,11 @@ def decompose(node, current_time):
                     print(result[0])
                     print(result[1])
                     return result
-                elif node[j][0] == 'U'and node[j][1] == str(min_time):
+                elif node[j][0] == 'U' and node[j][1] == str(min_time):
                     return decompose_U()
                 #Caso Nested:
                 elif node[j][0] in {'G', 'F'} and node[j][3][0] in {'G', 'F'} and int(node[j][1]) + int(node[j][3][1]) == min_time:
-                    return decompose_nested(node[j])
+                    return decompose_nested(node[j], node, j)
         else: #se arrivo qui vuol dire che non sono entrata in nessun return e quindi non c'era nulla da decomporre
             #perché era gia tutto decomposto o non ancora attivo
             counter = 0
@@ -105,20 +118,30 @@ def decompose(node, current_time):
 
 
 
-def decompose_G(node):
-    node = [['O', node], node[3]]
-    return node
+def decompose_G(node, single):
+    #single==1 indica che la formula è unica (non fa già parte di un and) e quindi devo aggiungere ',' all'inizio
+    if single == 1:
+        node = [',', ['O', node], node[3]]
+    else:
+        node = [['O', node], node[3]]
+    return [node]
 
 
 def decompose_F(node, formula, index):
     node_1 = [['0', node]]
     node_2 = [node[3]]
-    formula_1 = copy.deepcopy(formula)
-    formula_2 = copy.deepcopy(formula)
-    del formula_1[index]
-    del formula_2[index]
-    formula_1.extend(node_1)
-    formula_2.extend(node_2)
+    if index > 0: #se il F è una sottoformula (è in and con altre formule)
+        formula_1 = copy.deepcopy(formula)
+        formula_2 = copy.deepcopy(formula)
+        del formula_1[index] #tolgo il F dalla formula di partenza
+        del formula_2[index]
+        formula_1.extend(node_1) #sdoppio la formula di partenza (senza il F) e aggiungo a una un pezzo e all'altra l'altro
+        formula_2.extend(node_2)
+    else: #se il F è l'unica formula
+        formula_1 = node_1
+        formula_2 = node_2
+        print(formula_1)
+        print(formula_2)
     return [formula_1, formula_2]
 
 
@@ -136,13 +159,58 @@ def decompose_and(node): #voglio che tolga TUTTI gli '&&'
     return [node]
 
 
-def decompose_or(node): #voglio che resituisca come liste SEPARATE le diverse sottoformule unite da || (perché dovranno essere children diversi nell'albero)
-    for element in node[1:]:
-        print(element)
-        yield element
+def decompose_or(node): #basta togliere l'or e fare in modo che la lista venga restituita alla funzione add children
+    #come lista di tot elementi, dove ogni elemento è un argomento dell'or, in modo che add children la interpreti come
+    #tanti children diversi
+    node = node[1:]
+    print(node)
+    return node
 
-
-def decompose_nested():
+#['G', '0', '3', ['F', '1', '4', ['p']]]
+def decompose_nested(node, formula, index):
+    #se la formula è unica (non un and di sottoformule), allora index==0 e formula=[]
+    if index == 0:
+        if node[0] == 'G':
+            extract = copy.deepcopy(node[3])
+            extract[1] = str(int(node[1]) + int(extract[1])) #quando estraggo l'op annidato devo modificare l'intervallo temporale
+            extract[2] = str(int(node[1]) + int(extract[2]))
+            node = [[',', ['O', node], extract]]
+            print(node)
+            return node
+        if node[0] == 'F':
+            extract = copy.deepcopy(node[3])
+            extract[1] = str(int(node[1]) + int(extract[1])) #quando estraggo l'op annidato devo modificare l'intervallo temporale
+            extract[2] = str(int(node[1]) + int(extract[2]))
+            res_1 = copy.deepcopy(node)
+            res_1 = ['O', res_1]
+            node = [res_1, extract]
+            print(node)
+            return node
+    else:
+        if node[0] == 'G':
+            res_1 = copy.deepcopy(formula)
+            del res_1[index] #tolgo il nested dalla formula
+            extract = copy.deepcopy(node[3])
+            extract[1] = str(int(node[1]) + int(extract[1]))  # quando estraggo l'op annidato devo modificare l'intervallo temporale
+            extract[2] = str(int(node[1]) + int(extract[2]))
+            node = [['O', node], extract]
+            res_1.extend(node)
+            print(res_1)
+            return res_1
+        elif node[0] == 'F':
+            res_1 = copy.deepcopy(formula)
+            res_2 = copy.deepcopy(formula)
+            del res_1[index]
+            del res_2[index]
+            extract = copy.deepcopy(node[3])
+            extract[1] = str(int(node[1]) + int(extract[1]))
+            extract[2] = str(int(node[1]) + int(extract[2]))
+            node = [['O', node]]
+            res_1.extend(node)
+            res_2.extend([extract])
+            print(res_1)
+            print(res_2)
+            return [res_1, res_2]
     return
 
 
@@ -152,12 +220,10 @@ def decompose_jump(node):
     :return: se niente può essere decomposto e c'è almeno un operatore O, devo fare il salto temporale
     """
     #Caso 1: ho un solo operatore, è quindi O è in posizione 0
-    #Modifica questa versione (perché siccome devi togliere anche le cose come ['p'], è più facile scrivere la funzione
-    #in modo che crei un nuovo nodo prendendo dal vecchio solo le cose che ci interessano, invece di modificare il nodo esistente
     if node[0] == 'O' and int(node[1][1]) < int(node[1][2]):
-        node = node[1] #tolgo 'O'
+        node = node[1] #tolgo 'O' e tolgo ['p'] (o quello che c'è)
         node[1][1] = str(int(node[1][1])+1)
-    elif node [0] == ',':
+    elif node[0] == ',':
         for i in range(1, len(node)):
             if node[i][0] == 'O' and int(node[i][1][1]) < int(node[i][1][2]):
                 node[i] = node[i][1:]
@@ -213,12 +279,20 @@ def plot_tree(G):
 
 """
 #formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]]
-formula = [[',', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]]
-formula = [['G', '0', '3', ['F', '1', '4', ['p']]]]
+#formula = [['||', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]]
+#formula = [[',', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]]
+#formula = [[',', ['F', '0', '2', ['p']], ['F', '1', '3', ['q']]]]
+#formula = [['G', '0', '2', ['p']]]
+#formula = [['F', '0', '2', ['p']]]
+#formula = [['G', '0', '3', ['F', '1', '4', ['p']]]]
+#formula = [['F', '0', '3', ['G', '1', '4', ['p']]]]
+#formula = [[',', ['G', '0', '3', ['F', '1', '4', ['p']]], ['F', '1', '3', ['q']]]]
+formula = [[',', ['F', '0', '3', ['F', '1', '4', ['p']]], ['F', '1', '3', ['q']]]]
+#formula = [[',', ['O', ['G', '0', '3', ['F', '1', '4', ['p']]]], ['F', '1', '4', ['p']]]]
 max_depth = 10
 min_time = extract_min_time(formula)
 result = decompose(formula, min_time)
-print(result)
+#print(result)
 #tree = build_decomposition_tree(formula, max_depth)
 #print(tree)
 #plot_tree(tree)
