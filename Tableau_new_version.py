@@ -214,19 +214,25 @@ def decompose_nested(node, formula, index):
     return
 
 
-def decompose_jump(node):
+def decompose_jump(node, current_time):
     """
-
+    deco fare in modo che venga chiamta solo quando NULLA può essere più decomposto
     :return: se niente può essere decomposto e c'è almeno un operatore O, devo fare il salto temporale
+    NB: devo anche rimuovere tutto ciò che è già stato totalmente decomposto, per esempio espressioni come ['p'],
+    quindi mi sembra che sia più semplice ricostruire un nuovo nodo a partire dall'input, inserendo solo gli elementi
+    necessari e con le opportune modifiche. Quindi saranno da inserire così come sono le espressioni non ancora attive
+    (quelle con il lower bound > current time), mentre per le espressioni precedute da 'O', bisognerà rimuovere 'O' e
+    spostare in avanti di 1 il lower bound. I restanti elementi vanno omessi
     """
-    #Caso 1: ho un solo operatore, è quindi O è in posizione 0
-    if node[0] == 'O' and int(node[1][1]) < int(node[1][2]):
-        node = node[1] #tolgo 'O' e tolgo ['p'] (o quello che c'è)
-        node[1][1] = str(int(node[1][1])+1)
-    elif node[0] == ',':
+    #Caso in cui input sia della forma [',', [], [], ....] (un and di tante sottoformule)
+    new_node = []
+    if node[0] == ',':
         for i in range(1, len(node)):
-            if node[i][0] == 'O' and int(node[i][1][1]) < int(node[i][1][2]):
-                node[i] = node[i][1:]
+            if node[i][0] in {'F', 'G', 'U'}:
+                new_node.extend(node[i]) #testare per vedere se funziona o se va modificato come append nel vecchio codice
+            elif node[i][0] in {'O'} and int(node[i][1][1]) < current_time: #incremento solo se lb < current_time
+                sub_formula = copy.deepcopy(node[i][1]) #node[i][1] dovrebbe essere l'argomenti di 'O'
+                sub_formula[1] = str(int(sub_formula[1])+1)
     return
 
 #Queste funzioni sono copiate dal vecchio codice, andranno riadattate
