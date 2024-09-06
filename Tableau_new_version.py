@@ -46,6 +46,7 @@ def extract_min_time(formula):
                 min_times.append(min_time)
     return int(min(min_times))
 
+#DA SISTEMARE
 """
 def formula_to_string(formula):
     if isinstance(formula, list) and len(formula) == 1 and isinstance(formula[0], list):
