@@ -172,7 +172,7 @@ def decompose(node, current_time):
                 elif node[j][0] == 'U' and node[j][1] == str(current_time):
                     return decompose_U()
                 #Caso Nested:
-                elif node[j][0] in {'G', 'F'} and node[j][3][0] in {'G', 'F'} and int(node[j][1]) + int(node[j][3][1]) == min_time:
+                elif node[j][0] in {'G', 'F'} and node[j][3][0] in {'G', 'F'} and int(node[j][1]) + int(node[j][3][1]) == current_time:
                     return decompose_nested(node[j], node, j)
                 else: #se arrivo qui vuol dire che non sono entrata in nessun return e quindi non c'era nulla da decomporre
                     #perché l'elemento era già decomposto o non ancora attivo
@@ -255,7 +255,7 @@ def decompose_nested(node, formula, index):
             extract[2] = str(int(node[1]) + int(extract[2]))
             node = [['O', node], extract]
             res_1.extend(node)
-            return res_1
+            return [res_1]
         elif node[0] == 'F':
             res_1 = copy.deepcopy(formula)
             res_2 = copy.deepcopy(formula)
@@ -267,7 +267,7 @@ def decompose_nested(node, formula, index):
             node = [['O', node]]
             res_1.extend(node)
             res_2.extend([extract])
-            return [res_1, res_2]
+            return [res_1, res_2] #ricontrolla se le parentesi vanno bene
     return
 
 
@@ -347,12 +347,11 @@ def plot_tree(G):
 #formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
 #formula = [['||', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
 #formula = [['&&', ['F', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
-formula = [['G', '0', '3', ['F', '1', '4', ['p']]]] #not ok
-#formula = [['F', '0', '3', ['G', '1', '4', ['p']]]]
-#formula = [[',', ['G', '0', '3', ['F', '1', '4', ['p']]], ['F', '1', '3', ['q']]]]
-#formula = [[',', ['F', '0', '3', ['F', '1', '4', ['p']]], ['F', '1', '3', ['q']]]]
-#formula = [[',', ['O', ['G', '0', '3', ['F', '1', '4', ['p']]]], ['F', '1', '4', ['p']]]]
-max_depth = 14
+#formula = [['G', '0', '3', ['F', '1', '4', ['p']]]] #credo venga giusto, ma non si capisce niente perché i nodi sono troppo appiccicati
+#formula = [['F', '0', '3', ['G', '1', '4', ['p']]]] #ok
+formula = [['&&', ['G', '0', '3', ['F', '1', '4', ['p']]], ['F', '1', '3', ['q']]]] #ok
+
+max_depth = 6
 
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
