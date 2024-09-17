@@ -66,16 +66,15 @@ def extract_min_time(formula):
         return None
 
 
-#DA SISTEMARE
-"""
+
 def formula_to_string(formula):
-    if isinstance(formula, list) and len(formula) == 1 and isinstance(formula[0], list):
+    if isinstance(formula, list) and len(formula) == 1 and isinstance(formula[0], list): # se ho [[formula]]
         formula = formula[0]
 
-    if isinstance(formula, list) and len(formula) == 1 and isinstance(formula[0], str):
+    if isinstance(formula, list) and len(formula) == 1 and isinstance(formula[0], str): #serve per formule del tipo ['p']
         return formula[0]
 
-    if isinstance(formula, str):
+    if isinstance(formula, str): #probabilemente non serve
         return formula
 
     operator = formula[0]
@@ -84,11 +83,11 @@ def formula_to_string(formula):
         _, lowerb, upperb, arg = formula
         return f"G[{lowerb}, {upperb}] ({formula_to_string(arg)})"
 
-    elif operator == 'F':  # Finally operator
+    elif operator == 'F':
         _, lowerb, upperb, arg = formula
         return f"F[{lowerb}, {upperb}] ({formula_to_string(arg)})"
 
-    elif operator == 'O':  # Once operator
+    elif operator == 'O':
         _, arg = formula
         return f"O ({formula_to_string(arg)})"
 
@@ -108,15 +107,12 @@ def formula_to_string(formula):
         subformulas = [f"({formula_to_string(subformula)})" for subformula in formula[1:]]
         return " || ".join(subformulas)
 
-    elif operator == '->':  # Implication
-        subformulas = [f"({formula_to_string(subformula)})" for subformula in formula[1:]]
-        return " -> ".join(subformulas)
+    #elif operator == '->':  # Implication
+        #subformulas = [f"({formula_to_string(subformula)})" for subformula in formula[1:]]
+        #return " -> ".join(subformulas)
 
-    else:
-        raise ValueError(f"Unknown operator: {operator}")
+
 """
-
-
 def formula_to_string(lista):
     elementi = []
     for elem in lista:
@@ -125,6 +121,7 @@ def formula_to_string(lista):
         else:
             elementi.append(str(elem))
     return ", ".join(elementi)
+"""
 
 def decompose(node, current_time):
     """
@@ -344,14 +341,14 @@ def plot_tree(G):
     plt.show()
 
 
-#formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
+formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
 #formula = [['||', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
 #formula = [['&&', ['F', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
 #formula = [['G', '0', '3', ['F', '1', '4', ['p']]]] #credo venga giusto, ma non si capisce niente perché i nodi sono troppo appiccicati
 #formula = [['F', '0', '3', ['G', '1', '4', ['p']]]] #ok
-formula = [['&&', ['G', '0', '3', ['F', '1', '4', ['p']]], ['F', '1', '3', ['q']]]] #ok
+#formula = [['&&', ['G', '0', '3', ['F', '1', '4', ['p']]], ['F', '1', '3', ['q']]]] #ok
 
-max_depth = 6
+max_depth = 15
 
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
