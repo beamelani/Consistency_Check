@@ -341,13 +341,15 @@ def plot_tree(G):
     plt.show()
 
 
-formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
+#formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
 #formula = [['||', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
 #formula = [['&&', ['F', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
 #formula = [['G', '0', '3', ['F', '1', '4', ['p']]]] #credo venga giusto, ma non si capisce niente perché i nodi sono troppo appiccicati
+formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['p']]]]]
+#formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['F', '1', '3', ['p']]]]]]
 #formula = [['F', '0', '3', ['G', '1', '4', ['p']]]] #ok
 #formula = [['&&', ['G', '0', '3', ['F', '1', '4', ['p']]], ['F', '1', '3', ['q']]]] #ok
-
+#formula = [['&&', ['G', '0', '4', ['x>5']], ['F', '2', '4', ['x<2']]]]
 max_depth = 15
 
 tree = build_decomposition_tree(formula, max_depth)
