@@ -9,16 +9,21 @@ F come sopra
 [['O', 'arg']]
 [['U', 'lowerb', 'upperb', 'arg1', 'arg2']]
 """
+import re
+
 #NB: usa .extend invece di .append per riassemblare la lista dopo averne decomposta una parte
 
 #PRIMA scrivo la funzione decompose e verifico che funzioni, poi cerco di integrarla alla funzione add children per
 #creare l'albero
 
+#Scrivi funzione che verifica se un nodo è uno stato ed estrae le espressioni atomiche e le codifica in un problema SMT.
+#Prima dovrebbe verificare che non ci siano espressioni del tipo OF[a,a], in quel caso il nodo va rigettato senza nemmeno
+#passare da SMT
 import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
 import copy
-
+from z3 import *
 
 def extract_min_time(formula):
     """
@@ -175,7 +180,13 @@ def decompose(node, current_time):
                     #perché l'elemento era già decomposto o non ancora attivo
                     counter += 1
         if counter == len(node) - 1: #-1 perché un elemento del nodo è la virgola
-            return decompose_jump(node)
+            #fai qui il check accept/reject, se rigetti non serve nemmeno fare il jump
+            res = smt_check(node)
+            if res is None:
+                return None
+            else:
+                return decompose_jump(node)
+
     return None #se non c'è niente da decomporre
 
 
@@ -272,6 +283,7 @@ def decompose_jump(node):
     """
     dovrebbe essere ok: fa fare il salto agli elementi con 0, lascia come sono quelli con F,G non ancora attivi
     ed elimina il resto
+
     """
     #Caso in cui input sia della forma [',', [], [], ....] (un and di tante sottoformule)
     new_node = []
@@ -300,6 +312,46 @@ def decompose_jump(node):
         else:
             return None
 
+def smt_check(node):
+    """
+    NB : Potresti avere anche variabili Bool, qui setti tutte le variabili come Real
+    :param node:
+    :return: ritorna il nodo di partenza se è accepted, ritorna None se il nodo è rejected
+    """
+    new_node = []
+    variabili_z3 = {}
+    for i in range(len(node)):
+        if node[i][0] == 'O' and node[i][1][0] in 'F' and node[i][1][1] == node[i][1][2]:
+            print("node is rejected because finally was never satisfied")
+            return None
+        if node[i][0] not in {'O', 'F', 'G', 'U', ','}:
+            new_node.extend(node[i])
+    variabili = []
+    vincoli = []
+    for esp in new_node:
+        #devo estrarre le espressioni e definirle in SMT tipo
+        #x= Real('x')
+        new_var = re.findall(r'\b[a-zA-Z_]\w*\b', esp)
+        variabili.extend(new_var)
+        for var in variabili:
+            if var not in variabili_z3:
+                variabili_z3[var] = Real(var)
+        #Scrivere vincoli (in realtà sono già scritti in new node, bisogna solo inserirci le variabili z
+        esp_z3 = esp
+        for var in variabili_z3:
+            esp_z3 = esp_z3.replace(var, f'variabili_z3["{var}"]')
+        vincoli.append(eval(esp_z3))
+    solver = Solver()
+    #aggiungi vincoli al solver
+    solver.add(vincoli)
+    #Verifica se vincoli sono sat
+    if solver.check() == sat:
+        print("Node is accepted, expressions are consistent")
+        #print(solver.model())
+        return node
+    else:
+        print("Node is rejected, expressions are incosistent")
+        return None
 
 def build_decomposition_tree(root, max_depth):
     G = nx.DiGraph()
@@ -345,12 +397,13 @@ def plot_tree(G):
 #formula = [['||', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
 #formula = [['&&', ['F', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
 #formula = [['G', '0', '3', ['F', '1', '4', ['p']]]] #credo venga giusto, ma non si capisce niente perché i nodi sono troppo appiccicati
-formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['p']]]]]
+#formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['p']]]]]
 #formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['F', '1', '3', ['p']]]]]]
 #formula = [['F', '0', '3', ['G', '1', '4', ['p']]]] #ok
 #formula = [['&&', ['G', '0', '3', ['F', '1', '4', ['p']]], ['F', '1', '3', ['q']]]] #ok
-#formula = [['&&', ['G', '0', '4', ['x>5']], ['F', '2', '4', ['x<2']]]]
-max_depth = 15
+formula = [['&&', ['G', '0', '4', ['x>5']], ['F', '2', '4', ['x<2']]]] #consistency check ok
+#formula = [['&&', ['G', '0', '4', ['x>5']], ['F', '2', '4', ['y<2']]]] #consistency check ok
+max_depth = 10
 
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
