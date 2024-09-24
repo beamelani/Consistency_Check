@@ -182,8 +182,8 @@ def decompose(node, current_time):
         if counter == len(node) - 1: #-1 perché un elemento del nodo è la virgola
             #fai qui il check accept/reject, se rigetti non serve nemmeno fare il jump
             res = smt_check(node)
-            if res is None:
-                return None
+            if res == 'Rejected':
+                return [res]
             else:
                 return decompose_jump(node)
 
@@ -315,6 +315,9 @@ def decompose_jump(node):
 def smt_check(node):
     """
     NB : Potresti avere anche variabili Bool, qui setti tutte le variabili come Real
+    in realtà però dovrebbe già esistere un data dictionary con tutte le variabili del problema (serve per riempire
+    i pattern, quindi il tipo di ogni variabile potrebbe essere automaticamente estratto da lì, così come i vincoli
+    sui bound della variabile che possono essere aggiunti come espressioni atomiche nel nodo
     :param node:
     :return: ritorna il nodo di partenza se è accepted, ritorna None se il nodo è rejected
     """
@@ -323,7 +326,7 @@ def smt_check(node):
     for i in range(len(node)):
         if node[i][0] == 'O' and node[i][1][0] in 'F' and node[i][1][1] == node[i][1][2]:
             print("node is rejected because finally was never satisfied")
-            return None
+            return 'Rejected'
         if node[i][0] not in {'O', 'F', 'G', 'U', ','}:
             new_node.extend(node[i])
     variabili = []
@@ -350,8 +353,8 @@ def smt_check(node):
         #print(solver.model())
         return node
     else:
-        print("Node is rejected, expressions are incosistent")
-        return None
+        print("Node is rejected, expressions are inconsistent")
+        return 'Rejected'
 
 def build_decomposition_tree(root, max_depth):
     G = nx.DiGraph()
@@ -375,6 +378,12 @@ def build_decomposition_tree(root, max_depth):
                 #print(children)
                 print(formula_to_string(children))
             for child in children:
+                if child == 'Rejected':
+                    counter += 1
+                    child_label = " ".join([child, str(counter)])
+                    G.add_node(child_label)
+                    G.add_edge(node_label, child_label)
+                else:
                     counter += 1
                     child_label = " ".join([formula_to_string(child), str(counter)])
                     G.add_node(child_label)
@@ -403,7 +412,7 @@ def plot_tree(G):
 #formula = [['&&', ['G', '0', '3', ['F', '1', '4', ['p']]], ['F', '1', '3', ['q']]]] #ok
 formula = [['&&', ['G', '0', '4', ['x>5']], ['F', '2', '4', ['x<2']]]] #consistency check ok
 #formula = [['&&', ['G', '0', '4', ['x>5']], ['F', '2', '4', ['y<2']]]] #consistency check ok
-max_depth = 10
+max_depth = 20
 
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
