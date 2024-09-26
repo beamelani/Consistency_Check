@@ -8,6 +8,28 @@
 F come sopra
 [['O', 'arg']]
 [['U', 'lowerb', 'upperb', 'arg1', 'arg2']]
+
+Sintassi Z3
+Definire variabili:
+x = Real('x')
+p = Bool('p')
+z = Int('z')
+
+Scrivere i vincoli:
+
+Bool constraints:
+Not(p)
+Implies(p,q)
+Or(p,q)
+And(p,q)
+
+Real Constraints, puoi scrivere con i seguenti operatori <, <=, >, >=, == , !=  espressioni del tipo:
+x>5
+x+y == 7
+2*x+y == 1
+
+Creare il problema con tutti i vincoli
+solve(constraint1, constraint2,...)  #li considera in and
 """
 
 
@@ -426,7 +448,8 @@ def plot_tree(G):
 
 #formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
 #formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['!', ['q']]]]] #ok
-formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['!', ['p']]]]]
+#formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['!', ['p']]]]]
+formula = [['G', '0', '2', ['&&', ['p'], ['q']]]] #come gestirlo?
 #formula = [['||', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
 #formula = [['&&', ['F', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
 #formula = [['G', '0', '3', ['F', '1', '4', ['p']]]] #credo venga giusto, ma non si capisce niente perché i nodi sono troppo appiccicati
