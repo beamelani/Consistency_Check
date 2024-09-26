@@ -9,21 +9,20 @@ F come sopra
 [['O', 'arg']]
 [['U', 'lowerb', 'upperb', 'arg1', 'arg2']]
 """
-import re
 
-#NB: usa .extend invece di .append per riassemblare la lista dopo averne decomposta una parte
 
-#PRIMA scrivo la funzione decompose e verifico che funzioni, poi cerco di integrarla alla funzione add children per
-#creare l'albero
 
 #Scrivi funzione che verifica se un nodo è uno stato ed estrae le espressioni atomiche e le codifica in un problema SMT.
 #Prima dovrebbe verificare che non ci siano espressioni del tipo OF[a,a], in quel caso il nodo va rigettato senza nemmeno
 #passare da SMT
+
+import re
 import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
 import copy
 from z3 import *
+
 
 def extract_min_time(formula):
     """
@@ -71,7 +70,6 @@ def extract_min_time(formula):
         return None
 
 
-
 def formula_to_string(formula):
     if isinstance(formula, list) and len(formula) == 1 and isinstance(formula[0], list): # se ho [[formula]]
         formula = formula[0]
@@ -96,6 +94,10 @@ def formula_to_string(formula):
         _, arg = formula
         return f"O ({formula_to_string(arg)})"
 
+    elif operator == '!':
+        _, arg = formula
+        return f"!({formula_to_string(arg)})"
+
     elif operator == 'U':
         _, lowerb, upperb, arg1, arg2 = formula
         return f"({formula_to_string(arg1)}) U[{lowerb}, {upperb}] ({formula_to_string(arg2)})"
@@ -111,7 +113,6 @@ def formula_to_string(formula):
     elif operator == '||':
         subformulas = [f"({formula_to_string(subformula)})" for subformula in formula[1:]]
         return " || ".join(subformulas)
-
     #elif operator == '->':  # Implication
         #subformulas = [f"({formula_to_string(subformula)})" for subformula in formula[1:]]
         #return " -> ".join(subformulas)
@@ -128,6 +129,7 @@ def formula_to_string(lista):
     return ", ".join(elementi)
 """
 
+
 def decompose(node, current_time):
     """
 
@@ -136,6 +138,7 @@ def decompose(node, current_time):
     :return: ritorna la lista decomposta (i.e. il successivo nodo del tree
     """
     if isinstance(node, list):
+        counter = 0
         if len(node) == 1:
             return decompose(node[0], current_time)
         if node[0] == '&&':
@@ -149,6 +152,8 @@ def decompose(node, current_time):
             return decompose_F(node, [], 0)
         elif node[0] == 'U':
             return decompose_U()
+        elif node[0] == '!':
+            counter +=1
         #Caso nested
         elif node[0] in {'F', 'G'} and node[3][0] in {'F', 'G'}:
             return decompose_nested(node, [], 0)
@@ -157,7 +162,7 @@ def decompose(node, current_time):
             return decompose_jump(node)
         #Scrivo un nodo come una virgola (un and) di tutti gli elementi del nodo
         elif node[0] == ',':
-            counter = 0
+            #counter = 0
             for j in range(1, len(node)):
                 # Devo controllare se è un G, se è attivo (lowerb=current_time) e se non è nested
                 # perché se è nested devo controllare se è attivo sommando i lb degli intervalli e poi di nuovo
@@ -188,7 +193,6 @@ def decompose(node, current_time):
                 return decompose_jump(node)
 
     return None #se non c'è niente da decomporre
-
 
 
 def decompose_G(node, single):
@@ -312,6 +316,7 @@ def decompose_jump(node):
         else:
             return None
 
+
 def smt_check(node):
     """
     NB : Potresti avere anche variabili Bool, qui setti tutte le variabili come Real
@@ -338,7 +343,7 @@ def smt_check(node):
         variabili.extend(new_var)
         for var in variabili:
             if var not in variabili_z3:
-                variabili_z3[var] = Real(var)
+                variabili_z3[var] = Bool(var)
         #Scrivere vincoli (in realtà sono già scritti in new node, bisogna solo inserirci le variabili z
         esp_z3 = esp
         for var in variabili_z3:
@@ -355,6 +360,7 @@ def smt_check(node):
     else:
         print("Node is rejected, expressions are inconsistent")
         return 'Rejected'
+
 
 def build_decomposition_tree(root, max_depth):
     G = nx.DiGraph()
@@ -375,7 +381,6 @@ def build_decomposition_tree(root, max_depth):
                 print('No more children in this branch')
                 return
             else:
-                #print(children)
                 print(formula_to_string(children))
             for child in children:
                 if child == 'Rejected':
@@ -403,6 +408,7 @@ def plot_tree(G):
 
 
 #formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
+formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['!', ['q']]]]]
 #formula = [['||', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
 #formula = [['&&', ['F', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
 #formula = [['G', '0', '3', ['F', '1', '4', ['p']]]] #credo venga giusto, ma non si capisce niente perché i nodi sono troppo appiccicati
@@ -410,7 +416,7 @@ def plot_tree(G):
 #formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['F', '1', '3', ['p']]]]]]
 #formula = [['F', '0', '3', ['G', '1', '4', ['p']]]] #ok
 #formula = [['&&', ['G', '0', '3', ['F', '1', '4', ['p']]], ['F', '1', '3', ['q']]]] #ok
-formula = [['&&', ['G', '0', '4', ['x>5']], ['F', '2', '4', ['x<2']]]] #consistency check ok
+#formula = [['&&', ['G', '0', '4', ['x>5']], ['F', '2', '4', ['x<2']]]] #consistency check ok
 #formula = [['&&', ['G', '0', '4', ['x>5']], ['F', '2', '4', ['y<2']]]] #consistency check ok
 max_depth = 20
 
