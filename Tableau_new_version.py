@@ -22,6 +22,7 @@ Not(p)
 Implies(p,q)
 Or(p,q)
 And(p,q)
+r == q (bi-implication)
 
 Real Constraints, puoi scrivere con i seguenti operatori <, <=, >, >=, == , !=  espressioni del tipo:
 x>5
