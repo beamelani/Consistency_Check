@@ -34,9 +34,11 @@ def extract_min_time(formula):
     if isinstance(formula, list):
         if len(formula) == 1:
             return extract_min_time(formula[0])
+        if formula[0] == '!':
+            return None
         if formula[0] in {'&&', '||', ','}:
             for i in range(1, len(formula)):
-                if len(formula[i]) > 1 and formula[i][0] not in {'O'}:
+                if len(formula[i]) > 1 and formula[i][0] not in {'O', '!'}:
                     if formula[i][3][0] in {'G', 'F'}: #caso nested, non O
                         min_time = str(int(formula[i][1]) + int(formula[i][3][1]))
                         min_times.append(min_time)
@@ -153,7 +155,7 @@ def decompose(node, current_time):
         elif node[0] == 'U':
             return decompose_U()
         elif node[0] == '!':
-            counter +=1
+            counter += 1
         #Caso nested
         elif node[0] in {'F', 'G'} and node[3][0] in {'F', 'G'}:
             return decompose_nested(node, [], 0)
@@ -291,6 +293,8 @@ def decompose_jump(node):
     """
     #Caso in cui input sia della forma [',', [], [], ....] (un and di tante sottoformule)
     new_node = []
+    if node[0] == '!':
+        return None
     if node[0] == ',':
         new_node = [',']
         for i in range(1, len(node)):
@@ -328,27 +332,40 @@ def smt_check(node):
     """
     new_node = []
     variabili_z3 = {}
-    for i in range(len(node)):
-        if node[i][0] == 'O' and node[i][1][0] in 'F' and node[i][1][1] == node[i][1][2]:
-            print("node is rejected because finally was never satisfied")
-            return 'Rejected'
-        if node[i][0] not in {'O', 'F', 'G', 'U', ','}:
-            new_node.extend(node[i])
     variabili = []
     vincoli = []
-    for esp in new_node:
+    for i in range(len(node)):
+        if node[0] == ',': #caso con più elmenti
+            if node[i][0] == 'O' and node[i][1][0] in 'F' and node[i][1][1] == node[i][1][2]:
+                print("node is rejected because finally was never satisfied")
+                return 'Rejected'
+            if node[i][0] not in {'O', 'F', 'G', 'U', ','}:
+                new_node.extend(node[i])
+                new_var = re.findall(r'\b[a-zA-Z_]\w*\b', new_node[-1][0])
+                variabili.extend(new_var)
+        else:  #caso con un solo elemento (succede se ho un ramo con solo un finally)
+            if node[0] == 'O' and node[i][0] in 'F' and node[1][1] == node[1][2]:
+                print("node is rejected because finally was never satisfied")
+                return 'Rejected'
+            if node[0] not in {'O', 'F', 'G', 'U', ','}:
+                new_node.extend(node[i])
+                new_var = re.findall(r'\b[a-zA-Z_]\w*\b', new_node[-1])
+                variabili.extend(new_var)
+    for var in variabili:
+        if var not in variabili_z3:
+            variabili_z3[var] = Bool(var) #va cambiato manualmente dentro a smt_checker altrimenti dà errore,
+            # quindi si possono fare casi o con tutte bool o con tutte Re
+    for i in range(len(new_node)):
         #devo estrarre le espressioni e definirle in SMT tipo
         #x= Real('x')
-        new_var = re.findall(r'\b[a-zA-Z_]\w*\b', esp)
-        variabili.extend(new_var)
-        for var in variabili:
-            if var not in variabili_z3:
-                variabili_z3[var] = Bool(var)
+        if new_node[i] == '!':
+            new_node[i+1] = 'Not(' + new_node[i+1][0] + ')'
         #Scrivere vincoli (in realtà sono già scritti in new node, bisogna solo inserirci le variabili z
-        esp_z3 = esp
-        for var in variabili_z3:
-            esp_z3 = esp_z3.replace(var, f'variabili_z3["{var}"]')
-        vincoli.append(eval(esp_z3))
+        else:
+            esp_z3 = new_node[i]
+            for var in variabili_z3:
+                esp_z3 = esp_z3.replace(var, f'variabili_z3["{var}"]')
+            vincoli.append(eval(esp_z3))
     solver = Solver()
     #aggiungi vincoli al solver
     solver.add(vincoli)
@@ -408,7 +425,8 @@ def plot_tree(G):
 
 
 #formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
-formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['!', ['q']]]]]
+#formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['!', ['q']]]]] #ok
+formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['!', ['p']]]]]
 #formula = [['||', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
 #formula = [['&&', ['F', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
 #formula = [['G', '0', '3', ['F', '1', '4', ['p']]]] #credo venga giusto, ma non si capisce niente perché i nodi sono troppo appiccicati
@@ -418,7 +436,7 @@ formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['!', ['q']]]]]
 #formula = [['&&', ['G', '0', '3', ['F', '1', '4', ['p']]], ['F', '1', '3', ['q']]]] #ok
 #formula = [['&&', ['G', '0', '4', ['x>5']], ['F', '2', '4', ['x<2']]]] #consistency check ok
 #formula = [['&&', ['G', '0', '4', ['x>5']], ['F', '2', '4', ['y<2']]]] #consistency check ok
-max_depth = 20
+max_depth = 15
 
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
