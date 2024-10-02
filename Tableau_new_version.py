@@ -358,13 +358,17 @@ def smt_check(node):
     variabili = []
     vincoli = []
     for i in range(len(node)):
-        if node[0] == ',': #caso con più elmenti
+        if node[0] == ',': #caso con più elementi
             if node[i][0] == 'O' and node[i][1][0] in 'F' and node[i][1][1] == node[i][1][2]:
                 print("node is rejected because finally was never satisfied")
                 return 'Rejected'
             if node[i][0] not in {'O', 'F', 'G', 'U', ','}:
                 new_node.extend(node[i])
-                new_var = re.findall(r'\b[a-zA-Z_]\w*\b', new_node[-1][0])
+                #new_var = re.findall(r'\b[a-zA-Z_]\w*\b', new_node[-1][0])
+                if len(node[i]) == 1:
+                    new_var = re.findall(r'\b[B|R]_[a-zA-Z]\w*\b', new_node[-1])
+                else:
+                    new_var = re.findall(r'\b[B|R]_[a-zA-Z]\w*\b', new_node[-1][0])
                 variabili.extend(new_var)
         else:  #caso con un solo elemento (succede se ho un ramo con solo un finally)
             if node[0] == 'O' and node[i][0] in 'F' and node[1][1] == node[1][2]:
@@ -372,12 +376,18 @@ def smt_check(node):
                 return 'Rejected'
             if node[0] not in {'O', 'F', 'G', 'U', ','}:
                 new_node.extend(node[i])
-                new_var = re.findall(r'\b[a-zA-Z_]\w*\b', new_node[-1])
+                #new_var = re.findall(r'\b[a-zA-Z_]\w*\b', new_node[-1])
+                new_var = re.findall(r'\b[B|R]_[a-zA-Z]\w*\b', new_node[-1])
                 variabili.extend(new_var)
     for var in variabili:
         if var not in variabili_z3:
-            variabili_z3[var] = Bool(var) #va cambiato manualmente dentro a smt_checker altrimenti dà errore,
-            # quindi si possono fare casi o con tutte bool o con tutte Re
+            if var[0] == 'B':
+                var = var[2:]
+                variabili_z3[var] = Bool(var)
+            else:
+                var = var[2:]
+                variabili_z3[var] = Real(var)
+    new_node = modify_node(new_node) #tolgo B_ e R_ che non servono più
     for i in range(len(new_node)):
         #devo estrarre le espressioni e definirle in SMT tipo
         #x= Real('x')
@@ -400,6 +410,20 @@ def smt_check(node):
     else:
         print("Node is rejected, expressions are inconsistent")
         return 'Rejected'
+
+
+def modify_node(node):
+    def flatten(lst):
+        flat_list = []
+        for item in lst:
+            if isinstance(item, list):
+                flat_list.extend(flatten(item))  # Ricorsione per appiattire anche liste più profonde
+            else:
+                flat_list.append(item)
+        return flat_list
+    node = flatten(node)
+    new_node = [re.sub(r'\b[B|R]_', '', expr) for expr in node]
+    return new_node
 
 
 def build_decomposition_tree(root, max_depth):
@@ -447,10 +471,12 @@ def plot_tree(G):
     plt.show()
 
 
-#formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
-#formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['!', ['q']]]]] #ok
+#aggiungere B_, R_ davanti a tutte le var per identificarle come bool o real
+
+formula = [['&&', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['B_q']]]] #ok
+#formula = [['&&', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['!', ['B_p']]]]] #ok
 #formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['!', ['p']]]]]
-formula = [['G', '0', '2', ['&&', ['p'], ['q']]]] #come gestirlo?
+#formula = [['G', '0', '2', ['&&', ['p'], ['q']]]] #come gestirlo?
 #formula = [['||', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
 #formula = [['&&', ['F', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
 #formula = [['G', '0', '3', ['F', '1', '4', ['p']]]] #credo venga giusto, ma non si capisce niente perché i nodi sono troppo appiccicati
@@ -458,9 +484,9 @@ formula = [['G', '0', '2', ['&&', ['p'], ['q']]]] #come gestirlo?
 #formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['F', '1', '3', ['p']]]]]]
 #formula = [['F', '0', '3', ['G', '1', '4', ['p']]]] #ok
 #formula = [['&&', ['G', '0', '3', ['F', '1', '4', ['p']]], ['F', '1', '3', ['q']]]] #ok
-#formula = [['&&', ['G', '0', '4', ['x>5']], ['F', '2', '4', ['x<2']]]] #consistency check ok
-#formula = [['&&', ['G', '0', '4', ['x>5']], ['F', '2', '4', ['y<2']]]] #consistency check ok
-max_depth = 15
+#formula = [['&&', ['G', '0', '4', ['R_x>5']], ['F', '2', '4', ['R_x<2']]]] #consistency check ok
+#formula = [['&&', ['G', '0', '4', ['R_x>5']], ['F', '2', '4', ['R_y<2']]]] #consistency check ok
+max_depth = 20
 
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
