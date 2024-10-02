@@ -478,16 +478,36 @@ def plot_tree(G):
 #formula = [['G', '0', '2', ['&&', ['p'], ['q']]]] #come gestirlo? 
 #formula = [['||', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
 #formula = [['&&', ['F', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
-#formula = [['G', '0', '3', ['F', '1', '4', ['p']]]] #credo venga giusto, ma non si capisce niente perché i nodi sono troppo appiccicati
+formula = [['G', '0', '3', ['F', '1', '2', ['B_p']]]]
 #formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['p']]]]]
 #formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['F', '1', '3', ['B_p']]]]]] #problemi con la funz che plotta se depth >5
 #formula = [['&&', ['F', '0', '3', ['G', '1', '4', ['B_p']]], ['G', '1', '6', ['!', ['B_p']]]]] #ok
 #formula = [['&&', ['G', '0', '3', ['F', '1', '4', ['p']]], ['F', '1', '3', ['q']]]] #ok
 #formula = [['&&', ['G', '0', '4', ['R_x>5']], ['F', '2', '4', ['R_x<2']]]] #consistency check ok
 #formula = [['&&', ['G', '0', '4', ['R_x>5']], ['F', '2', '4', ['R_y<2']]]] #consistency check ok
-formula = [['&&', ['G', '0', '4', ['R_x>5']], ['F', '2', '4', ['R_y<2']], ['F', '1', '5', ['R_x == 4']]]] #ok
-max_depth = 20
+#formula = [['&&', ['G', '0', '4', ['R_x>5']], ['F', '2', '4', ['R_y<2']], ['F', '1', '5', ['R_x == 4']]]] #ok
+max_depth = 8
 
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
 plot_tree(tree)
+
+
+"""
+Implementare i jump, osservazioni:
+1)Se non ho op annidati è facile, passo da un minimo al minimo successivo, tipo:
+formula = [['&&', ['G', '0', '10', ['B_p']], ['F', '5', '8', ['B_q']]]]
+faccio G in 0 e poi salto a 5, faccio G e F in 5 e poi salto a 8, faccio G e F in 8 e poi G nel resto
+
+2) se ho operatori annidati GF è un problema perché ad ogni istante di tempo si aggiunge un F e inizio a
+trovare un pattern quando il primo F che si è generato decomponendo GF esaurisce il suo intervallo e quindi i
+F smettono di aumentare, quindi devo fare di 1 in 1 almeno per l'orizz temp del F interno
+
+esempio:
+G[0, 3] (F[1, 2] (B_p))
+(G[1, 3] (F[1, 2] (B_p))) , (F[2, 2] (B_p))  <-----
+                ...
+(O(G[1, 3] (F[1, 2] (B_p)))), (F[2, 2] (B_p)), (F[2, 3] (B_p)) (F[2,2] è esaurito è scompare al passaggio succ)
+                ...
+(G[2, 3] (F[1, 2] (B_p))) , (F[3, 3] (B_p))  <-----
+"""
