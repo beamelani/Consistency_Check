@@ -136,6 +136,7 @@ def formula_to_string(formula):
     elif operator == '||':
         subformulas = [f"({formula_to_string(subformula)})" for subformula in formula[1:]]
         return " || ".join(subformulas)
+
     #elif operator == '->':  # Implication
         #subformulas = [f"({formula_to_string(subformula)})" for subformula in formula[1:]]
         #return " -> ".join(subformulas)
