@@ -35,9 +35,7 @@ solve(constraint1, constraint2,...)  #li considera in and
 
 
 
-#Scrivi funzione che verifica se un nodo è uno stato ed estrae le espressioni atomiche e le codifica in un problema SMT.
-#Prima dovrebbe verificare che non ci siano espressioni del tipo OF[a,a], in quel caso il nodo va rigettato senza nemmeno
-#passare da SMT
+#Implementa i "salti" per accorciare il tableau
 
 import re
 import networkx as nx
@@ -473,19 +471,20 @@ def plot_tree(G):
 
 #aggiungere B_, R_ davanti a tutte le var per identificarle come bool o real
 
-formula = [['&&', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['B_q']]]] #ok
+#formula = [['&&', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['B_q']]]] #ok
 #formula = [['&&', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['!', ['B_p']]]]] #ok
 #formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['!', ['p']]]]]
-#formula = [['G', '0', '2', ['&&', ['p'], ['q']]]] #come gestirlo?
+#formula = [['G', '0', '2', ['&&', ['p'], ['q']]]] #come gestirlo? 
 #formula = [['||', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
 #formula = [['&&', ['F', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
 #formula = [['G', '0', '3', ['F', '1', '4', ['p']]]] #credo venga giusto, ma non si capisce niente perché i nodi sono troppo appiccicati
 #formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['p']]]]]
-#formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['F', '1', '3', ['p']]]]]]
-#formula = [['F', '0', '3', ['G', '1', '4', ['p']]]] #ok
+#formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['F', '1', '3', ['B_p']]]]]] #problemi con la funz che plotta se depth >5
+#formula = [['&&', ['F', '0', '3', ['G', '1', '4', ['B_p']]], ['G', '1', '6', ['!', ['B_p']]]]] #ok
 #formula = [['&&', ['G', '0', '3', ['F', '1', '4', ['p']]], ['F', '1', '3', ['q']]]] #ok
 #formula = [['&&', ['G', '0', '4', ['R_x>5']], ['F', '2', '4', ['R_x<2']]]] #consistency check ok
 #formula = [['&&', ['G', '0', '4', ['R_x>5']], ['F', '2', '4', ['R_y<2']]]] #consistency check ok
+formula = [['&&', ['G', '0', '4', ['R_x>5']], ['F', '2', '4', ['R_y<2']], ['F', '1', '5', ['R_x == 4']]]] #ok
 max_depth = 20
 
 tree = build_decomposition_tree(formula, max_depth)
