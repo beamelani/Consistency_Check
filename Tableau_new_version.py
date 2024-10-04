@@ -396,7 +396,8 @@ def smt_check(node):
         else:
             esp_z3 = new_node[i]
             for var in variabili_z3:
-                esp_z3 = esp_z3.replace(var, f'variabili_z3["{var}"]')
+                #esp_z3 = esp_z3.replace(var, f'variabili_z3["{var}"]')
+                esp_z3 = re.sub(rf'\b{var}\b', f'variabili_z3["{var}"]', esp_z3)
             vincoli.append(eval(esp_z3))
     solver = Solver()
     #aggiungi vincoli al solver
@@ -478,15 +479,22 @@ def plot_tree(G):
 #formula = [['G', '0', '2', ['&&', ['p'], ['q']]]] #come gestirlo? 
 #formula = [['||', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
 #formula = [['&&', ['F', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
-formula = [['G', '0', '3', ['F', '1', '2', ['B_p']]]]
+#formula = [['G', '0', '3', ['F', '1', '2', ['B_p']]]]
+#formula = [['F', '0', '3', ['G', '1', '4', ['B_p']]]]
+#formula = [['&&', ['F', '0', '3', ['G', '1', '4', ['B_p']]], ['G', '0', '3', ['F', '1', '2', ['B_y']]]]]
 #formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['p']]]]]
 #formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['F', '1', '3', ['B_p']]]]]] #problemi con la funz che plotta se depth >5
 #formula = [['&&', ['F', '0', '3', ['G', '1', '4', ['B_p']]], ['G', '1', '6', ['!', ['B_p']]]]] #ok
 #formula = [['&&', ['G', '0', '3', ['F', '1', '4', ['p']]], ['F', '1', '3', ['q']]]] #ok
-#formula = [['&&', ['G', '0', '4', ['R_x>5']], ['F', '2', '4', ['R_x<2']]]] #consistency check ok
+formula = [['&&', ['G', '0', '4', ['R_x>5']], ['F', '2', '4', ['R_x<2']]]] #consistency check ok
 #formula = [['&&', ['G', '0', '4', ['R_x>5']], ['F', '2', '4', ['R_y<2']]]] #consistency check ok
 #formula = [['&&', ['G', '0', '4', ['R_x>5']], ['F', '2', '4', ['R_y<2']], ['F', '1', '5', ['R_x == 4']]]] #ok
-max_depth = 8
+#formula = [['&&', ['G', '0', '4', ['Implies(B_q, R_x>2)']], ['F', '0', '4', ['Implies(B_q, R_x<1)']]]] #il ris mi confonde
+#formula = [['&&', ['G', '0', '4', ['Implies(B_q, Not(B_p))']], ['F', '0', '4', ['Implies(B_q, B_p)']]]]
+#formula = [['&&', ['G', '0', '4', ['And(B_p, Not(B_p))']], ['F', '0', '4', ['R_x>9']]]]
+#formula = [['&&', ['G', '0', '4', ['And(B_p, Not(B_p))']], ['F', '0', '4', ['R_x>9']]]]
+
+max_depth = 15
 
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
@@ -510,4 +518,15 @@ G[0, 3] (F[1, 2] (B_p))
 (O(G[1, 3] (F[1, 2] (B_p)))), (F[2, 2] (B_p)), (F[2, 3] (B_p)) (F[2,2] è esaurito è scompare al passaggio succ)
                 ...
 (G[2, 3] (F[1, 2] (B_p))) , (F[3, 3] (B_p))  <-----
+
+3) se invece ho un FG, trovo la stessa espressione shiftata di un istante di tempo ad ogni salto temporale
+
+F[0, 3] (G[1, 2] (B_p))   <-----
+
+genera: O(F[0, 3] (G[1, 2] (B_p)))  E  G[1, 2] (B_p)
+
+dal primo ottengo: F[1, 3] (G[1, 2] (B_p))    <-----
+
+che di nuovo si divide in un ramo con OF e uno con G.
+I rami con G hanno poi tutti la stessa evoluzione (che però inizia shiftata di 1 in avanti a mano a mano che scendo nell'albero)
 """
