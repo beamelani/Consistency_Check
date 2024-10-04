@@ -477,16 +477,16 @@ def plot_tree(G):
 #formula = [['&&', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['!', ['B_p']]]]] #ok
 #formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['!', ['p']]]]]
 #formula = [['G', '0', '2', ['&&', ['p'], ['q']]]] #come gestirlo? 
-#formula = [['||', ['G', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
-#formula = [['&&', ['F', '0', '2', ['p']], ['F', '1', '3', ['q']]]] #ok
+#formula = [['||', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['B_q']]]] #ok
+formula = [['&&', ['F', '0', '2', ['B_p']], ['F', '1', '3', ['B_q']]]] #ok
 #formula = [['G', '0', '3', ['F', '1', '2', ['B_p']]]]
 #formula = [['F', '0', '3', ['G', '1', '4', ['B_p']]]]
-#formula = [['&&', ['F', '0', '3', ['G', '1', '4', ['B_p']]], ['G', '0', '3', ['F', '1', '2', ['B_y']]]]]
-#formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['p']]]]]
+#formula = [['&&', ['F', '0', '3', ['G', '1', '4', ['B_p']]], ['G', '0', '3', ['F', '0', '2', ['B_y']]]]]
+#formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['B_p']]]]]
 #formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['F', '1', '3', ['B_p']]]]]] #problemi con la funz che plotta se depth >5
 #formula = [['&&', ['F', '0', '3', ['G', '1', '4', ['B_p']]], ['G', '1', '6', ['!', ['B_p']]]]] #ok
-#formula = [['&&', ['G', '0', '3', ['F', '1', '4', ['p']]], ['F', '1', '3', ['q']]]] #ok
-formula = [['&&', ['G', '0', '4', ['R_x>5']], ['F', '2', '4', ['R_x<2']]]] #consistency check ok
+#formula = [['&&', ['G', '0', '3', ['F', '1', '4', ['B_p']]], ['F', '1', '3', ['B_q']]]] #ok
+#formula = [['&&', ['G', '0', '4', ['R_x>5']], ['F', '2', '4', ['R_x<2']]]] #consistency check ok
 #formula = [['&&', ['G', '0', '4', ['R_x>5']], ['F', '2', '4', ['R_y<2']]]] #consistency check ok
 #formula = [['&&', ['G', '0', '4', ['R_x>5']], ['F', '2', '4', ['R_y<2']], ['F', '1', '5', ['R_x == 4']]]] #ok
 #formula = [['&&', ['G', '0', '4', ['Implies(B_q, R_x>2)']], ['F', '0', '4', ['Implies(B_q, R_x<1)']]]] #il ris mi confonde
@@ -494,7 +494,7 @@ formula = [['&&', ['G', '0', '4', ['R_x>5']], ['F', '2', '4', ['R_x<2']]]] #cons
 #formula = [['&&', ['G', '0', '4', ['And(B_p, Not(B_p))']], ['F', '0', '4', ['R_x>9']]]]
 #formula = [['&&', ['G', '0', '4', ['And(B_p, Not(B_p))']], ['F', '0', '4', ['R_x>9']]]]
 
-max_depth = 14
+max_depth = 10
 
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
@@ -529,4 +529,17 @@ dal primo ottengo: F[1, 3] (G[1, 2] (B_p))    <-----
 
 che di nuovo si divide in un ramo con OF e uno con G.
 I rami con G hanno poi tutti la stessa evoluzione (che però inizia shiftata di 1 in avanti a mano a mano che scendo nell'albero)
+
+Come implemento i salti?
+Forse dovrei preprocessare la formula per stabilire a priori quando poter saltare (in teoria a seconda degli operatori che
+ci sono nella formula e dei loro intervalli temporali, dovrebbe potersi stabilire a priori il numero minimo di 
+istanti necessari per arrivare ad un nodo ripetuto (shiftato nel tempo di tot)
+
+formula = [['&&', ['F', '0', '3', ['G', '1', '4', ['B_p']]], ['G', '0', '3', ['F', '0', '2', ['B_y']]]]]
+
+(F[0, 3] (G[1, 4] (B_p))) , (G[1, 3] (F[0, 2] (B_y))) , (F[1, 2] (B_y))   <----
+
+(F[1, 3] (G[1, 4] (B_p))) , (G[2, 3] (F[0, 2] (B_y))) , (F[2, 3] (B_y))   <---- Ottengo il nodo uguale all'istante 2
+ovvero dopo 2 istanti di tempo che corrispondono al range temporale del F interno al FG (che è il maggior nella formula,
+perché il GF si ripete ad ogni istante di tempo, come detto sopra).
 """
