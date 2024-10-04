@@ -494,7 +494,7 @@ formula = [['&&', ['G', '0', '4', ['R_x>5']], ['F', '2', '4', ['R_x<2']]]] #cons
 #formula = [['&&', ['G', '0', '4', ['And(B_p, Not(B_p))']], ['F', '0', '4', ['R_x>9']]]]
 #formula = [['&&', ['G', '0', '4', ['And(B_p, Not(B_p))']], ['F', '0', '4', ['R_x>9']]]]
 
-max_depth = 15
+max_depth = 14
 
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
