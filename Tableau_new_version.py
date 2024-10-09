@@ -108,7 +108,9 @@ def calculate_min_step(formula):
                 if isinstance(elem, list):
                     if elem[0] in ['G', 'F']:  # Controlla operatori temporali G (Globally) e F (Finally)
                         start = Fraction(elem[1])
+                        time_instants.append(elem[1])
                         end = Fraction(elem[2])
+                        time_instants.append(elem[2])
                         difference = end-start
                         if difference > 0:
                             intervals.append(difference)
@@ -137,6 +139,18 @@ def calculate_min_step(formula):
     risultato = Fraction(mcd_numeratori, mcm_denominatori)
 
     return risultato
+
+def check_nested(formula):
+    '''
+    :param formula:
+    :return: la formula controlla che non ci siano operatori nested (serve per fare i salti)
+    Restituisce true se ci sono, false se non ci sono
+    '''
+    for element in formula:
+        if element[0] in {'G', 'F'} and element[3][0] in {'G', 'F'}:
+            return True
+    return False
+
 
 def formula_to_string(formula):
     if isinstance(formula, list) and len(formula) == 1 and isinstance(formula[0], list): # se ho [[formula]]
@@ -534,7 +548,7 @@ def plot_tree(G):
 
 #aggiungere B_, R_ davanti a tutte le var per identificarle come bool o real
 
-#formula = [['&&', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['B_q']]]] #ok
+formula = [['&&', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['B_q']]]] #ok
 #formula = [['&&', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['!', ['B_p']]]]] #ok
 #formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['!', ['p']]]]]
 #formula = [['G', '0', '2', ['&&', ['p'], ['q']]]] #come gestirlo?
@@ -544,7 +558,7 @@ def plot_tree(G):
 #formula = [['G', '0', '3', ['F', '1', '2', ['B_p']]]]
 #formula = [['F', '0', '3', ['G', '1', '4', ['B_p']]]]
 #formula = [['G', '0', '5', ['G', '1', '3', ['B_p']]]]
-formula = [['F', '0', '5', ['F', '1', '3', ['B_p']]]]
+#formula = [['F', '0', '5', ['F', '1', '3', ['B_p']]]]
 #formula = [['&&', ['F', '0', '3', ['G', '1', '4', ['B_p']]], ['G', '0', '3', ['F', '0', '2', ['B_y']]]]]
 #formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['B_p']]]]]
 #formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['F', '1', '3', ['B_p']]]]]] #problemi con la funz che plotta se depth >5
@@ -560,7 +574,9 @@ formula = [['F', '0', '5', ['F', '1', '3', ['B_p']]]]
 
 max_depth = 10
 
+time_instants = []
 step = calculate_min_step(formula) #va poi inserito per fare i jump
+nested = check_nested(formula)
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
 plot_tree(tree)
