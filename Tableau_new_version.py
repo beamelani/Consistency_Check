@@ -228,7 +228,11 @@ def decompose(node, current_time):
             return decompose_nested(node, [], 0)
         #Jump
         elif node[0] == 'O': #se c'è un solo elemento non servono altre condizioni
-            return decompose_jump(node)
+            res = smt_check(node)
+            if res == 'Rejected':
+                return [res]
+            else:
+                return decompose_jump(node)
         #Scrivo un nodo come una virgola (un and) di tutti gli elementi del nodo
         elif node[0] == ',':
             #counter = 0
@@ -368,9 +372,14 @@ def decompose_jump(node):
             if node[i][0] in {'F', 'G', 'U'}:
                 new_node.extend([node[i]])
             elif node[i][0] in {'O'} and int(node[i][1][1]) < int(node[i][1][2]): #incremento solo se lb < ub
-                sub_formula = copy.deepcopy(node[i][1]) #node[i][1] dovrebbe essere l'argomenti di 'O'
-                sub_formula[1] = str(int(sub_formula[1])+1)
-                new_node.extend([sub_formula])
+                if node[i][1][0] == 'G' and len(node) == 3: #ho solo un G nel ramo, posso passare all'ultimo istante
+                    sub_formula = copy.deepcopy(node[i][1])
+                    sub_formula[1] = sub_formula[2]
+                    new_node.extend([sub_formula])
+                else:
+                    sub_formula = copy.deepcopy(node[i][1]) #node[i][1] dovrebbe essere l'argomenti di 'O'
+                    sub_formula[1] = str(int(sub_formula[1])+1)
+                    new_node.extend([sub_formula])
         if len(new_node) == 2: #se uno degli elementi iniziale è della forma OG[x,x],
             # cioè ha esaurito l'intervallo e viene eliminato, è possibile  che rimanga un solo elemento, ma preceduto dalla virgola anche se non dovrebbe
             return [new_node[1]]
@@ -380,9 +389,16 @@ def decompose_jump(node):
             return None
     else: #caso in cui ho una sola formula
         if int(node[1][1]) < int(node[1][2]):
-            sub_formula = copy.deepcopy(node[1])  # node[1] dovrebbe essere l'argomenti di 'O'
-            sub_formula[1] = str(int(sub_formula[1]) + 1)
-            new_node.extend([sub_formula])
+            #nel caso GF non posso skippare, perché devo attraversare tutto l'intervallo temporale del F
+            if len(node[1][3]) > 2 and node[1][0] == 'G' and node[1][3][0] == 'F':
+                sub_formula = copy.deepcopy(node[1])  # node[1] dovrebbe essere l'argomenti di 'O'
+                sub_formula[1] = str(int(sub_formula[1]) + 1)
+                new_node.extend([sub_formula])
+            else:
+                sub_formula = copy.deepcopy(node[1])  # node[1] dovrebbe essere l'argomenti di 'O'
+                #sub_formula[1] = str(int(sub_formula[1]) + 1)
+                sub_formula[1] = sub_formula[2] #se ho una sola formula posso già saltare all'ultimo istante di tempo, tranne se è GF
+                new_node.extend([sub_formula])
             return [new_node]
         else:
             return None
@@ -522,11 +538,13 @@ def plot_tree(G):
 #formula = [['&&', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['!', ['B_p']]]]] #ok
 #formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['!', ['p']]]]]
 #formula = [['G', '0', '2', ['&&', ['p'], ['q']]]] #come gestirlo?
-formula = [['F', '0', '5', ['B_q']]]
+#formula = [['F', '0', '5', ['B_q']]]
 #formula = [['||', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['B_q']]]] #ok
 #formula = [['&&', ['F', '0', '2', ['B_p']], ['F', '1', '3', ['B_q']]]] #ok
 #formula = [['G', '0', '3', ['F', '1', '2', ['B_p']]]]
 #formula = [['F', '0', '3', ['G', '1', '4', ['B_p']]]]
+#formula = [['G', '0', '5', ['G', '1', '3', ['B_p']]]]
+formula = [['F', '0', '5', ['F', '1', '3', ['B_p']]]]
 #formula = [['&&', ['F', '0', '3', ['G', '1', '4', ['B_p']]], ['G', '0', '3', ['F', '0', '2', ['B_y']]]]]
 #formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['B_p']]]]]
 #formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['F', '1', '3', ['B_p']]]]]] #problemi con la funz che plotta se depth >5
@@ -554,9 +572,10 @@ Implementare i jump, osservazioni:
 formula = [['&&', ['G', '0', '10', ['B_p']], ['F', '5', '8', ['B_q']]]]
 faccio G in 0 e poi salto a 5, faccio G e F in 5 e poi salto a 8, faccio G e F in 8 e poi G nel resto
 
-2) se ho operatori annidati GF è un problema perché ad ogni istante di tempo si aggiunge un F e inizio a
-trovare un pattern quando il primo F che si è generato decomponendo GF esaurisce il suo intervallo e quindi i
-F smettono di aumentare, quindi devo fare di 1 in 1 almeno per l'orizz temp del F interno
+2) se ho operatori annidati GF o GG è un problema perché ad ogni istante di tempo si aggiunge un F (o G) e inizio a
+trovare un pattern quando il primo F che si è generato decomponendo GF (o il primo G che si è generato decomponendo 
+GG) esaurisce il suo intervallo e quindi i F smettono di aumentare. Devo avanzare di 1 in 1 almeno per l'orizz temp 
+del F (o G) interno.
 
 esempio:
 G[0, 3] (F[1, 2] (B_p))
@@ -569,7 +588,7 @@ G[0, 3] (F[1, 2] (B_p))
                 ...
 (G[2, 3] (F[1, 2] (B_p))) , (F[3, 3] (B_p))  <-----
 
-3) se invece ho un FG, trovo la stessa espressione shiftata di un istante di tempo ad ogni salto temporale
+3) se invece ho un FG (o FF), trovo la stessa espressione shiftata di un istante di tempo ad ogni salto temporale
 
 F[0, 3] (G[1, 2] (B_p))   <-----
 
