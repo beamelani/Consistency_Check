@@ -43,7 +43,9 @@ import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
 import copy
 from z3 import *
-
+from fractions import Fraction
+from math import gcd
+from functools import reduce
 
 def extract_min_time(formula):
     """
@@ -92,6 +94,49 @@ def extract_min_time(formula):
     else:
         return None
 
+
+def calculate_min_step(formula):
+    """
+    Calcola il passo discreto minimo necessario per una formula temporale, quando intervalli hanno
+    estremi frazionari
+    """
+
+    def extract_intervals(formula):
+        intervals = []
+        if isinstance(formula, list):
+            for elem in formula:
+                if isinstance(elem, list):
+                    if elem[0] in ['G', 'F']:  # Controlla operatori temporali G (Globally) e F (Finally)
+                        start = Fraction(elem[1])
+                        end = Fraction(elem[2])
+                        difference = end-start
+                        if difference > 0:
+                            intervals.append(difference)
+                    intervals.extend(extract_intervals(elem))  # Ricorsione per esplorare strutture annidate
+        return intervals
+
+    # Estrazione degli intervalli dalla formula
+    intervals = extract_intervals(formula)
+    #Verifica se tutti gli intervalli sono interi
+    res = all(f == Fraction(int(f)) for f in intervals)
+    # Se non ci sono intervalli validi o se tutti gli intervalli sono interi, restituisce 1 (avanzamento di default)
+    if not intervals or res:
+        return 1
+
+    # Trova il minimo comune multiplo tra i numeratori e i denominatori
+
+    numeratori = [i.numerator for i in intervals]
+    denominatori = [i.denominator for i in intervals]
+
+    # Calcolo dell'MCD tra i numeratori e denominatori
+
+    mcd_numeratori = reduce(gcd, numeratori)
+    mcm_denominatori = reduce(lambda x, y: abs(x * y) // gcd(x, y), denominatori)
+
+    # Costruisci la frazione finale con MCD calcolato
+    risultato = Fraction(mcd_numeratori, mcm_denominatori)
+
+    return risultato
 
 def formula_to_string(formula):
     if isinstance(formula, list) and len(formula) == 1 and isinstance(formula[0], list): # se ho [[formula]]
@@ -476,7 +521,7 @@ def plot_tree(G):
 #formula = [['&&', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['B_q']]]] #ok
 #formula = [['&&', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['!', ['B_p']]]]] #ok
 #formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['!', ['p']]]]]
-#formula = [['G', '0', '2', ['&&', ['p'], ['q']]]] #come gestirlo? 
+#formula = [['G', '0', '2', ['&&', ['p'], ['q']]]] #come gestirlo?
 #formula = [['||', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['B_q']]]] #ok
 formula = [['&&', ['F', '0', '2', ['B_p']], ['F', '1', '3', ['B_q']]]] #ok
 #formula = [['G', '0', '3', ['F', '1', '2', ['B_p']]]]
@@ -496,6 +541,7 @@ formula = [['&&', ['F', '0', '2', ['B_p']], ['F', '1', '3', ['B_q']]]] #ok
 
 max_depth = 10
 
+step = calculate_min_step(formula) #va poi inserito per fare i jump
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
 plot_tree(tree)
@@ -513,6 +559,9 @@ F smettono di aumentare, quindi devo fare di 1 in 1 almeno per l'orizz temp del 
 
 esempio:
 G[0, 3] (F[1, 2] (B_p))
+
+(O(G[0, 3] (F[1, 2] (B_p)))), (F[1, 2] (B_p))
+                ...
 (G[1, 3] (F[1, 2] (B_p))) , (F[2, 2] (B_p))  <-----
                 ...
 (O(G[1, 3] (F[1, 2] (B_p)))), (F[2, 2] (B_p)), (F[2, 3] (B_p)) (F[2,2] è esaurito è scompare al passaggio succ)
