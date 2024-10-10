@@ -46,6 +46,7 @@ from z3 import *
 from fractions import Fraction
 from math import gcd
 from functools import reduce
+import bisect
 
 def extract_min_time(formula):
     """
@@ -108,15 +109,12 @@ def calculate_min_step(formula):
                 if isinstance(elem, list):
                     if elem[0] in ['G', 'F']:  # Controlla operatori temporali G (Globally) e F (Finally)
                         start = Fraction(elem[1])
-                        time_instants.append(elem[1])
                         end = Fraction(elem[2])
-                        time_instants.append(elem[2])
                         difference = end-start
                         if difference > 0:
                             intervals.append(difference)
                     intervals.extend(extract_intervals(elem))  # Ricorsione per esplorare strutture annidate
         return intervals
-
     # Estrazione degli intervalli dalla formula
     intervals = extract_intervals(formula)
     #Verifica se tutti gli intervalli sono interi
@@ -139,6 +137,23 @@ def calculate_min_step(formula):
     risultato = Fraction(mcd_numeratori, mcm_denominatori)
 
     return risultato
+
+
+def extract_time_instants(formula):
+    time_instants = []
+    if isinstance(formula, list):
+        for elem in formula:
+            if isinstance(elem, list):
+                if elem[0] in ['G', 'F']:  # Controlla operatori temporali G (Globally) e F (Finally)
+                    time_instants.append(elem[1])
+                    time_instants.append(elem[2])
+                elif elem[0] in ['O']:
+                    time_instants.append(elem[1][1])
+                    time_instants.append(elem[1][2])
+    time_instants = [int(x) for x in time_instants]
+    time_instants = sorted(time_instants)
+    return time_instants
+
 
 def check_nested(formula):
     '''
@@ -199,18 +214,6 @@ def formula_to_string(formula):
     #elif operator == '->':  # Implication
         #subformulas = [f"({formula_to_string(subformula)})" for subformula in formula[1:]]
         #return " -> ".join(subformulas)
-
-
-"""
-def formula_to_string(lista):
-    elementi = []
-    for elem in lista:
-        if isinstance(elem, list):
-            elementi.append(f'({formula_to_string(elem)})')
-        else:
-            elementi.append(str(elem))
-    return ", ".join(elementi)
-"""
 
 
 def decompose(node, current_time):
@@ -376,6 +379,7 @@ def decompose_jump(node):
     ed elimina il resto
 
     """
+    time_instants = extract_time_instants(node)
     #Caso in cui input sia della forma [',', [], [], ....] (un and di tante sottoformule)
     new_node = []
     if node[0] == '!':
@@ -386,9 +390,14 @@ def decompose_jump(node):
             if node[i][0] in {'F', 'G', 'U'}:
                 new_node.extend([node[i]])
             elif node[i][0] in {'O'} and int(node[i][1][1]) < int(node[i][1][2]): #incremento solo se lb < ub
-                if node[i][1][0] == 'G' and len(node) == 3: #ho solo un G nel ramo, posso passare all'ultimo istante
+                if node[i][1][0] == 'G' and len(node) == 3 and nested: #ho solo un G nel ramo, posso passare all'ultimo istante
                     sub_formula = copy.deepcopy(node[i][1])
                     sub_formula[1] = sub_formula[2]
+                    new_node.extend([sub_formula])
+                elif not nested: #se non ho operatori annidati salto al prossimo istante in cui cambia qualcosa
+                    sub_formula = copy.deepcopy(node[i][1])
+                    indice = bisect.bisect_right(time_instants, int(sub_formula[1])) #trovo il primo numero maggiore dell'istante corrente di tempo
+                    sub_formula[1] = str(time_instants[indice])
                     new_node.extend([sub_formula])
                 else:
                     sub_formula = copy.deepcopy(node[i][1]) #node[i][1] dovrebbe essere l'argomenti di 'O'
@@ -548,9 +557,8 @@ def plot_tree(G):
 
 #aggiungere B_, R_ davanti a tutte le var per identificarle come bool o real
 
-formula = [['&&', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['B_q']]]] #ok
+#formula = [['&&', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['B_q']]]] #ok
 #formula = [['&&', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['!', ['B_p']]]]] #ok
-#formula = [['&&', ['G', '0', '2', ['p']], ['F', '1', '3', ['!', ['p']]]]]
 #formula = [['G', '0', '2', ['&&', ['p'], ['q']]]] #come gestirlo?
 #formula = [['F', '0', '5', ['B_q']]]
 #formula = [['||', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['B_q']]]] #ok
@@ -558,7 +566,7 @@ formula = [['&&', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['B_q']]]] #ok
 #formula = [['G', '0', '3', ['F', '1', '2', ['B_p']]]]
 #formula = [['F', '0', '3', ['G', '1', '4', ['B_p']]]]
 #formula = [['G', '0', '5', ['G', '1', '3', ['B_p']]]]
-#formula = [['F', '0', '5', ['F', '1', '3', ['B_p']]]]
+formula = [['F', '0', '5', ['F', '1', '4', ['B_p']]]]
 #formula = [['&&', ['F', '0', '3', ['G', '1', '4', ['B_p']]], ['G', '0', '3', ['F', '0', '2', ['B_y']]]]]
 #formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['B_p']]]]]
 #formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['F', '1', '3', ['B_p']]]]]] #problemi con la funz che plotta se depth >5
@@ -574,7 +582,7 @@ formula = [['&&', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['B_q']]]] #ok
 
 max_depth = 10
 
-time_instants = []
+
 step = calculate_min_step(formula) #va poi inserito per fare i jump
 nested = check_nested(formula)
 tree = build_decomposition_tree(formula, max_depth)
