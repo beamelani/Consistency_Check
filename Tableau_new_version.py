@@ -64,14 +64,14 @@ def extract_min_time(formula):
             for i in range(1, len(formula)):
                 if len(formula[i]) > 1 and formula[i][0] not in {'O', '!'}:
                     if formula[i][3][0] in {'G', 'F'}: #caso nested, non O
-                        min_time = str(int(formula[i][1]) + int(formula[i][3][1]))
+                        min_time = str(float(formula[i][1]) + float(formula[i][3][1]))
                         min_times.append(min_time)
                     else:  #caso non nested e non O
                         min_time = formula[i][1]
                         min_times.append(min_time)
                 elif len(formula[i]) > 1 and formula[i][0] in {'O'}:
                     if formula[i][1][3][0] in {'G', 'F'}: #caso nested,  O
-                        min_time = str(int(formula[i][1][1]) + int(formula[i][1][3][1]))
+                        min_time = str(float(formula[i][1][1]) + float(formula[i][1][3][1]))
                         min_times.append(min_time)
                     else: #caso non nested, O
                         min_time = formula[i][1][1]
@@ -81,17 +81,17 @@ def extract_min_time(formula):
                 min_time = formula[1]
                 min_times.append(min_time)
             else:
-                min_time = str(int(formula[1]) + int(formula[3][1]))
+                min_time = str(float(formula[1]) + float(formula[3][1]))
                 min_times.append(min_time)
         elif formula[0] in {'O'}: #formula ha un solo elemento in O
             if formula[1][3][0] not in {'G', 'F'}:
                 min_time = formula[1][1]
                 min_times.append(min_time)
             else: #caso nested
-                min_time = str(int(formula[1][1]) + int(formula[1][3][1]))
+                min_time = str(float(formula[1][1]) + float(formula[1][3][1]))
                 min_times.append(min_time)
     if min_times:
-        return int(min(min_times))
+        return float(min(min_times))
     else:
         return None
 
@@ -125,18 +125,19 @@ def calculate_min_step(formula):
 
     # Trova il minimo comune multiplo tra i numeratori e i denominatori
 
-    numeratori = [i.numerator for i in intervals]
+    #numeratori = [i.numerator for i in intervals]
     denominatori = [i.denominator for i in intervals]
 
     # Calcolo dell'MCD tra i numeratori e denominatori
 
-    mcd_numeratori = reduce(gcd, numeratori)
+    #mcd_numeratori = reduce(gcd, numeratori)
     mcm_denominatori = reduce(lambda x, y: abs(x * y) // gcd(x, y), denominatori)
 
     # Costruisci la frazione finale con MCD calcolato
-    risultato = Fraction(mcd_numeratori, mcm_denominatori)
+   # risultato = Fraction(mcd_numeratori, mcm_denominatori)
+    risultato = Fraction(1, mcm_denominatori)
 
-    return risultato
+    return float(risultato)
 
 
 def extract_time_instants(formula):
@@ -150,7 +151,7 @@ def extract_time_instants(formula):
                 elif elem[0] in ['O']:
                     time_instants.append(elem[1][1])
                     time_instants.append(elem[1][2])
-    time_instants = [int(x) for x in time_instants]
+    time_instants = [float(x) for x in time_instants]
     time_instants = sorted(time_instants)
     return time_instants
 
@@ -269,7 +270,7 @@ def decompose(node, current_time):
                 elif node[j][0] == 'U' and node[j][1] == str(current_time):
                     return decompose_U()
                 #Caso Nested:
-                elif node[j][0] in {'G', 'F'} and node[j][3][0] in {'G', 'F'} and int(node[j][1]) + int(node[j][3][1]) == current_time:
+                elif node[j][0] in {'G', 'F'} and node[j][3][0] in {'G', 'F'} and float(node[j][1]) + float(node[j][3][1]) == current_time:
                     return decompose_nested(node[j], node, j)
                 else: #se arrivo qui vuol dire che non sono entrata in nessun return e quindi non c'era nulla da decomporre
                     #perché l'elemento era già decomposto o non ancora attivo
@@ -336,14 +337,14 @@ def decompose_nested(node, formula, index):
     if index == 0:
         if node[0] == 'G':
             extract = copy.deepcopy(node[3])
-            extract[1] = str(int(node[1]) + int(extract[1])) #quando estraggo l'op annidato devo modificare l'intervallo temporale
-            extract[2] = str(int(node[1]) + int(extract[2]))
+            extract[1] = str(float(node[1]) + float(extract[1])) #quando estraggo l'op annidato devo modificare l'intervallo temporale
+            extract[2] = str(float(node[1]) + float(extract[2]))
             node = [[',', ['O', node], extract]]
             return node
         if node[0] == 'F':
             extract = copy.deepcopy(node[3])
-            extract[1] = str(int(node[1]) + int(extract[1])) #quando estraggo l'op annidato devo modificare l'intervallo temporale
-            extract[2] = str(int(node[1]) + int(extract[2]))
+            extract[1] = str(float(node[1]) + float(extract[1])) #quando estraggo l'op annidato devo modificare l'intervallo temporale
+            extract[2] = str(float(node[1]) + float(extract[2]))
             res_1 = copy.deepcopy(node)
             res_1 = ['O', res_1]
             node = [res_1, extract]
@@ -353,8 +354,8 @@ def decompose_nested(node, formula, index):
             res_1 = copy.deepcopy(formula)
             del res_1[index] #tolgo il nested dalla formula
             extract = copy.deepcopy(node[3])
-            extract[1] = str(int(node[1]) + int(extract[1]))  # quando estraggo l'op annidato devo modificare l'intervallo temporale
-            extract[2] = str(int(node[1]) + int(extract[2]))
+            extract[1] = str(float(node[1]) + float(extract[1]))  # quando estraggo l'op annidato devo modificare l'intervallo temporale
+            extract[2] = str(float(node[1]) + float(extract[2]))
             node = [['O', node], extract]
             res_1.extend(node)
             return [res_1]
@@ -364,8 +365,8 @@ def decompose_nested(node, formula, index):
             del res_1[index]
             del res_2[index]
             extract = copy.deepcopy(node[3])
-            extract[1] = str(int(node[1]) + int(extract[1]))
-            extract[2] = str(int(node[1]) + int(extract[2]))
+            extract[1] = str(float(node[1]) + float(extract[1]))
+            extract[2] = str(float(node[1]) + float(extract[2]))
             node = [['O', node]]
             res_1.extend(node)
             res_2.extend([extract])
@@ -389,19 +390,19 @@ def decompose_jump(node):
         for i in range(1, len(node)):
             if node[i][0] in {'F', 'G', 'U'}:
                 new_node.extend([node[i]])
-            elif node[i][0] in {'O'} and int(node[i][1][1]) < int(node[i][1][2]): #incremento solo se lb < ub
-                if node[i][1][0] == 'G' and len(node) == 3 and nested: #ho solo un G nel ramo, posso passare all'ultimo istante
+            elif node[i][0] in {'O'} and float(node[i][1][1]) < float(node[i][1][2]): #incremento solo se lb < ub
+                if node[i][1][0] == 'G' and len(node) == 3 and not nested: #ho solo un G nel ramo, posso passare all'ultimo istante
                     sub_formula = copy.deepcopy(node[i][1])
                     sub_formula[1] = sub_formula[2]
                     new_node.extend([sub_formula])
                 elif not nested: #se non ho operatori annidati salto al prossimo istante in cui cambia qualcosa
                     sub_formula = copy.deepcopy(node[i][1])
-                    indice = bisect.bisect_right(time_instants, int(sub_formula[1])) #trovo il primo numero maggiore dell'istante corrente di tempo
+                    indice = bisect.bisect_right(time_instants, float(sub_formula[1])) #trovo il primo numero maggiore dell'istante corrente di tempo
                     sub_formula[1] = str(time_instants[indice])
                     new_node.extend([sub_formula])
                 else:
                     sub_formula = copy.deepcopy(node[i][1]) #node[i][1] dovrebbe essere l'argomenti di 'O'
-                    sub_formula[1] = str(int(sub_formula[1])+1)
+                    sub_formula[1] = str(float(sub_formula[1]) + step)
                     new_node.extend([sub_formula])
         if len(new_node) == 2: #se uno degli elementi iniziale è della forma OG[x,x],
             # cioè ha esaurito l'intervallo e viene eliminato, è possibile  che rimanga un solo elemento, ma preceduto dalla virgola anche se non dovrebbe
@@ -411,15 +412,14 @@ def decompose_jump(node):
         else:
             return None
     else: #caso in cui ho una sola formula
-        if int(node[1][1]) < int(node[1][2]):
+        if float(node[1][1]) < float(node[1][2]):
             #nel caso GF non posso skippare, perché devo attraversare tutto l'intervallo temporale del F
             if len(node[1][3]) > 2 and node[1][0] == 'G' and node[1][3][0] == 'F':
                 sub_formula = copy.deepcopy(node[1])  # node[1] dovrebbe essere l'argomenti di 'O'
-                sub_formula[1] = str(int(sub_formula[1]) + 1)
+                sub_formula[1] = str(float(sub_formula[1]) + step)
                 new_node.extend([sub_formula])
             else:
                 sub_formula = copy.deepcopy(node[1])  # node[1] dovrebbe essere l'argomenti di 'O'
-                #sub_formula[1] = str(int(sub_formula[1]) + 1)
                 sub_formula[1] = sub_formula[2] #se ho una sola formula posso già saltare all'ultimo istante di tempo, tranne se è GF
                 new_node.extend([sub_formula])
             return [new_node]
@@ -557,28 +557,28 @@ def plot_tree(G):
 
 #aggiungere B_, R_ davanti a tutte le var per identificarle come bool o real
 
-#formula = [['&&', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['B_q']]]] #ok
-#formula = [['&&', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['!', ['B_p']]]]] #ok
-#formula = [['G', '0', '2', ['&&', ['p'], ['q']]]] #come gestirlo?
-#formula = [['F', '0', '5', ['B_q']]]
-#formula = [['||', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['B_q']]]] #ok
-#formula = [['&&', ['F', '0', '2', ['B_p']], ['F', '1', '3', ['B_q']]]] #ok
-#formula = [['G', '0', '3', ['F', '1', '2', ['B_p']]]]
-#formula = [['F', '0', '3', ['G', '1', '4', ['B_p']]]]
-#formula = [['G', '0', '5', ['G', '1', '3', ['B_p']]]]
-formula = [['F', '0', '5', ['F', '1', '4', ['B_p']]]]
-#formula = [['&&', ['F', '0', '3', ['G', '1', '4', ['B_p']]], ['G', '0', '3', ['F', '0', '2', ['B_y']]]]]
-#formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['B_p']]]]]
-#formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['F', '1', '3', ['B_p']]]]]] #problemi con la funz che plotta se depth >5
-#formula = [['&&', ['F', '0', '3', ['G', '1', '4', ['B_p']]], ['G', '1', '6', ['!', ['B_p']]]]] #ok
-#formula = [['&&', ['G', '0', '3', ['F', '1', '4', ['B_p']]], ['F', '1', '3', ['B_q']]]] #ok
-#formula = [['&&', ['G', '0', '4', ['R_x>5']], ['F', '2', '4', ['R_x<2']]]] #consistency check ok
-#formula = [['&&', ['G', '0', '4', ['R_x>5']], ['F', '2', '4', ['R_y<2']]]] #consistency check ok
-#formula = [['&&', ['G', '0', '4', ['R_x>5']], ['F', '2', '4', ['R_y<2']], ['F', '1', '5', ['R_x == 4']]]] #ok
-#formula = [['&&', ['G', '0', '4', ['Implies(B_q, R_x>2)']], ['F', '0', '4', ['Implies(B_q, R_x<1)']]]] #il ris mi confonde
-#formula = [['&&', ['G', '0', '4', ['Implies(B_q, Not(B_p))']], ['F', '0', '4', ['Implies(B_q, B_p)']]]]
-#formula = [['&&', ['G', '0', '4', ['And(B_p, Not(B_p))']], ['F', '0', '4', ['R_x>9']]]]
-#formula = [['&&', ['G', '0', '4', ['And(B_p, Not(B_p))']], ['F', '0', '4', ['R_x>9']]]]
+formula = [['&&', ['G', '0.0', '9.0', ['B_p']], ['F', '4.0', '7.0', ['B_q']]]] #ok
+#formula = [['&&', ['G', '0.0', '2.0', ['B_p']], ['F', '1.0', '3.0', ['!', ['B_p']]]]] #ok
+#formula = [['G', '0.0', '2.0', ['&&', ['p'], ['q']]]] #come gestirlo?
+#formula = [['F', '0.0', '5.0', ['B_q']]]
+#formula = [['||', ['G', '0.0', '2.0', ['B_p']], ['F', '1.0', '3.0', ['B_q']]]] #ok
+#formula = [['&&', ['F', '0.0', '2.0', ['B_p']], ['F', '1.0', '3.0', ['B_q']]]] #ok
+#formula = [['G', '0.0', '3.0', ['F', '0.5', '2.0', ['B_p']]]]
+#formula = [['F', '0.0', '3.0', ['G', '1.0', '4.0', ['B_p']]]]
+#formula = [['G', '0.0', '5.0', ['G', '1.0', '3.0', ['B_p']]]]
+#formula = [['F', '0.0', '5.0', ['F', '1.0', '4.0', ['B_p']]]]
+#formula = [['&&', ['F', '0.0', '3.0', ['G', '1.0', '4.0', ['B_p']]], ['G', '0.0', '3.0', ['F', '0.0', '2.0', ['B_y']]]]]
+#formula = [['G', '0.0', '3.0', ['F', '1.0', '4.0', ['G', '0.0', '2.0', ['B_p']]]]]
+#formula = [['G', '0.0', '3.0', ['F', '1.0', '4.0', ['G', '0.0', '2.0', ['F', '1.0', '3.0', ['B_p']]]]]] #problemi con la funz che plotta se depth >5
+#formula = [['&&', ['F', '0.0', '3.0', ['G', '1.0', '4.0', ['B_p']]], ['G', '1.0', '6.0', ['!', ['B_p']]]]] #ok
+#formula = [['&&', ['G', '0.0', '3.0', ['F', '1.0', '4.0', ['B_p']]], ['F', '1.0', '3.0', ['B_q']]]] #ok
+#formula = [['&&', ['G', '0.0', '4.0', ['R_x>5']], ['F', '2.0', '4.0', ['R_x<2']]]] #consistency check ok
+#formula = [['&&', ['G', '0.0', '4.0', ['R_x>5']], ['F', '2.0', '4.0', ['R_y<2']]]] #consistency check ok
+#formula = [['&&', ['G', '0.0', '4.0', ['R_x>5']], ['F', '2.0', '4.0', ['R_y<2']], ['F', '1.0', '5.0', ['R_x == 4']]]] #ok
+#formula = [['&&', ['G', '0.0', '4.0', ['Implies(B_q, R_x>2)']], ['F', '0.0', '4.0', ['Implies(B_q, R_x<1)']]]] #il ris mi confonde
+#formula = [['&&', ['G', '0.0', '4.0', ['Implies(B_q, Not(B_p))']], ['F', '0.0', '4.0', ['Implies(B_q, B_p)']]]]
+#formula = [['&&', ['G', '0.0', '4.0', ['And(B_p, Not(B_p))']], ['F', '0.0', '4.0', ['R_x>9']]]]
+#formula = [['&&', ['G', '0.0', '4.0', ['And(B_p, Not(B_p))']], ['F', '0.0', '4.0', ['R_x>9']]]]
 
 max_depth = 10
 
