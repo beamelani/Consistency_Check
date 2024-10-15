@@ -34,9 +34,6 @@ solve(constraint1, constraint2,...)  #li considera in and
 """
 
 
-
-#Implementa i "salti" per accorciare il tableau
-
 import re
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -47,6 +44,7 @@ from fractions import Fraction
 from math import gcd
 from functools import reduce
 import bisect
+
 
 def extract_min_time(formula):
     """
@@ -154,19 +152,28 @@ def extract_time_instants(formula):
     time_instants = sorted(time_instants)
     return time_instants
 
+
 def check_nested(formula):
     '''
     :param formula:
     :return: la formula controlla che non ci siano operatori nested (serve per fare i salti)
     Restituisce true se ci sono, false se non ci sono
     '''
+    if len(formula) == 1:
+        formula = formula[0]
     for element in formula:
         if element[0] in {'G', 'F'} and element[3][0] in {'G', 'F'}:
+            return True
+        elif element[0] == 'O' and element[1][0] in {'G', 'F'} and element[1][3][0] in {'G', 'F'}:
             return True
     return False
 
 
 def formula_to_string(formula):
+    """
+    :param formula:
+    :return: trasforma la lista in una stringa per utilizzarla nell'etichetta del nodo del grafo e stamparla
+    """
     if isinstance(formula, list) and len(formula) == 1 and isinstance(formula[0], list): # se ho [[formula]]
         formula = formula[0]
 
@@ -217,10 +224,9 @@ def formula_to_string(formula):
 
 def decompose(node, current_time):
     """
-
     :param node: lista da decomporre che ha la forma esplicitata sopra
     :param current_time: istante di tempo attuale, per capire quali operatori sono attivi e quali no
-    :return: ritorna la lista decomposta (i.e. il successivo nodo del tree
+    :return: ritorna la lista decomposta (i.e. il successivo nodo del tree)
     """
     if isinstance(node, list):
         counter = 0
@@ -374,6 +380,8 @@ def decompose_jump(node):
     ed elimina il resto
 
     """
+    nested = check_nested(node) #meglio controllare qui, perché anche se la formula di partenza è nested,
+    #posso avere rami in cui non ho operatori nested e quindi posso accorciarli
     time_instants = extract_time_instants(node)
     #Caso in cui input sia della forma [',', [], [], ....] (un and di tante sottoformule)
     new_node = []
@@ -385,7 +393,8 @@ def decompose_jump(node):
             if node[i][0] in {'F', 'G', 'U'}:
                 new_node.extend([node[i]])
             elif node[i][0] in {'O'} and Fraction(node[i][1][1]) < Fraction(node[i][1][2]): #incremento solo se lb < ub
-                if node[i][1][0] == 'G' and len(node) == 3 and node[i][1][3][0] not in {'G', 'F'} and nested: #ho solo un G nel ramo, posso passare all'ultimo istante
+                if node[i][1][0] == 'G' and len(node) == 3 and node[i][1][3][0] not in {'G', 'F'} and nested:
+                    #ho solo un G nel ramo (ma è generato dalla dec di un operatore nested), posso passare all'ultimo istante
                     sub_formula = copy.deepcopy(node[i][1])
                     sub_formula[1] = sub_formula[2]
                     new_node.extend([sub_formula])
@@ -441,7 +450,6 @@ def smt_check(node):
                 return 'Rejected'
             if node[i][0] not in {'O', 'F', 'G', 'U', ','}:
                 new_node.extend(node[i])
-                #new_var = re.findall(r'\b[a-zA-Z_]\w*\b', new_node[-1][0])
                 if len(node[i]) == 1:
                     new_var = re.findall(r'\b[B|R]_[a-zA-Z]\w*\b', new_node[-1])
                 else:
@@ -453,7 +461,6 @@ def smt_check(node):
                 return 'Rejected'
             if node[0] not in {'O', 'F', 'G', 'U', ','}:
                 new_node.extend(node[i])
-                #new_var = re.findall(r'\b[a-zA-Z_]\w*\b', new_node[-1])
                 new_var = re.findall(r'\b[B|R]_[a-zA-Z]\w*\b', new_node[-1])
                 variabili.extend(new_var)
     for var in variabili:
@@ -491,6 +498,12 @@ def smt_check(node):
 
 
 def modify_node(node):
+    '''
+
+    :param node:
+    :return: dopo aver definito le variabili per smt check, posso togliere B_ e R_ dalla formula per poi definire i
+    vincoli
+    '''
     def flatten(lst):
         flat_list = []
         for item in lst:
@@ -549,7 +562,8 @@ def plot_tree(G):
     plt.show()
 
 
-#aggiungere B_, R_ davanti a tutte le var per identificarle come bool o real
+#aggiungere B_, R_ davanti a tutte le var per identificarle come bool o real, gli istanti temporali si possono scrivere
+#sia come interi, sia come frazioni, sia con i decimali (ma devono essere valori riconducibili a frazioni)
 
 #formula = [['&&', ['G', '1/3', '9', ['B_p']], ['F', '4', '7', ['B_q']]]]
 #formula = [['&&', ['G', '0.5', '9', ['B_p']], ['F', '4', '7', ['B_q']]]]
@@ -560,10 +574,10 @@ def plot_tree(G):
 #formula = [['||', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['B_q']]]] #ok
 #formula = [['&&', ['F', '0', '2', ['B_p']], ['F', '1', '3', ['B_q']]]] #ok
 #formula = [['G', '0', '3', ['F', '0', '2', ['B_p']]]]
-formula = [['F', '0', '3', ['G', '1', '4', ['B_p']]]]
+#formula = [['F', '0', '3', ['G', '1', '4', ['B_p']]]]
 #formula = [['G', '0', '5', ['G', '1', '3', ['B_p']]]]
 #formula = [['F', '0', '5', ['F', '1', '4', ['B_p']]]]
-#formula = [['&&', ['F', '0', '3', ['G', '1', '4', ['B_p']]], ['G', '0', '3', ['F', '0', '2', ['B_y']]]]]
+formula = [['&&', ['F', '0', '3', ['G', '1', '4', ['B_p']]], ['G', '0', '3', ['B_y']]]]
 #formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['B_p']]]]]
 #formula = [['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['F', '1', '3', ['B_p']]]]]] #problemi con la funz che plotta se depth >5
 #formula = [['&&', ['F', '0', '3', ['G', '1', '4', ['B_p']]], ['G', '1', '6', ['!', ['B_p']]]]] #ok
@@ -580,7 +594,7 @@ max_depth = 10
 
 
 step = calculate_min_step(formula) #va poi inserito per fare i jump
-nested = check_nested(formula)
+#nested = check_nested(formula)
 tree = build_decomposition_tree(formula, max_depth)
 print(tree)
 plot_tree(tree)
@@ -588,7 +602,7 @@ plot_tree(tree)
 
 """
 Implementare i jump, osservazioni:
-1)Se non ho op annidati è facile, passo da un minimo al minimo successivo, tipo:
+1)Se non ho op annidati (nested = False)  è facile, passo da un minimo al minimo successivo, tipo:
 formula = [['&&', ['G', '0', '10', ['B_p']], ['F', '5', '8', ['B_q']]]]
 faccio G in 0 e poi salto a 5, faccio G e F in 5 e poi salto a 8, faccio G e F in 8 e poi G nel resto
 
