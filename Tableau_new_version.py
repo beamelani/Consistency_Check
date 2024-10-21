@@ -42,7 +42,7 @@ from networkx.drawing.nx_pydot import graphviz_layout
 import copy
 from z3 import *
 from fractions import Fraction
-from math import gcd
+from math import gcd, lcm
 from functools import reduce
 import bisect
 
@@ -146,6 +146,51 @@ def calculate_min_step(formula):
     risultato = Fraction(1, mcm_denominatori)
 
     return risultato
+
+
+def calculate_time_quantum(formula):
+    """
+    Compute the maximum time length `quantum` such that all interval bounds are integer multiples of `quantum`.
+    """
+    def extract_bounds(formula):
+        bounds = []
+        if isinstance(formula, list):
+            for elem in formula:
+                if isinstance(elem, list):
+                    if elem[0] in ['G', 'F', 'U']:  # Controlla operatori temporali G (Globally), F (Finally) e U (Until)
+                        bounds.extend(elem[1:3])
+                    bounds.extend(extract_bounds(elem))  # Ricorsione per esplorare strutture annidate
+        return bounds
+    # Extract all bounds
+    bounds = extract_bounds(formula)
+    denominators = {Fraction(b).denominator for b in bounds}
+    return Fraction(1, lcm(*denominators))
+
+def normalize_bounds(formula):
+    quantum = calculate_time_quantum(formula)
+    if quantum == 1:
+        return formula
+    
+    def norm_bound(bound):
+        return str(int(Fraction(bound)/quantum))
+
+    def recompute_bounds(formula):
+        if isinstance(formula, list) and formula[0]:
+            if isinstance(formula[0], list):
+                return list(map(recompute_bounds, formula))
+            elif formula[0] in {'&&', '||', ','}:
+                return [formula[0]] + list(map(recompute_bounds, formula[1:]))
+            elif formula[0] in {'G', 'F'}:
+                return [formula[0], norm_bound(formula[1]), norm_bound(formula[2]), recompute_bounds(formula[3])]
+            elif formula[0] == 'U':
+                return [formula[0], norm_bound(formula[1]), norm_bound(formula[2]), recompute_bounds(formula[3]), recompute_bounds(formula[4])]
+            elif len(formula) == 1 and isinstance(formula[0], str):
+                return formula
+            else:
+                raise ValueError('Malformed formula ' + str(formula))
+        return formula
+
+    return recompute_bounds(formula)
 
 
 def extract_time_instants(formula):
@@ -683,7 +728,7 @@ formula = [['U', '1', '3', ['B_q'], ['G', '1', '4', ['B_p']]]]
 
 max_depth = 10
 
-
+#formula = normalize_bounds(formula)
 step = calculate_min_step(formula) #va poi inserito per fare i jump
 #nested = check_nested(formula)
 tree = build_decomposition_tree(formula, max_depth)
