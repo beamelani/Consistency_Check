@@ -65,12 +65,18 @@ def extract_min_time(formula):
                     if formula[i][3][0] in {'G', 'F', 'U'}: #caso nested, non O
                         min_time = str(Fraction(formula[i][1]) + Fraction(formula[i][3][1]))
                         min_times.append(min_time)
+                    elif formula[i][0] in 'U' and formula[i][4][0] in {'G', 'F', 'U'}: #caso nested U second arg
+                        min_time = str(Fraction(formula[i][1]) + Fraction(formula[i][4][1]))
+                        min_times.append(min_time)
                     else:  #caso non nested e non O
                         min_time = formula[i][1]
                         min_times.append(min_time)
                 elif len(formula[i]) > 1 and formula[i][0] in {'O'}:
                     if formula[i][1][3][0] in {'G', 'F', 'U'}: #caso nested,  O
                         min_time = str(Fraction(formula[i][1][1]) + Fraction(formula[i][1][3][1]))
+                        min_times.append(min_time)
+                    elif formula[i][1][0] in 'U' and formula[i][1][4][0] in {'G', 'F', 'U'}: # O U con nesting in second arg
+                        min_time = str(Fraction(formula[i][1][1]) + Fraction(formula[i][1][4][1]))
                         min_times.append(min_time)
                     else: #caso non nested, O
                         min_time = formula[i][1][1]
@@ -79,15 +85,24 @@ def extract_min_time(formula):
             if formula[3][0] not in {'G', 'F', 'U'}: #caso non nested
                 min_time = formula[1]
                 min_times.append(min_time)
-            else:
+            elif formula[0] in 'U' and formula[4][0] not in {'G', 'F', 'U'}: #caso non nested until second arg
+                min_time = formula[1]
+                min_times.append(min_time)
+            elif formula[0] in 'U' and formula[4][0] in {'G', 'F', 'U'}: #caso nested secondo arg
+                min_time = str(Fraction(formula[1]) + Fraction(formula[4][1]))
+                min_times.append(min_time)
+            else: #tutti gli altri casi nested
                 min_time = str(Fraction(formula[1]) + Fraction(formula[3][1]))
                 min_times.append(min_time)
         elif formula[0] in {'O'}: #formula ha un solo elemento in O
-            if formula[1][3][0] not in {'G', 'F', 'U'}:
+            if formula[1][3][0] not in {'G', 'F', 'U'} or (formula[1][0] in 'U' and formula[1][4][0] not in {'G', 'F', 'U'}):
                 min_time = formula[1][1]
                 min_times.append(min_time)
-            else: #caso nested
+            elif formula[1][3][0] in {'G', 'F', 'U'}: #caso nested  modificare per inserire anche until con nesting in secondo arg
                 min_time = str(Fraction(formula[1][1]) + Fraction(formula[1][3][1]))
+                min_times.append(min_time)
+            elif formula[1][0] in 'U' and formula[1][4][0] in {'G', 'F', 'U'}:
+                min_time = str(Fraction(formula[1][1]) + Fraction(formula[1][4][1]))
                 min_times.append(min_time)
     if min_times:
         return Fraction(min(min_times))
@@ -106,7 +121,7 @@ def calculate_min_step(formula):
         if isinstance(formula, list):
             for elem in formula:
                 if isinstance(elem, list):
-                    if elem[0] in ['G', 'F', 'U']:  # Controlla operatori temporali G (Globally) e F (Finally)
+                    if elem[0] in ['G', 'F', 'U']:  # Controlla operatori temporali G (Globally), F (Finally) e U (Until)
                         start = Fraction(elem[1])
                         end = Fraction(elem[2])
                         difference = end-start
@@ -143,7 +158,7 @@ def extract_time_instants(formula):
     if isinstance(formula, list):
         for elem in formula:
             if isinstance(elem, list):
-                if elem[0] in ['G', 'F', 'U']:  # Controlla operatori temporali G (Globally) e F (Finally)
+                if elem[0] in ['G', 'F', 'U']:  # Controlla operatori temporali G (Globally), F (Finally) e U (Until)
                     time_instants.append(elem[1])
                     time_instants.append(elem[2])
                 elif elem[0] in ['O']:
@@ -165,7 +180,11 @@ def check_nested(formula):
     for element in formula:
         if element[0] in {'G', 'F', 'U'} and element[3][0] in {'G', 'F', 'U'}:
             return True
+        elif element[0] in {'U'} and element[4][0] in {'G', 'F', 'U'}: #until ha 2 args, il nesting può anche essere nel secondo
+            return True
         elif element[0] == 'O' and element[1][0] in {'G', 'F', 'U'} and element[1][3][0] in {'G', 'F', 'U'}:
+            return True
+        elif element[0] == 'O' and element[1][0] in 'U' and element[1][4][0] in {'G', 'F', 'U'}:
             return True
     return False
 
@@ -238,16 +257,18 @@ def decompose(node, current_time):
         elif node[0] == '||':
             return decompose_or(node)
         #Se il nodo iniziale ha solo un elemento (quindi non è un and o or di più sottoformule) lo decompongo con i 5 elif di seguito
-        elif node[0] == 'G' and node[3][0] not in {'F', 'G'}: #non credo che in questi serva controllare il tempo perché se ho un solo elemento è sicuramente attivo perché considero solo il suo intervallo temp
+        elif node[0] == 'G' and node[3][0] not in {'F', 'G', 'U'}: #non credo che in questi serva controllare il tempo perché se ho un solo elemento è sicuramente attivo perché considero solo il suo intervallo temp
             return decompose_G(node, 1)
-        elif node[0] == 'F' and node[3][0] not in {'F', 'G'}:
+        elif node[0] == 'F' and node[3][0] not in {'F', 'G', 'U'}:
             return decompose_F(node, [], 0)
-        elif node[0] == 'U':
+        elif node[0] == 'U' and node[3][0] not in {'F', 'G', 'U'} and node[4][0] not in {'F', 'G', 'U'}:
             return decompose_U(node, [], 0)
         elif node[0] == '!':
             counter += 1
         #Caso nested
-        elif node[0] in {'F', 'G'} and node[3][0] in {'F', 'G'}:
+        elif node[0] in {'F', 'G'} and node[3][0] in {'F', 'G', 'U'}:
+            return decompose_nested(node, [], 0)
+        elif node[0] in 'U' and (node[3][0] in {'F', 'G', 'U'} or node[4][0] in {'F', 'G', 'U'}):
             return decompose_nested(node, [], 0)
         #Jump
         elif node[0] == 'O': #se c'è un solo elemento non servono altre condizioni
@@ -265,7 +286,7 @@ def decompose(node, current_time):
                     new_node.extend(result)
                     del new_node[j]
                     return [new_node]
-                elif node[j][0] == 'F' in {'G', 'F', 'U'} and Fraction(node[j][1]) == current_time and node[j][3][0] not in {'G', 'F', 'U'}:
+                elif node[j][0] == 'F' and Fraction(node[j][1]) == current_time and node[j][3][0] not in {'G', 'F', 'U'}:
                     result = decompose_F(node[j], node, j)
                     return result
                 elif node[j][0] == 'U' and Fraction(node[j][1]) == current_time and node[j][3][0] not in {'G', 'F', 'U'}:
