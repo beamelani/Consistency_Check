@@ -62,28 +62,28 @@ def extract_min_time(formula):
         if formula[0] in {'&&', '||', ','}:
             for i in range(1, len(formula)):
                 if len(formula[i]) > 1 and formula[i][0] not in {'O', '!'}:
-                    if formula[i][3][0] in {'G', 'F'}: #caso nested, non O
+                    if formula[i][3][0] in {'G', 'F', 'U'}: #caso nested, non O
                         min_time = str(Fraction(formula[i][1]) + Fraction(formula[i][3][1]))
                         min_times.append(min_time)
                     else:  #caso non nested e non O
                         min_time = formula[i][1]
                         min_times.append(min_time)
                 elif len(formula[i]) > 1 and formula[i][0] in {'O'}:
-                    if formula[i][1][3][0] in {'G', 'F'}: #caso nested,  O
+                    if formula[i][1][3][0] in {'G', 'F', 'U'}: #caso nested,  O
                         min_time = str(Fraction(formula[i][1][1]) + Fraction(formula[i][1][3][1]))
                         min_times.append(min_time)
                     else: #caso non nested, O
                         min_time = formula[i][1][1]
                         min_times.append(min_time)
         elif formula[0] in {'G', 'F', 'U'}: #formula ha un solo elemento
-            if formula[3][0] not in {'G', 'F'}: #caso non nested
+            if formula[3][0] not in {'G', 'F', 'U'}: #caso non nested
                 min_time = formula[1]
                 min_times.append(min_time)
             else:
                 min_time = str(Fraction(formula[1]) + Fraction(formula[3][1]))
                 min_times.append(min_time)
         elif formula[0] in {'O'}: #formula ha un solo elemento in O
-            if formula[1][3][0] not in {'G', 'F'}:
+            if formula[1][3][0] not in {'G', 'F', 'U'}:
                 min_time = formula[1][1]
                 min_times.append(min_time)
             else: #caso nested
@@ -106,7 +106,7 @@ def calculate_min_step(formula):
         if isinstance(formula, list):
             for elem in formula:
                 if isinstance(elem, list):
-                    if elem[0] in ['G', 'F']:  # Controlla operatori temporali G (Globally) e F (Finally)
+                    if elem[0] in ['G', 'F', 'U']:  # Controlla operatori temporali G (Globally) e F (Finally)
                         start = Fraction(elem[1])
                         end = Fraction(elem[2])
                         difference = end-start
@@ -143,7 +143,7 @@ def extract_time_instants(formula):
     if isinstance(formula, list):
         for elem in formula:
             if isinstance(elem, list):
-                if elem[0] in ['G', 'F']:  # Controlla operatori temporali G (Globally) e F (Finally)
+                if elem[0] in ['G', 'F', 'U']:  # Controlla operatori temporali G (Globally) e F (Finally)
                     time_instants.append(elem[1])
                     time_instants.append(elem[2])
                 elif elem[0] in ['O']:
@@ -163,9 +163,9 @@ def check_nested(formula):
     if len(formula) == 1:
         formula = formula[0]
     for element in formula:
-        if element[0] in {'G', 'F'} and element[3][0] in {'G', 'F'}:
+        if element[0] in {'G', 'F', 'U'} and element[3][0] in {'G', 'F', 'U'}:
             return True
-        elif element[0] == 'O' and element[1][0] in {'G', 'F'} and element[1][3][0] in {'G', 'F'}:
+        elif element[0] == 'O' and element[1][0] in {'G', 'F', 'U'} and element[1][3][0] in {'G', 'F', 'U'}:
             return True
     return False
 
@@ -243,7 +243,7 @@ def decompose(node, current_time):
         elif node[0] == 'F' and node[3][0] not in {'F', 'G'}:
             return decompose_F(node, [], 0)
         elif node[0] == 'U':
-            return decompose_U()
+            return decompose_U(node, [], 0)
         elif node[0] == '!':
             counter += 1
         #Caso nested
@@ -259,17 +259,17 @@ def decompose(node, current_time):
         #Scrivo un nodo come una virgola (un and) di tutti gli elementi del nodo
         elif node[0] == ',':
             for j in range(1, len(node)):
-                if node[j][0] == 'G' and Fraction(node[j][1]) == current_time and node[j][3][0] not in {'G', 'F'}:
+                if node[j][0] == 'G' and Fraction(node[j][1]) == current_time and node[j][3][0] not in {'G', 'F', 'U'}:
                     result = decompose_G(node[j], 0) #meglio passare una copia???
                     new_node = copy.deepcopy(node)
                     new_node.extend(result)
                     del new_node[j]
                     return [new_node]
-                elif node[j][0] == 'F' and Fraction(node[j][1]) == current_time and node[j][3][0] not in {'G', 'F'}:
+                elif node[j][0] == 'F' in {'G', 'F', 'U'} and Fraction(node[j][1]) == current_time and node[j][3][0] not in {'G', 'F', 'U'}:
                     result = decompose_F(node[j], node, j)
                     return result
-                elif node[j][0] == 'U' and Fraction(node[j][1]) == current_time:
-                    return decompose_U()
+                elif node[j][0] == 'U' and Fraction(node[j][1]) == current_time and node[j][3][0] not in {'G', 'F', 'U'}:
+                    return decompose_U(node[j], node, j)
                 #Caso Nested:
                 elif node[j][0] in {'G', 'F'} and node[j][3][0] in {'G', 'F'} and Fraction(node[j][1]) + Fraction(node[j][3][1]) == current_time:
                     return decompose_nested(node[j], node, j)
@@ -312,8 +312,30 @@ def decompose_F(node, formula, index):
     return [formula_1, formula_2]
 
 
-def decompose_U():
-    return
+def decompose_U(node, formula, index):
+    # esempio :['U', '2', '5', ['p'], ['q']] come lo decompongo?
+    '''
+    Potrei decomporlo dicende che all'istante 2 può succedere p o q, se succede q il req è già soddisfatto e non mi interessa
+    più cosa succede dopo (posso eliminare U da quel ramo. Mentre se succede p dovrò riportare che voglio avere pU[3,5]q all'ora all'istante successivo può succedere di nuovo p,
+    oppure può succedere q e così via fino a 5, se a 5 è sempre successo p e mai q elimino il ramo perché U non è soddisfatto
+    :return:
+    '''
+    if formula:
+        node_1 = [['O', node], node[3]]
+    else:
+        node_1 = [',', ['O', node], node[3]]
+    node_2 = [node[4]]
+    if index > 0: #se U è una sottoformula (è in and con altre formule)
+        formula_1 = copy.deepcopy(formula)
+        formula_2 = copy.deepcopy(formula)
+        del formula_1[index] #tolgo il F dalla formula di partenza
+        del formula_2[index]
+        formula_1.extend(node_1) #sdoppio la formula di partenza (senza il F) e aggiungo a una un pezzo e all'altra l'altro
+        formula_2.extend(node_2)
+    else: #se il F è l'unica formula
+        formula_1 = node_1
+        formula_2 = node_2
+    return [formula_1, formula_2]
 
 
 def decompose_and(node): #voglio che tolga TUTTI gli '&&'
@@ -394,7 +416,7 @@ def decompose_jump(node):
             if node[i][0] in {'F', 'G', 'U'}:
                 new_node.extend([node[i]])
             elif node[i][0] in {'O'} and Fraction(node[i][1][1]) < Fraction(node[i][1][2]): #incremento solo se lb < ub
-                if node[i][1][0] == 'G' and len(node) == 3 and node[i][1][3][0] not in {'G', 'F'} and nested:
+                if node[i][1][0] == 'G' and len(node) == 3 and node[i][1][3][0] not in {'G', 'F', 'U'} and nested:
                     #ho solo un G nel ramo (ma è generato dalla dec di un operatore nested), posso passare all'ultimo istante
                     sub_formula = copy.deepcopy(node[i][1])
                     sub_formula[1] = sub_formula[2]
@@ -446,8 +468,11 @@ def smt_check(node):
     vincoli = []
     for i in range(len(node)):
         if node[0] == ',': #caso con più elementi
-            if node[i][0] == 'O' and node[i][1][0] in 'F' and node[i][1][1] == node[i][1][2]:
-                print("node is rejected because finally was never satisfied")
+            if node[i][0] == 'O' and node[i][1][0] in {'F', 'U'} and node[i][1][1] == node[i][1][2]:
+                if node[i][1][0] in 'F':
+                    print("Node is rejected because finally was never satisfied in this branch")
+                else:
+                    print("Node is rejected because until was never satisfied in this branch")
                 return 'Rejected'
             if node[i][0] not in {'O', 'F', 'G', 'U', ','}:
                 new_node.extend(node[i])
@@ -458,7 +483,7 @@ def smt_check(node):
                 variabili.extend(new_var)
         else:  #caso con un solo elemento (succede se ho un ramo con solo un finally)
             if node[0] == 'O' and node[i][0] in 'F' and node[1][1] == node[1][2]:
-                print("node is rejected because finally was never satisfied")
+                print("Node is rejected because finally was never satisfied in this branch")
                 return 'Rejected'
             if node[0] not in {'O', 'F', 'G', 'U', ','}:
                 new_node.extend(node[i])
@@ -576,7 +601,7 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = [['&&', ['G', '0.0', '9.0', ['B_p']], ['F', '4.0', '7.0', ['B_q']]]] #ok
 #formula = [['&&', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['!', ['B_p']]]]] #ok
 #formula = [['G', '0', '2', ['&&', ['p'], ['q']]]] #come gestirlo? vedi sotto
-formula = [['G', '0', '2', ['And(B_p, B_q)']]]
+#formula = [['G', '0', '2', ['And(B_p, B_q)']]]
 #formula = [['F', '0', '5', ['B_q']]]
 #formula = [['||', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['B_q']]]] #ok
 #formula = [['&&', ['F', '0', '2', ['B_p']], ['F', '1', '3', ['B_q']]]] #ok
@@ -594,8 +619,12 @@ formula = [['G', '0', '2', ['And(B_p, B_q)']]]
 #formula = [['&&', ['G', '0', '4', ['R_x>5']], ['F', '2', '4', ['R_y<2']], ['F', '1', '5', ['R_x == 4']]]] #ok
 #formula = [['&&', ['G', '0', '4', ['Implies(B_q, R_x>2)']], ['F', '0', '4', ['Implies(B_q, R_x<1)']]]] #il ris mi confonde
 #formula = [['&&', ['G', '0', '4', ['Implies(B_q, Not(B_p))']], ['F', '0', '4', ['Implies(B_q, B_p)']]]]
+#formula = [['G', '0', '4', ['And(Implies(B_q, Not(B_p)), Implies(B_q, B_p))']]]
+#formula = [['G', '0', '4', ['And(B_q, Not(B_q))']]]
 #formula = [['&&', ['G', '0', '4', ['And(B_p, Not(B_p))']], ['F', '0', '4', ['R_x>9']]]]
 #formula = [['&&', ['G', '0', '4', ['And(B_p, Not(B_p))']], ['F', '0', '4', ['R_x>9']]]]
+#formula = [['U', '0', '5', ['B_p'], ['B_q']]]
+formula = [['&&', ['U', '0', '5', ['B_p'], ['B_q']], ['G', '0', '4', ['B_p']]]]
 
 max_depth = 10
 
