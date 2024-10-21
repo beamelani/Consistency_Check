@@ -678,8 +678,8 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = [['U', '0', '5', ['B_p'], ['B_q']]]
 #formula = [['&&', ['U', '0', '5', ['B_p'], ['B_q']], ['G', '0', '4', ['B_p']]]]
 #formula = [['U', '1', '3', ['G', '1', '4', ['B_p']], ['B_q']]]
-#formula = [['U', '1', '3', ['B_q'], ['G', '1', '4', ['B_p']]]]
-formula = [['U', '1', '3', ['G', '1', '4', ['B_p']], ['G', '2', '5', ['B_q']]]]
+formula = [['U', '1', '3', ['B_q'], ['G', '1', '4', ['B_p']]]]
+#formula = [['U', '1', '3', ['G', '1', '4', ['B_p']], ['G', '2', '5', ['B_q']]]]
 
 max_depth = 10
 
