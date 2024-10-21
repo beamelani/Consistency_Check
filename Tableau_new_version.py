@@ -568,7 +568,7 @@ def build_decomposition_tree(root, max_depth):
     G = nx.DiGraph()
     time = extract_min_time(root)
     counter = 0
-    root_label = " ".join([formula_to_string(root), str(counter)])
+    root_label = " ".join([formula_to_string(root), str(time), str(counter)])
     G.add_node(root_label)
     print(formula_to_string(root))
 
@@ -577,7 +577,7 @@ def build_decomposition_tree(root, max_depth):
         if depth < max_depth:
             node_copy = copy.deepcopy(node)
             current_time = extract_min_time(node_copy)
-            node_label = " ".join([formula_to_string(node), str(counter)])
+            node_label = " ".join([formula_to_string(node), str(current_time), str(counter)])
             children = decompose(node_copy, current_time)
             if children is None:
                 print('No more children in this branch')
@@ -592,7 +592,10 @@ def build_decomposition_tree(root, max_depth):
                     G.add_edge(node_label, child_label)
                 else:
                     counter += 1
-                    child_label = " ".join([formula_to_string(child), str(counter)])
+                    # Compute child time for the label (for debugging)
+                    child_time = extract_min_time(child)
+                    child_time = current_time if child_time is None else child_time
+                    child_label = " ".join([formula_to_string(child), str(child_time), str(counter)])
                     G.add_node(child_label)
                     G.add_edge(node_label, child_label)
                     add_children(child, depth + 1, current_time)
