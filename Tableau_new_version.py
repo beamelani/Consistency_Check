@@ -495,6 +495,7 @@ def decompose_jump(node):
     """
     dovrebbe essere ok: fa fare il salto agli elementi con 0, lascia come sono quelli con F,G non ancora attivi
     ed elimina il resto
+    Se la formula di partenza NON ha operatori annidati, il salto è COMPLETO
 
     """
     nested = check_nested(node) #meglio controllare qui, perché anche se la formula di partenza è nested,
@@ -531,10 +532,10 @@ def decompose_jump(node):
             return [new_node]
         else:
             return None
-    else: #caso in cui ho una sola formula
+    else: #caso in cui ho una formula con un unico operatore
         if Fraction(node[1][1]) < Fraction(node[1][2]):
             #nel caso GF non posso skippare, perché devo attraversare tutto l'intervallo temporale del F
-            if len(node[1][3]) > 2 and node[1][0] == 'G' and node[1][3][0] == 'F':
+            if len(node[1][3]) > 2 and node[1][0] == 'G' and node[1][3][0] in {'F', 'G'}: #SBAGLIATO, non entri mai qui, perché appena decomponi hai già almeno 2 elementi in questo caso
                 sub_formula = copy.deepcopy(node[1])  # node[1] dovrebbe essere l'argomenti di 'O'
                 sub_formula[1] = str(Fraction(sub_formula[1]) + step)
                 new_node.extend([sub_formula])
@@ -723,10 +724,12 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = [['U', '0', '5', ['B_p'], ['B_q']]]
 #formula = [['&&', ['U', '0', '5', ['B_p'], ['B_q']], ['G', '0', '4', ['B_p']]]]
 #formula = [['U', '1', '3', ['G', '1', '4', ['B_p']], ['B_q']]]
-formula = [['U', '1', '3', ['B_q'], ['G', '1', '4', ['B_p']]]]
+#formula = [['U', '1', '3', ['B_q'], ['G', '1', '4', ['B_p']]]]
 #formula = [['U', '1', '3', ['G', '1', '4', ['B_p']], ['G', '2', '5', ['B_q']]]]
+#formula = [['&&', ['G', '0', '7', ['F', '1', '3', ['B_p']]], ['G', '2', '9', ['B_y']]]]
+formula = [['G', '0', '7', ['F', '1', '3', ['B_p']]]]
 
-max_depth = 10
+max_depth = 6
 
 #formula = normalize_bounds(formula)
 step = calculate_min_step(formula) #va poi inserito per fare i jump
@@ -781,4 +784,52 @@ formula = [['&&', ['F', '0', '3', ['G', '1', '4', ['B_p']]], ['G', '0', '3', ['F
 (F[1, 3] (G[1, 4] (B_p))) , (G[2, 3] (F[0, 2] (B_y))) , (F[2, 3] (B_y))   <---- Ottengo il nodo uguale all'istante 2
 ovvero dopo 2 istanti di tempo che corrispondono al range temporale del F interno al FG (che è il maggior nella formula,
 perché il GF si ripete ad ogni istante di tempo, come detto sopra).
+
+
+SALTO NEI CASI COMPLICATI (GF, GG):
+esempio: G[0,7]F[1,3]p && G[2,9]q
+
+quando arrivo a:
+G[2,7]F[1,3]p, F[3,3]p, F[3,4]p, G[3,9]q
+decompongo (considero solo il ramo in cui skippo tutti i F):
+OG[2,7]F[1,3]p, OF[3,3]p, OF[3,4]p, OF[3,5]p, OG[3,9]q, q
+al salto successivo ottengo:
+G[3,7]F[1,3]p, F[4,4]p, F[4,5]p, G[5,9]q (uguale al precedente, ma shiftato), a questo punto decompongo e poi posso saltare.
+OG[3,7]F[1,3]p, OF[4,4]p, OF[4,5]p, OF[4,6]p, OG[4,9]q, q
+
+QUINDI per saltare se ho una formula del tipo G[a,b]F[c,d] (o G[a,b]G[c,d]) devo aspettare che new_a sia == a + d
+e a quel punto posso saltare di new_a* floor(b/new_a) [nel caso dell'esempio: 3*floor(7/3)=6]
+
+QUANDO SALTI PERò NON è semplice, siccome salti da 3 a 6 (nel caso dell'esempio) devi aggiungere 3, ma in modo diverso 
+per elementi diversi. Mi spiego:
+1) all'operatore esterno del nesting aggiungi 3 SOLO al primo estremo dell'intervallo temporale esterno: G[6,7]F[1,3]p
+2) agli operatori generati dalla decomposizione dell'operatore nested aggiungi 3 a ENTRAMBI gli estremi:
+   F[7,7]p, F[7,8]p (non li aggiungo a OF[4,6] perché F[7,9] esce dalla decomposizione del nuovo GF: G[6,7]F[1,3]p)
+3) agli operatori che non derivano da quello nested aggiungo 3 SOLO al primo estremo dell'intervallo: G[7,9]q
+
+In definitiva dopo il salto ottengo:
+G[6,7]F[1,3]p, F[7,7]p, F[7,8]p, G[7,9]q
+
+che decomposto diventa
+
+OG[6,7]F[1,3]p, OF[7,7]p, OF[7,8]p, OF[7,9]p, OG[7,9]q, q (ovvero OG[3,7]F[1,3]p, OF[4,4]p, OF[4,5]p, OF[4,6]p, OG[4,9]q, q)
+shiftato in avanti
+
+
+COSA succede invece se non riesco a saltare del passo calcolato? Mi spiego:
+
+Se la formula iniziale fosse 
+G[1,7]F[1,3]p (lascio perdere l'extra globally, perché non fa differenza)
+avrei che posso saltare quando new_a == a + d e quindi a 4
+
+ovvero: OG[4,7]F[1,3]p, OF[5,5]p, OF[5,6]p, OF[5,7]p
+
+e posso saltare di new_a* floor(b/new_a) = 4*floor(7/4)= 4. Ma new_a+4=4+4=8 che è > b (=7). Cosa faccio??
+
+Perché non posso direttamente saltare sempre all'ultimo istante???
+
+Se saltassi all'ultimo istante avrei:
+G[7,7]F[1,3]p, F[8,8]p, F[8,9]p che è corretto. Quindi mi sembra che una volta che arrivi a new_a == a + d tu possa sempre
+arrivare direttamente all'istante finale, perché in quel lasso di tempo non ci sono differenze nel comportamento della
+formula (a meno che ovviamente tu non abbia anche altri operatori oltre al nested che potrebbero interferire)
 """
