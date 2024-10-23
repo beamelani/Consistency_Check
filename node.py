@@ -52,6 +52,7 @@ def formula_to_string(formula):
 
 class Node:
     def __init__(self, operator, *args):
+        self.current_time = None
         self.is_derived = False
         self.operator = operator
         if operator in {'&&', '||', ',', '!'}:
@@ -61,6 +62,10 @@ class Node:
             self.lower = args[0]
             self.upper = args[1]
             self.operands = args[2:]
+        elif operator in {'O'}:
+            self.lower = None
+            self.upper = None
+            self.operands = args[0:]
         elif isinstance(operator, str) and len(args) == 0:
             self.lower = self.upper = -1
             self.operator = 'P'
@@ -88,7 +93,7 @@ class Node:
         '''
         Convert node to list representation
         '''
-        if self.operator in {'&&', '||', ',', '!'}:
+        if self.operator in {'&&', '||', ',', '!', 'O'}:
             return [self.operator] + [op.to_list() for op in self.operands]
         elif self.operator in {'G', 'F', 'U', 'R'}:
             return [self.operator, self.lower, self.upper] + [op.to_list() for op in self.operands]
