@@ -45,7 +45,7 @@ from fractions import Fraction
 from math import gcd, lcm
 from functools import reduce
 import bisect
-
+from node import Node
 
 def extract_min_time(formula):
     """
@@ -728,6 +728,9 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = [['U', '1', '3', ['G', '1', '4', ['B_p']], ['G', '2', '5', ['B_q']]]]
 #formula = [['&&', ['G', '0', '7', ['F', '1', '3', ['B_p']]], ['G', '2', '9', ['B_y']]]]
 formula = [['G', '0', '7', ['F', '1', '3', ['B_p']]]]
+
+# Crea nuovi nodi così:
+# formula = Node(*['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['F', '1', '3', ['B_p']]]]])
 
 max_depth = 6
 
