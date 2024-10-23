@@ -55,17 +55,13 @@ class Node:
         self.current_time = None
         self.is_derived = False
         self.operator = operator
-        if operator in {'&&', '||', ',', '!'}:
+        if operator in {'&&', '||', ',', '!', 'O'}:
             self.lower = self.upper = -1
             self.operands = args
         elif operator in {'G', 'F', 'U', 'R'}:
             self.lower = args[0]
             self.upper = args[1]
             self.operands = args[2:]
-        elif operator in {'O'}:
-            self.lower = None
-            self.upper = None
-            self.operands = args[0:]
         elif isinstance(operator, str) and len(args) == 0:
             self.lower = self.upper = -1
             self.operator = 'P'
