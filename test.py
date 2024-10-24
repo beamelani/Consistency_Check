@@ -122,7 +122,7 @@ def extract_min_time(node):
     all'attributo current_time della formula.
     """
 
-    def recursive_lower_bound(n, accumulated_bound=Fraction(0)):
+    def recursive_lower_bound(n, accumulated_bound):
         if n.operator in {'G', 'F', 'U', 'R'}:
             accumulated_bound += Fraction(n.lower)
             return min([recursive_lower_bound(op, accumulated_bound) for op in n.operands])
@@ -132,7 +132,7 @@ def extract_min_time(node):
         # Se è un predicato, non ha bound e quindi restituiamo il bound accumulato
         return accumulated_bound
 
-    min_lower_bound = recursive_lower_bound(node)
+    min_lower_bound = recursive_lower_bound(node, 0)
 
     # Assegna il minimo lower bound trovato all'attributo current_time della formula
     node.set_current_time(min_lower_bound)
@@ -341,9 +341,9 @@ def decompose(node, current_time):
         # Se il nodo iniziale ha solo un elemento (quindi non è un and o or di più sottoformule) lo decompongo con i 5 elif di seguito
         elif node.operator == 'G' and node.operands[0].operator not in {'F', 'G',
                                                    'U'}:  # non credo che in questi serva controllare il tempo perché se ho un solo elemento è sicuramente attivo perché considero solo il suo intervallo temp
-            return decompose_G(node, 1)
+            return decompose_G(node, [], -1)
         elif node.operator == 'F' and node.operands[0].operator not in {'F', 'G', 'U'}:
-            return decompose_F(node, [], 0)
+            return decompose_F(node, [], -1)
         elif node.operator == 'U' and node.operands[0].operator not in {'F', 'G', 'U'} and node[4][0] not in {'F', 'G', 'U'}:
             return decompose_U(node, [], 0)
         elif node[0] == '!':
@@ -356,84 +356,85 @@ def decompose(node, current_time):
             return decompose_U(node, [], 0)  # dovrebbe estrarli già questo
         # Jump
         elif node.operator == 'O':  # se c'è un solo elemento non servono altre condizioni
-            res = smt_check(node)
+            res = smt_check(node.to_list())
             if res == 'Rejected':
                 return [res]
             else:
-                return decompose_jump(node)
+                res = decompose_jump(node.to_list())
+                res[0].current_time = node.current_time
+                return res
         # Scrivo un nodo come una virgola (un and) di tutti gli elementi del nodo
         elif node.operator == ',':
-            #for j in range(1, len(node)):
-            for operand in node.operands:
-                if operand.operator == 'G' and operand.lower == current_time and operand.operands[0].operator not in {'G', 'F', 'U'}:
-                    result = decompose_G(operand, 0)  # meglio passare una copia???
-                    new_node = copy.deepcopy(node)
-                    new_node.extend(result)
-                    del new_node[j]
-                    return [new_node]
-                elif operand.operator == 'F' and operand.lower == current_time and operand.operands[0].operator not in {'G', 'F',
+            for j in range(len(node.operands)):
+                if node.operands[j].operator == 'G' and Fraction(node.operands[j].lower) == current_time and node.operands[j].operands[0].operator not in {'G', 'F', 'U'}:
+                    #new_node = decompose_G(node.operands[j], node, 0)  # meglio passare una copia???
+                    #del node.operands[j]
+                    #node.operands.extend(new_node.operands)
+                    #return [node]
+                    return decompose_G(node.operands[j], node, j)
+                elif node.operands[j].operator == 'F' and Fraction(node.operands[j].lower) == current_time and node.operands[j].operands[0].operator not in {'G', 'F',
                                                                                                           'U'}:
-                    result = decompose_F(operand, node, j) #j sarebbe indice operand, pensa a soluzione
-                    return result
-                elif operand.operator == 'U' and operand.lower == current_time and operand.operands[0].operator not in {'G', 'F',
+                    return decompose_F(node.operands[j].to_list(), node, j)
+                elif node.operands[j].operator == 'U' and Fraction(node.operands[j].lower) == current_time and node.operands[j].operands[0].operator not in {'G', 'F',
                                                                                                           'U'} and \
-                        operand.operands[1].operator not in {'G', 'F', 'U'}:
-                    return decompose_U(operand, node, j)
+                        node.operands[j].operands[1].operator not in {'G', 'F', 'U'}:
+                    return decompose_U(node.operands[j], node, j)
                 # Caso Nested:
-                elif operand.operator in {'G', 'F'} and operand.operands[0].operator in {'G', 'F', 'U'} and Fraction(operand.lower) + Fraction(
-                        operand.operands[0].lower) == current_time:
-                    return decompose_nested(operand, node, j)
-                elif operand.operator in 'U':
-                    if operand.operands[0].operator in {'G', 'F'} and Fraction(operand.lower) + Fraction(operand.operands[0].lower) == current_time:
+                elif node.operands[j].operator in {'G', 'F'} and node.operands[j].operands[0].operator in {'G', 'F', 'U'} and Fraction(node.operands[j].lower) + Fraction(
+                        node.operands[j].operands[0].lower) == current_time:
+                    return decompose_nested(node.operands[j], node, j)
+                elif node.operands[j].operator in 'U':
+                    if node.operands[j].operands[0].operator in {'G', 'F'} and Fraction(node.operands[j].lower) + Fraction(node.operands[j].operands[0].lower) == current_time:
                         # return decompose_nested(node[j], node, j)
-                        return decompose_U(operand, node, j)
-                    elif operand.operands[1].operator in {'G', 'F', 'U'} and Fraction(operand.lower) + Fraction(
-                            operand.operands[1].lower) == current_time:
+                        return decompose_U(node.operands[j], node, j)
+                    elif node.operands[j].operands[1].operator in {'G', 'F', 'U'} and Fraction(node.operands[j].lower) + Fraction(
+                            node.operands[j].operands[1].lower) == current_time:
                         # return decompose_nested(node[j], node, j)
-                        return decompose_U(operand, node, j)
+                        return decompose_U(node.operands[j], node, j)
                 else:  # se arrivo qui vuol dire che non sono entrata in nessun return e quindi non c'era nulla da decomporre
                     # perché l'elemento era già decomposto o non ancora attivo
                     counter += 1
-        if counter == len(node) - 1:  # -1 perché un elemento del nodo è la virgola
+        if counter == len(node.operands):
             # fai qui il check accept/reject, se rigetti non serve nemmeno fare il jump
-            res = smt_check(node)
+            res = smt_check(node.to_list())
             if res == 'Rejected':
                 return [res]
             else:
-                return decompose_jump(node)
+                res = decompose_jump(node.to_list())
+                res[0].current_time = node.current_time
+                return res
 
     return None  # se non c'è niente da decomporre
 
 
-def decompose_G(node, single):
-    # single==1 indica che la formula è unica (non fa già parte di un and) e quindi devo aggiungere ',' all'inizio
-    if single == 1:
+def decompose_G(node, formula, index):
+    # index < 0 indica che la formula è unica (non fa già parte di un and) e quindi devo aggiungere ',' all'inizio
+    if index < 0:
         new_node = Node(*[',', ['O', node.to_list()], [node[0][0]]])
         new_node.current_time = node.current_time
-        #node = [[',', ['O', node], node[3]]]
-    else: #da sistemare
-        node = [['O', node], node[3]]
-        new_node = Node(*[['O', node.to_list()], [node[0][0]]])
-    return new_node
+        return [new_node]
+    else:
+        new_node = Node(*[',', ['O', node.to_list()], [node[0][0]]]) #bisogna mettere la virgola, altrimenti Node() non funziona, poi la tolgo dopo
+        del formula.operands[index]
+        formula.operands.extend(new_node.operands)
+        return [formula]
 
 
 def decompose_F(node, formula, index):
-    node_1 = Node(*['O', node.to_list()])
-    node_1.current_time = node.current_time
-    node_2 = Node(*[node[0][0]]) #argomento di F
-    node_2.current_time = node.current_time
-    if index > 0:  # se il F è una sottoformula (è in and con altre formule)
-        formula_1 = copy.deepcopy(formula)
-        formula_2 = copy.deepcopy(formula)
-        del formula_1[index]  # tolgo il F dalla formula di partenza
-        del formula_2[index]
-        formula_1.extend(
-            node_1)  # sdoppio la formula di partenza (senza il F) e aggiungo a una un pezzo e all'altra l'altro
-        formula_2.extend(node_2)
-    else:  # se il F è l'unica formula
-        formula_1 = node_1
-        formula_2 = node_2
-    return formula_1, formula_2
+    if index >= 0:
+        node_1 = [',', ['O', node]]
+        node_2 = [',', node[3]]
+        del formula.operands[index]
+        node_1 = Node(*node_1)
+        node_2 = Node(*node_2)
+        new_node1 = copy.deepcopy(formula)
+        new_node2 = copy.deepcopy(formula)
+        new_node1.operands.extend(node_1.operands)
+        new_node2.operands.extend(node_2.operands)
+    else:
+        new_node1 = Node(*['O', node])
+        new_node2 = Node(*[node[3]])
+    return new_node1, new_node2
 
 
 def decompose_U(node, formula, index):
@@ -485,7 +486,7 @@ def decompose_and(node):  # voglio che tolga TUTTI gli '&&'
     for operand in node.operands:
         if not isinstance(operand, str):
             decompose_and(operand)
-    return node
+    return [node]
 
 
 def decompose_or(node):  # basta togliere l'or e fare in modo che la lista venga restituita alla funzione add children
@@ -583,9 +584,9 @@ def decompose_jump(node):
                     new_node.extend([sub_formula])
         if len(new_node) == 2:  # se uno degli elementi iniziale è della forma OG[x,x],
             # cioè ha esaurito l'intervallo e viene eliminato, è possibile  che rimanga un solo elemento, ma preceduto dalla virgola anche se non dovrebbe
-            return [new_node[1]]
+            return [Node(*new_node[1])]
         elif new_node != [',']:
-            return [new_node]
+            return [Node(*new_node)]
         else:
             return None
     else:  # caso in cui ho una formula con un unico operatore
@@ -601,7 +602,7 @@ def decompose_jump(node):
                 sub_formula[1] = sub_formula[
                     2]  # se ho una sola formula posso già saltare all'ultimo istante di tempo, tranne se è GF
                 new_node.extend([sub_formula])
-            return [new_node]
+            return [Node(*new_node)]
         else:
             return None
 
