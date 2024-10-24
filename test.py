@@ -418,8 +418,10 @@ def decompose_G(node, single):
 
 
 def decompose_F(node, formula, index):
-    node_1 = [['O', node]]
-    node_2 = [node[3]]
+    node_1 = Node(*['O', node.to_list()])
+    node_1.current_time = node.current_time
+    node_2 = Node(*[node[0][0]]) #argomento di F
+    node_2.current_time = node.current_time
     if index > 0:  # se il F è una sottoformula (è in and con altre formule)
         formula_1 = copy.deepcopy(formula)
         formula_2 = copy.deepcopy(formula)
@@ -431,7 +433,7 @@ def decompose_F(node, formula, index):
     else:  # se il F è l'unica formula
         formula_1 = node_1
         formula_2 = node_2
-    return [formula_1, formula_2]
+    return formula_1, formula_2
 
 
 def decompose_U(node, formula, index):
@@ -717,8 +719,9 @@ def build_decomposition_tree(root, max_depth):
                 print('No more children in this branch')
                 return
             else:
+                for child in children:
                 #print(formula_to_string(children))
-                print(children.to_list())
+                    print(child.to_list())
             for child in children:
                 if child == 'Rejected':
                     counter += 1
@@ -796,6 +799,7 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 # Crea nuovi nodi così:
 # formula = Node(*['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['F', '1', '3', ['B_p']]]]])
 formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['B_q']]])
+#formula = Node(*['F', '4', '7', ['B_q']])
 max_depth = 6
 
 # formula = normalize_bounds(formula)
