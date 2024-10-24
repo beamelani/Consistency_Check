@@ -47,8 +47,8 @@ from functools import reduce
 import bisect
 from node import Node
 
-'''
-def extract_min_time(formula):
+
+def extract_min_time(formula, node):
     """
     Estrae l'istante di tempo minimo da una formula STL, serve per sapere l'istante corrente
     durante la decomposizione
@@ -57,7 +57,7 @@ def extract_min_time(formula):
     min_times = []
     if isinstance(formula, list):
         if len(formula) == 1:
-            return extract_min_time(formula[0])
+            return extract_min_time(formula[0], node)
         if formula[0] == '!':
             return None
         if formula[0] in {'&&', '||', ','}:
@@ -109,13 +109,14 @@ def extract_min_time(formula):
                 min_time = str(Fraction(formula[1][1]) + Fraction(formula[1][4][1]))
                 min_times.append(min_time)
     if min_times:
+        node.current_time = Fraction(min(min_times))
         return Fraction(min(min_times))
     else:
         return None
 
+
+
 '''
-
-
 def extract_min_time(node):
     """
     Estrae il minore tra i lower bounds di una formula e assegna quel valore
@@ -127,18 +128,19 @@ def extract_min_time(node):
             accumulated_bound += Fraction(n.lower)
             return min([recursive_lower_bound(op, accumulated_bound) for op in n.operands])
         # Se è un operatore logico, esploriamo i suoi operandi senza cambiare il bound
-        elif n.operator in {'&&', '||', ',', '!'}:
+        elif n.operator in {'&&', '||', ',', '!', 'O'}:
             return min([recursive_lower_bound(op, accumulated_bound) for op in n.operands])
         # Se è un predicato, non ha bound e quindi restituiamo il bound accumulato
-        return accumulated_bound
+        elif n.operator == 'P':
+            return accumulated_bound
 
-    min_lower_bound = recursive_lower_bound(node, 0)
+    min_lower_bound = recursive_lower_bound(node, Fraction(0))
 
     # Assegna il minimo lower bound trovato all'attributo current_time della formula
     node.set_current_time(min_lower_bound)
 
     return min_lower_bound
-
+'''
 
 def calculate_min_step(formula):
     """
@@ -401,7 +403,8 @@ def decompose(node, current_time):
                 return [res]
             else:
                 res = decompose_jump(node.to_list())
-                res[0].current_time = node.current_time
+                if res:
+                    res[0].current_time = node.current_time
                 return res
 
     return None  # se non c'è niente da decomporre
@@ -515,9 +518,6 @@ def decompose_nested(node, formula, index):
             res_1 = ['O', res_1]
             node = [res_1, extract]
             return node
-        # elif node[0] == 'U':
-        # completa
-        # return node
     else:
         if node[0] == 'G':
             res_1 = copy.deepcopy(formula)
@@ -541,8 +541,6 @@ def decompose_nested(node, formula, index):
             res_1.extend(node)
             res_2.extend([extract])
             return [res_1, res_2]  # ricontrolla se le parentesi vanno bene
-        # elif node[0] == 'U':
-        # completa
     return
 
 
@@ -565,8 +563,7 @@ def decompose_jump(node):
         for i in range(1, len(node)):
             if node[i][0] in {'F', 'G', 'U'}:
                 new_node.extend([node[i]])
-            elif node[i][0] in {'O'} and Fraction(node[i][1][1]) < Fraction(
-                    node[i][1][2]):  # incremento solo se lb < ub
+            elif node[i][0] in {'O'} and Fraction(node[i][1][1]) < Fraction(node[i][1][2]):  # incremento solo se lb < ub
                 if node[i][1][0] == 'G' and len(node) == 3 and node[i][1][3][0] not in {'G', 'F', 'U'} and nested:
                     # ho solo un G nel ramo (ma è generato dalla dec di un operatore nested), posso passare all'ultimo istante
                     sub_formula = copy.deepcopy(node[i][1])
@@ -574,8 +571,7 @@ def decompose_jump(node):
                     new_node.extend([sub_formula])
                 elif not nested:  # se non ho operatori annidati salto al prossimo istante in cui cambia qualcosa
                     sub_formula = copy.deepcopy(node[i][1])
-                    indice = bisect.bisect_right(time_instants, Fraction(
-                        sub_formula[1]))  # trovo il primo numero maggiore dell'istante corrente di tempo
+                    indice = bisect.bisect_right(time_instants, Fraction(sub_formula[1]))  # trovo il primo numero maggiore dell'istante corrente di tempo
                     sub_formula[1] = str(time_instants[indice])
                     new_node.extend([sub_formula])
                 else:
@@ -701,9 +697,8 @@ def modify_node(node):
 
 def build_decomposition_tree(root, max_depth):
     G = nx.DiGraph()
-    time = extract_min_time(root)
+    time = extract_min_time(root.to_list(), root)
     counter = 0
-    #root_label = " ".join([formula_to_string(root), str(time), str(counter)])
     root_label = root.to_label(counter)
     G.add_node(root_label)
     print(root_label)
@@ -712,8 +707,7 @@ def build_decomposition_tree(root, max_depth):
         nonlocal counter
         if depth < max_depth:
             node_copy = copy.deepcopy(node)
-            current_time = extract_min_time(node_copy)
-            #node_label = " ".join([formula_to_string(node), str(current_time), str(counter)])
+            current_time = extract_min_time(node_copy.to_list(), node_copy)
             node_label = node.to_label(counter)
             children = decompose(node_copy, current_time)
             if children is None:
@@ -721,19 +715,21 @@ def build_decomposition_tree(root, max_depth):
                 return
             else:
                 for child in children:
-                #print(formula_to_string(children))
-                    print(child.to_list())
+                    if not isinstance(child, str):
+                        print(child.to_list())
+                    else:
+                        print(child)
             for child in children:
                 if child == 'Rejected':
                     counter += 1
-                    #child_label = " ".join([child, str(counter)])
-                    child_label = child.to_label(counter)
+                    child_label = " ".join([child, str(counter)])
+                    #child_label = child.to_label(counter)
                     G.add_node(child_label)
                     G.add_edge(node_label, child_label)
                 else:
                     counter += 1
                     # Compute child time for the label (for debugging)
-                    child_time = extract_min_time(child)
+                    child_time = extract_min_time(child.to_list(), child)
                     child_time = current_time if child_time is None else child_time
                     #child_label = " ".join([formula_to_string(child), str(child_time), str(counter)])
                     child_label = child.to_label(counter)
@@ -801,7 +797,7 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 # formula = Node(*['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['F', '1', '3', ['B_p']]]]])
 formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['B_q']]])
 #formula = Node(*['F', '4', '7', ['B_q']])
-max_depth = 6
+max_depth = 10
 
 # formula = normalize_bounds(formula)
 step = calculate_min_step(formula)  # va poi inserito per fare i jump
