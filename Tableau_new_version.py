@@ -222,14 +222,24 @@ def check_nested(formula):
     '''
     if len(formula) == 1:
         formula = formula[0]
-    for element in formula:
-        if element[0] in {'G', 'F', 'U'} and element[3][0] in {'G', 'F', 'U'}:
+    if formula[0] == ',':
+        for element in formula:
+            if element[0] in {'G', 'F', 'U'} and element[3][0] in {'G', 'F', 'U'}:
+                return True
+            elif element[0] in {'U'} and element[4][0] in {'G', 'F', 'U'}: #until ha 2 args, il nesting può anche essere nel secondo
+                return True
+            elif element[0] == 'O' and element[1][0] in {'G', 'F', 'U'} and element[1][3][0] in {'G', 'F', 'U'}:
+                return True
+            elif element[0] == 'O' and element[1][0] in 'U' and element[1][4][0] in {'G', 'F', 'U'}:
+                return True
+    else:
+        if formula[0] in {'G', 'F', 'U'} and formula[3][0] in {'G', 'F', 'U'}:
             return True
-        elif element[0] in {'U'} and element[4][0] in {'G', 'F', 'U'}: #until ha 2 args, il nesting può anche essere nel secondo
+        elif formula[0] in {'U'} and formula[4][0] in {'G', 'F','U'}:
             return True
-        elif element[0] == 'O' and element[1][0] in {'G', 'F', 'U'} and element[1][3][0] in {'G', 'F', 'U'}:
+        elif formula[0] == 'O' and formula[1][0] in {'G', 'F', 'U'} and formula[1][3][0] in {'G', 'F', 'U'}:
             return True
-        elif element[0] == 'O' and element[1][0] in 'U' and element[1][4][0] in {'G', 'F', 'U'}:
+        elif formula[0] == 'O' and formula[1][0] in 'U' and formula[1][4][0] in {'G', 'F', 'U'}:
             return True
     return False
 
@@ -696,7 +706,8 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 
 #formula = [['&&', ['G', '1/3', '9', ['B_p']], ['F', '4', '7', ['B_q']]]]
 #formula = [['&&', ['G', '0.5', '9', ['B_p']], ['F', '4', '7', ['B_q']]]]
-#formula = [['&&', ['G', '0.0', '9.0', ['B_p']], ['F', '4.0', '7.0', ['B_q']]]] #ok
+#formula = [['&&', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['B_q']]]] #ok
+formula = [['F', '1', '9', ['G', '2', '5', ['B_q']]]]
 #formula = [['&&', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['!', ['B_p']]]]] #ok
 #formula = [['G', '0', '2', ['&&', ['p'], ['q']]]] #come gestirlo? vedi sotto
 #formula = [['G', '0', '2', ['And(B_p, B_q)']]]
@@ -727,10 +738,12 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = [['U', '1', '3', ['B_q'], ['G', '1', '4', ['B_p']]]]
 #formula = [['U', '1', '3', ['G', '1', '4', ['B_p']], ['G', '2', '5', ['B_q']]]]
 #formula = [['&&', ['G', '0', '7', ['F', '1', '3', ['B_p']]], ['G', '2', '9', ['B_y']]]]
-formula = [['G', '0', '7', ['F', '1', '3', ['B_p']]]]
+#formula = [['G', '0', '7', ['F', '1', '3', ['B_p']]]]
 
 # Crea nuovi nodi così:
 # formula = Node(*['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['F', '1', '3', ['B_p']]]]])
+#formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['B_q']]])
+
 
 max_depth = 6
 
@@ -835,4 +848,17 @@ Se saltassi all'ultimo istante avrei:
 G[7,7]F[1,3]p, F[8,8]p, F[8,9]p che è corretto. Quindi mi sembra che una volta che arrivi a new_a == a + d tu possa sempre
 arrivare direttamente all'istante finale, perché in quel lasso di tempo non ci sono differenze nel comportamento della
 formula (a meno che ovviamente tu non abbia anche altri operatori oltre al nested che potrebbero interferire)
+
+----------------------------------------------------------------------------------------------------------
+
+Release Operator
+
+p R q
+meaning: q always holds, but it is released as soon as p holds 
+(i.e.: q must remain true up to and including the moment when p becomes true (if there is one))
+
+Cosa succede se inserisco i bound? p R[a,b] q
+
+forse il significato è: q always holds (anche prima di a), but if p happens between a and b, then q is released. Therefore if p DOES NOT
+happen between a and b, q keeps holding until the end
 """
