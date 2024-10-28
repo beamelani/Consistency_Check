@@ -318,6 +318,10 @@ def formula_to_string(formula):
         _, lowerb, upperb, arg1, arg2 = formula
         return f"({formula_to_string(arg1)}) U[{lowerb}, {upperb}] ({formula_to_string(arg2)})"
 
+    elif operator == 'R':
+        _, lowerb, upperb, arg1, arg2 = formula
+        return f"({formula_to_string(arg1)}) R[{lowerb}, {upperb}] ({formula_to_string(arg2)})"
+
     elif operator == '&&':
         subformulas = [f"({formula_to_string(subformula)})" for subformula in formula[1:]]
         return " && ".join(subformulas)
@@ -358,7 +362,7 @@ def decompose(node, current_time):
         elif node.operator == 'U' and node.operands[0].operator not in {'F', 'G', 'U'} and node.operands[1].operator not in {'F', 'G', 'U'}:
             return decompose_U(node.to_list(), [], -1)
         elif node.operator == 'R' and node.operands[0].operator not in {'F', 'G', 'U'} and node.operands[1].operator not in {'F', 'G', 'U'}:
-            return decompose_R(node.to_list(), [], -1)
+            return decompose_R(node.to_list(), [], -1, current_time)
         elif node[0] == '!':
             counter += 1
         # Caso nested
@@ -388,11 +392,15 @@ def decompose(node, current_time):
                                                                                                           'U'} and \
                         node.operands[j].operands[1].operator not in {'G', 'F', 'U'}:
                     return decompose_U(node.operands[j].to_list(), node, j)
+                elif node.operands[j].operator == 'R':
+                    if Fraction(node.operands[j].lower) < current_time: #non so se serve
+                        counter += 1
+                    return decompose_R(node.operands[j].to_list(), node, j, current_time)
                 # Caso Nested:
                 elif node.operands[j].operator in {'G', 'F'} and node.operands[j].operands[0].operator in {'G', 'F', 'U'} and Fraction(node.operands[j].lower) + Fraction(
                         node.operands[j].operands[0].lower) == current_time:
                     return decompose_nested(node.operands[j].to_list(), node, j)
-                elif node.operands[j].operator in 'U' and  Fraction(node.operands[j].lower) == current_time:
+                elif node.operands[j].operator in 'U' and Fraction(node.operands[j].lower) == current_time:
                     if node.operands[j].operands[0].operator in {'G', 'F'} and Fraction(node.operands[j].lower) + Fraction(node.operands[j].operands[0].lower) == current_time:
                         # return decompose_nested(node[j], node, j)
                         return decompose_U(node.operands[j].to_list(), node, j)
@@ -492,20 +500,45 @@ def decompose_R(node, formula, index, current_time):
     Quindi se p succede prima di a, allora q non è mai vero: quindi tra 0 e a ho che se succede p, allora non avrò mai q
     quindi se succede p, puoi cancellare il R dalla formula: quindi tra 0 a a ho p OR (pR[a,b]q)
     tra a e b ho q and O(pRq) OR p
+
+    NB: ma se succede p tra 0 ed a, q NON deve succedere tra a e b anche se succede per via di un altro operatore?
+    perché in quel caso dovrei avere (p and G[a,b](!q)) OR (pR[a,b]q)
     :param formula:
     :param index:
     :return:
     '''
-    if index == -1:
-        if node.lower < current_time:
+    if index == -1: #ho solo l'operatore R
+        #if node < current_time: #tra 0 e a
             #p OR (pR[a,b]q)
-            node_1 = Node(*node[3])
-            node_2 = Node(*node)
-        else:
+            #node_1 = Node(*node[3])
+            #node_2 = Node(*node)
+        #else:
             #(q and O(pRq)) OR p
-            node_1 = Node(*node[3])
-            node_2 = Node(*[',', ['O', node], node[4]])
+        node_1 = Node(*node[3])
+        node_2 = Node(*[',', ['O', node], node[4]])
         return node_1, node_2
+    else:
+        if Fraction(node[1]) < current_time:
+            # p OR (pR[a,b]q) (ma se succede p, q NON deve succedere tra a e b anche se succede per via di un altro operatore?
+            #perché in quel caso dovrei avere (p and G[a,b](!q)) OR (pR[a,b]q)
+            formula_1 = copy.deepcopy(formula)
+            formula_2 = copy.deepcopy(formula)
+            del formula_1.operands[index]  # tolgo U dalla formula di partenza
+            del formula_2.operands[index]
+            node_1 = Node(*[',', node[3]])
+            node_2 = Node(*[',', node])
+            formula_1.operands.extend(node_1.operands)
+            formula_2.operands.extend(node_2.operands)
+        else:
+            # (q and O(pRq)) OR p
+            formula_1 = copy.deepcopy(formula)
+            formula_2 = copy.deepcopy(formula)
+            del formula_1.operands[index]  # tolgo U dalla formula di partenza
+            del formula_2.operands[index]
+            node_1 = Node(*[',', node[3]])
+            node_2 = Node(*[',', ['O', node], node[4]])
+            formula_1.operands.extend(node_1.operands)
+            formula_2.operands.extend(node_2.operands)
     return
 
 def decompose_and(node):  # voglio che tolga TUTTI gli '&&'
@@ -872,7 +905,8 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = Node(*['U', '1', '3', ['G', '1', '4', ['B_p']], ['B_q']])
 #formula = Node(*['U', '1', '3', ['B_p'], ['B_q']])
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['U', '4', '7', ['B_q'], ['B_z']]]
-formula = Node(*['R', '4', '9', ['B_p'], ['B_q']])
+#formula = Node(*['R', '4', '9', ['B_p'], ['B_q']])
+formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['R', '4', '7', ['B_q'], ['B_z']]])
 
 formula = add_G_for_U(formula, formula.operator)
 max_depth = 10
