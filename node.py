@@ -36,6 +36,10 @@ def formula_to_string(formula):
         _, lowerb, upperb, arg1, arg2 = formula
         return f"({formula_to_string(arg1)}) U[{lowerb}, {upperb}] ({formula_to_string(arg2)})"
 
+    elif operator == 'R':
+        _, lowerb, upperb, arg1, arg2 = formula
+        return f"({formula_to_string(arg1)}) R[{lowerb}, {upperb}] ({formula_to_string(arg2)})"
+
     elif operator == '&&':
         subformulas = [f"({formula_to_string(subformula)})" for subformula in formula[1:]]
         return " && ".join(subformulas)
