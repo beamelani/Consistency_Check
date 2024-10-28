@@ -390,7 +390,7 @@ def decompose(node, current_time):
                 elif node.operands[j].operator in {'G', 'F'} and node.operands[j].operands[0].operator in {'G', 'F', 'U'} and Fraction(node.operands[j].lower) + Fraction(
                         node.operands[j].operands[0].lower) == current_time:
                     return decompose_nested(node.operands[j].to_list(), node, j)
-                elif node.operands[j].operator in 'U':
+                elif node.operands[j].operator in 'U' and  Fraction(node.operands[j].lower) == current_time:
                     if node.operands[j].operands[0].operator in {'G', 'F'} and Fraction(node.operands[j].lower) + Fraction(node.operands[j].operands[0].lower) == current_time:
                         # return decompose_nested(node[j], node, j)
                         return decompose_U(node.operands[j].to_list(), node, j)
@@ -714,6 +714,43 @@ def modify_node(node):
     return new_node
 
 
+def add_G_for_U(node, single):
+    """
+    Cerca un operatore 'U' in un nodo e, se presente, aggiunge un nodo 'G' con scope [0, lower]
+    avente come operando il primo argomento dell'operatore 'U' a pari livello.
+
+    Modifica il nodo in-place.
+
+    :param node: Oggetto di tipo Node su cui effettuare la modifica.
+    :return: Il nodo modificato con l'operatore 'G' aggiunto dove necessario.
+    """
+    if single != 'U':
+        new_operands = []
+        for operand in node.operands:
+            if isinstance(operand, Node):
+                # Se troviamo un nodo con operatore 'U', creiamo il nuovo nodo 'G'
+                if operand.operator == 'U':
+                    # Creiamo il nodo G con bounds [0, operand.lower] e primo operando di 'U'
+                    new_G_node = Node('G', '0', operand.lower, operand.operands[0])
+                    # Aggiungiamo sia l'operatore 'U' corrente sia il nuovo 'G' come figli del nodo
+                    new_operands.append(operand)
+                    new_operands.append(new_G_node)
+                else:
+                    # Se non è un nodo 'U', richiamiamo ricorsivamente la funzione
+                    add_G_for_U(operand, ',')
+                    new_operands.append(operand)
+            else:
+                new_operands.append(operand)
+
+        # Aggiorna gli operandi del nodo corrente con quelli modificati
+        node.operands = new_operands
+        return node
+    else:
+        new_G_node = Node(*['G', '0', node.lower, node.operands[0].to_list()])
+        # Ritorna un nodo con ',' come operatore che include sia 'U' sia 'G'
+        return Node(*[',', node.to_list(), new_G_node.to_list()])
+
+
 def build_decomposition_tree(root, max_depth):
     G = nx.DiGraph()
     time = extract_min_time(root.to_list(), root)
@@ -819,10 +856,13 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = Node(*['F', '4', '7', ['B_q']])
 #formula = Node(*[',', ['G', '1', '9', ['F', '2', '5', ['B_q']]], ['G', '3', '10', ['B_p']]])
 #formula = Node(*['F', '1', '9', ['G', '2', '5', ['B_q']]])
-#formula = Node(*['U', '1', '3', ['B_q'], ['B_p']])
-formula = Node(*['U', '1', '3', ['G', '1', '4', ['B_p']], ['B_q']])
+#formula = Node(*['U', '5', '8', ['B_q'], ['B_p']])
+#formula = Node(*['U', '1', '3', ['G', '1', '4', ['B_p']], ['B_q']])
+formula = Node(*['U', '1', '3', ['B_p'], ['B_q']])
+#formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['U', '4', '7', ['B_q'], ['B_z']]]
 
-max_depth = 7
+formula = add_G_for_U(formula, formula.operator)
+max_depth = 10
 
 # formula = normalize_bounds(formula)
 step = calculate_min_step(formula)  # va poi inserito per fare i jump
