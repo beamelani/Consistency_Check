@@ -357,7 +357,7 @@ def decompose(node, current_time):
             return decompose_F(node, [], -1)
         elif node.operator == 'U' and node.operands[0].operator not in {'F', 'G', 'U'} and node.operands[1].operator not in {'F', 'G', 'U'}:
             return decompose_U(node.to_list(), [], -1)
-        elif node.operator == 'R' node.operands[0].operator not in {'F', 'G', 'U'} and node.operands[1].operator not in {'F', 'G', 'U'}:
+        elif node.operator == 'R' and node.operands[0].operator not in {'F', 'G', 'U'} and node.operands[1].operator not in {'F', 'G', 'U'}:
             return decompose_R(node.to_list(), [], -1)
         elif node[0] == '!':
             counter += 1
@@ -870,8 +870,9 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = Node(*['F', '1', '9', ['G', '2', '5', ['B_q']]])
 #formula = Node(*['U', '5', '8', ['B_q'], ['B_p']])
 #formula = Node(*['U', '1', '3', ['G', '1', '4', ['B_p']], ['B_q']])
-formula = Node(*['U', '1', '3', ['B_p'], ['B_q']])
+#formula = Node(*['U', '1', '3', ['B_p'], ['B_q']])
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['U', '4', '7', ['B_q'], ['B_z']]]
+formula = Node(*['R', '4', '9', ['B_p'], ['B_q']])
 
 formula = add_G_for_U(formula, formula.operator)
 max_depth = 10
