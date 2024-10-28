@@ -357,6 +357,8 @@ def decompose(node, current_time):
             return decompose_F(node, [], -1)
         elif node.operator == 'U' and node.operands[0].operator not in {'F', 'G', 'U'} and node.operands[1].operator not in {'F', 'G', 'U'}:
             return decompose_U(node.to_list(), [], -1)
+        elif node.operator == 'R' node.operands[0].operator not in {'F', 'G', 'U'} and node.operands[1].operator not in {'F', 'G', 'U'}:
+            return decompose_R(node.to_list(), [], -1)
         elif node[0] == '!':
             counter += 1
         # Caso nested
@@ -483,17 +485,27 @@ def decompose_U(node, formula, index):
         formula_2 = node_2
     return [formula_1, formula_2]
 
-def decompose_R(node, formula, index):
+def decompose_R(node, formula, index, current_time):
     '''
     p R[a,b] q
     q always holds in [a, b], but if p holds in a position t'' before b, then q holds from a to t''
     Quindi se p succede prima di a, allora q non è mai vero: quindi tra 0 e a ho che se succede p, allora non avrò mai q
-    quindi se succede p, puoi cancellare il R dalla formula
+    quindi se succede p, puoi cancellare il R dalla formula: quindi tra 0 a a ho p OR (pR[a,b]q)
     tra a e b ho q and O(pRq) OR p
     :param formula:
     :param index:
     :return:
     '''
+    if index == -1:
+        if node.lower < current_time:
+            #p OR (pR[a,b]q)
+            node_1 = Node(*node[3])
+            node_2 = Node(*node)
+        else:
+            #(q and O(pRq)) OR p
+            node_1 = Node(*node[3])
+            node_2 = Node(*[',', ['O', node], node[4]])
+        return node_1, node_2
     return
 
 def decompose_and(node):  # voglio che tolga TUTTI gli '&&'
