@@ -408,6 +408,7 @@ def decompose_U(node, formula, index):
         if node[3][0] in {'G', 'F', 'U'}:
             new_node = copy.deepcopy(node[3])
             new_node[1] = str(Fraction(new_node[1]) + Fraction(node[1]))
+            new_node[2] = str(Fraction(new_node[2]) + Fraction(node[1]))
             node_1 = [['O', node], new_node]
         else:
             node_1 = [['O', node], node[3]]
@@ -415,12 +416,14 @@ def decompose_U(node, formula, index):
         if node[3][0] in {'G', 'F', 'U'}:
             new_node = copy.deepcopy(node[3])
             new_node[1] = str(Fraction(new_node[1]) + Fraction(node[1]))
+            new_node[2] = str(Fraction(new_node[2]) + Fraction(node[1]))
             node_1 = [',', ['O', node], new_node]
         else:
             node_1 = [',', ['O', node], node[3]]
     if node[4][0] in {'G', 'F', 'U'}:
         new_node2 = copy.deepcopy(node[4])
         new_node2[1] = str(Fraction(new_node2[1]) + Fraction(node[1]))
+        new_node2[2] = str(Fraction(new_node2[2]) + Fraction(node[1]))
         node_2 = [new_node2]
     else:
         node_2 = [node[4]]
