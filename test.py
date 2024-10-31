@@ -385,14 +385,12 @@ def decompose(node, current_time):
             for j in range(len(node.operands)):
                 if node.operands[j].operator == '||':
                     return decompose_or(node.operands[j], node, j)
-                if node.operands[j].operator == 'G' and Fraction(node.operands[j].lower) == current_time and node.operands[j].operands[0].operator not in {'G', 'F', 'U'}:
+                elif node.operands[j].operator == 'G' and Fraction(node.operands[j].lower) == current_time and node.operands[j].operands[0].operator not in {'G', 'F', 'U'}:
                     return decompose_G(node.operands[j], node, j)
                 elif node.operands[j].operator == 'F' and Fraction(node.operands[j].lower) == current_time and node.operands[j].operands[0].operator not in {'G', 'F',
                                                                                                           'U'}:
                     return decompose_F(node.operands[j].to_list(), node, j)
-                elif node.operands[j].operator == 'U' and Fraction(node.operands[j].lower) == current_time and node.operands[j].operands[0].operator not in {'G', 'F',
-                                                                                                          'U', 'R'} and \
-                        node.operands[j].operands[1].operator not in {'G', 'F', 'U', 'R'}:
+                elif node.operands[j].operator == 'U' and Fraction(node.operands[j].lower) == current_time and node.operands[j].operands[0].operator not in {'G', 'F', 'U'} and node.operands[j].operands[1].operator not in {'G', 'F', 'U'}:
                     return decompose_U(node.operands[j].to_list(), node, j)
                 elif node.operands[j].operator == 'R' and Fraction(node.operands[j].lower) == current_time:
                     return decompose_R(node.operands[j].to_list(), node, j)
@@ -400,12 +398,6 @@ def decompose(node, current_time):
                 elif node.operands[j].operator in {'G', 'F'} and node.operands[j].operands[0].operator in {'G', 'F', 'U', 'R'} and Fraction(node.operands[j].lower) + Fraction(
                         node.operands[j].operands[0].lower) == current_time:
                     return decompose_nested(node.operands[j].to_list(), node, j)
-                elif node.operands[j].operator in 'U' and Fraction(node.operands[j].lower) == current_time:
-                    if node.operands[j].operands[0].operator in {'G', 'F', 'U', 'R'} and Fraction(node.operands[j].lower) + Fraction(node.operands[j].operands[0].lower) == current_time:
-                        return decompose_U(node.operands[j].to_list(), node, j)
-                    elif node.operands[j].operands[1].operator in {'G', 'F', 'U', 'R'} and Fraction(node.operands[j].lower) + Fraction(
-                            node.operands[j].operands[1].lower) == current_time:
-                        return decompose_U(node.operands[j].to_list(), node, j)
                 else:  # se arrivo qui vuol dire che non sono entrata in nessun return e quindi non c'era nulla da decomporre
                     # perché l'elemento era già decomposto o non ancora attivo
                     counter += 1
@@ -456,6 +448,7 @@ def decompose_F(node, formula, index):
 def decompose_U(node, formula, index):
     # esempio :['U', '2', '5', ['p'], ['q']] come lo decompongo?
     '''
+    NB:nei casi nested devo sommare gli estremi degli intervalli?
     Potrei decomporlo dicende che all'istante 2 può succedere p o q, se succede q il req è già soddisfatto e non mi interessa
     più cosa succede dopo (posso eliminare U da quel ramo. Mentre se succede p dovrò riportare che voglio avere pU[3,5]q all'ora all'istante successivo può succedere di nuovo p,
     oppure può succedere q e così via fino a 5, se a 5 è sempre successo p e mai q elimino il ramo perché U non è soddisfatto
