@@ -358,7 +358,7 @@ def decompose(node, current_time):
                                                    'U'}:  # non credo che in questi serva controllare il tempo perché se ho un solo elemento è sicuramente attivo perché considero solo il suo intervallo temp
             return decompose_G(node, [], -1)
         elif node.operator == 'F' and node.operands[0].operator not in {'F', 'G', 'U'}:
-            return decompose_F(node, [], -1)
+            return decompose_F(node.to_list(), [], -1)
         elif node.operator == 'U' and node.operands[0].operator not in {'F', 'G', 'U'} and node.operands[1].operator not in {'F', 'G', 'U'}:
             return decompose_U(node.to_list(), [], -1)
         elif node.operator == 'R' and node.operands[0].operator not in {'F', 'G', 'U'} and node.operands[1].operator not in {'F', 'G', 'U'}:
@@ -441,7 +441,7 @@ def decompose_F(node, formula, index):
         new_node2.operands.extend(node_2.operands)
     else:
         new_node1 = Node(*['O', node])
-        new_node2 = Node(*[node[3]])
+        new_node2 = Node(*node[3])
     return new_node1, new_node2
 
 
@@ -750,7 +750,7 @@ def add_G_for_U(node, single):
     Cerca un operatore 'U' in un nodo e, se presente, aggiunge un nodo 'G' con scope [0, lower]
     avente come operando il primo argomento dell'operatore 'U' a pari livello.
 
-    Modifica il nodo in-place.
+    Invece per R sostituisce R con F[0,a] p OR (p R[a,b] q)
 
     :param node: Oggetto di tipo Node su cui effettuare la modifica.
     :return: Il nodo modificato con l'operatore 'G' aggiunto dove necessario.
@@ -767,8 +767,8 @@ def add_G_for_U(node, single):
                     new_operands.append(operand)
                     new_operands.append(new_G_node)
                 elif operand.operator == 'R':
-                    new_G_node = Node(*['G', '0', operand.lower, ['||', operand.operands[0].to_list(), operand.to_list()]])
-                    #new_operands.append(operand)
+                    new_G_node = Node(*['||', ['F', '0', operand.lower, operand.operands[0].to_list()], operand.to_list()])
+                    #new_operands.append(operand) #Non lo metto perché voglio sostituire R con new_G_node
                     new_operands.append(new_G_node)
                 else:
                     # Se non è un nodo 'U', richiamiamo ricorsivamente la funzione
@@ -786,9 +786,8 @@ def add_G_for_U(node, single):
             # Ritorna un nodo con ',' come operatore che include sia 'U' sia 'G'
             return Node(*[',', node.to_list(), new_G_node.to_list()])
         else:
-            new_G_node = Node(*['G', '0', node.lower, ['||', node.operands[0].to_list(), node.to_list()]])
+            new_G_node = Node(*['||', ['F', '0', node.lower, node.operands[0].to_list()], node.to_list()])
             return new_G_node
-            #return Node(*[',', node.to_list(), new_G_node.to_list()])
 
 def build_decomposition_tree(root, max_depth):
     G = nx.DiGraph()
@@ -896,10 +895,10 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = Node(*[',', ['G', '1', '9', ['F', '2', '5', ['B_q']]], ['G', '3', '10', ['B_p']]])
 #formula = Node(*['F', '1', '9', ['G', '2', '5', ['B_q']]])
 #formula = Node(*['U', '5', '8', ['B_q'], ['B_p']])
-formula = Node(*['U', '1', '3', ['G', '1', '4', ['B_p']], ['B_q']])
+#formula = Node(*['U', '1', '3', ['G', '1', '4', ['B_p']], ['B_q']])
 #formula = Node(*['U', '1', '3', ['B_p'], ['B_q']])
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['U', '4', '7', ['B_q'], ['B_z']]]
-#formula = Node(*['R', '2', '9', ['B_p'], ['B_q']])
+formula = Node(*['R', '2', '9', ['B_p'], ['B_q']])
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['R', '2', '4', ['B_q'], ['B_z']]])
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['G', '1', '7', ['||', ['B_q'], ['B_z']]]])
 
