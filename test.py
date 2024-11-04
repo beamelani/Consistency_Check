@@ -282,6 +282,41 @@ def check_nested(formula):
             return True
     return False
 
+
+def flagging(formula):
+    '''
+    :param formula:
+    :return: la formula controlla che non ci siano operatori nested problematici (GF, GG,until con nesting nel
+    primo arg, release con nesting nel secondo arg
+    '''
+    if len(formula) == 1:
+        formula = formula[0]
+    if formula[0] == ',':
+        for element in formula:
+            #if element[0] in {'G'} and element[3][0] in {'G', 'F'}: #se non sono ancora attivi non creano problemi
+                #return True
+            #elif element[0] in {'U', 'R'} and element[4][0] in {'G', 'F', 'U', 'R'}: #until/release ha 2 args, il nesting può anche essere nel secondo
+                #return True
+            if element[0] == 'O' and element[1][0] in {'G'} and element[1][3][0] in {'G', 'F', 'U', 'R'}:
+                return True
+            elif element[0] == 'O' and element[1][0] in {'R'} and element[1][4][0] in {'G', 'F', 'U', 'R'}:
+                return True
+            elif element[0] == 'O' and element[1][0] in {'U'} and element[1][3][0] in {'G', 'F', 'U', 'R'}:
+                return True
+    else:
+        #if formula[0] in {'G', 'F', 'U', 'R'} and formula[3][0] in {'G', 'F', 'U', 'R'}:
+            #return True
+        #elif formula[0] in {'U', 'R'} and formula[4][0] in {'G', 'F', 'U', 'R'}:
+            #return True
+        if formula[0] == 'O' and formula[1][0] in {'G'} and formula[1][3][0] in {'G', 'F', 'U', 'R'}:
+            return True
+        elif formula[0] == 'O' and formula[1][0] in {'R'} and formula[1][4][0] in {'G', 'F', 'U', 'R'}:
+            return True
+        elif formula[0] == 'O' and formula[1][0] in {'U'} and formula[1][3][0] in {'G', 'F', 'U', 'R'}:
+            return True
+    return False
+
+
 def formula_to_string(formula):
     """
     :param formula:
@@ -606,6 +641,57 @@ def decompose_nested(node, formula, index):
     return
 
 
+def decompose_jump(node): #Devi farlo usando Node invece di lista
+    '''
+    nuova versione del codice, distingue casi problematici da non problematici, dovrebbe lavorare sui Node
+    '''
+    nested = check_nested(node)
+    time_instants = extract_time_instants(node)
+    flag = flagging(node)
+    # Caso in cui input sia della forma [',', [], [], ....] (un and di tante sottoformule)
+    new_node = []
+    if node[0] == '!':
+        return None
+    if node[0] == ',':
+        new_node = [',']
+        if not flag: #non ci sono operatori probelmatici
+            for i in range(1, len(node)):
+                if node[i][0] in {'F', 'G', 'U', 'R'}:
+                    new_node.extend([node[i]])
+                elif node[i][0] in {'O'} and Fraction(node[i][1][1]) < Fraction(node[i][1][2]):
+                    sub_formula = copy.deepcopy(node[i][1])
+                    indice = bisect.bisect_right(time_instants, Fraction(sub_formula[1]))  # trovo il primo numero maggiore dell'istante corrente di tempo
+                    sub_formula[1] = str(time_instants[indice])
+                    new_node.extend([sub_formula])
+        else: #caso con operatori problematici
+            for i in range(1, len(node)):
+                if node[i][0] in {'F', 'G', 'U', 'R'}:
+                    new_node.extend([node[i]])
+                elif node[i][0] in {'O'} and Fraction(node[i][1][1]) < Fraction(node[i][1][2]):
+                    sub_formula = copy.deepcopy(node[i][1])  # node[i][1] dovrebbe essere l'argomenti di 'O'
+                    sub_formula[1] = str(Fraction(sub_formula[1]) + step)
+                    new_node.extend([sub_formula])
+        if len(new_node) == 2:  # se uno degli elementi iniziale è della forma OG[x,x],
+            # cioè ha esaurito l'intervallo e viene eliminato, è possibile  che rimanga un solo elemento, ma preceduto dalla virgola anche se non dovrebbe
+            return [Node(*new_node[1])]
+        elif new_node != [',']:
+            return [Node(*new_node)]
+        else:
+            return None
+    else: #ho una formula con un solo operatore
+        if not flag and Fraction(node[1][1]) < Fraction(node[1][2]):
+            sub_formula = copy.deepcopy(node[1])  # node[1] dovrebbe essere l'argomenti di 'O'
+            sub_formula[1] = sub_formula[2]  # se ho una sola formula posso già saltare all'ultimo istante di tempo
+            new_node.extend(sub_formula)
+            return [Node(*new_node)]
+        elif flag and Fraction(node[1][1]) < Fraction(node[1][2]):
+            sub_formula = copy.deepcopy(node[1])  # node[1] dovrebbe essere l'argomenti di 'O'
+            sub_formula[1] = str(Fraction(sub_formula[1]) + step)
+            new_node.extend([sub_formula])
+            return [Node(*new_node)]
+        else:
+            return None
+'''
 def decompose_jump(node):
     """
     dovrebbe essere ok: fa fare il salto agli elementi con 0, lascia come sono quelli con F,G,U,R non ancora attivi
@@ -632,6 +718,11 @@ def decompose_jump(node):
                     sub_formula[1] = sub_formula[2]
                     new_node.extend([sub_formula])
                 elif node[i][1][0] == 'R' and nested and node[i][1][4][0] not in {'G', 'F', 'U', 'R'}: #controlla che sia ok
+                    sub_formula = copy.deepcopy(node[i][1])
+                    indice = bisect.bisect_right(time_instants, Fraction(sub_formula[1]))  # trovo il primo numero maggiore dell'istante corrente di tempo
+                    sub_formula[1] = str(time_instants[indice])
+                    new_node.extend([sub_formula])
+                elif node[i][1][0] == 'U' and nested and node[i][1][3][0] not in {'G', 'F', 'U', 'R'}: #controlla che sia ok
                     sub_formula = copy.deepcopy(node[i][1])
                     indice = bisect.bisect_right(time_instants, Fraction(sub_formula[1]))  # trovo il primo numero maggiore dell'istante corrente di tempo
                     sub_formula[1] = str(time_instants[indice])
@@ -669,7 +760,7 @@ def decompose_jump(node):
         else:
             return None
 
-
+'''
 def smt_check(node):
     """
     NB : Potresti avere anche variabili Bool, qui setti tutte le variabili come Real
@@ -908,7 +999,7 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 
 # Crea nuovi nodi così:
 # formula = Node(*['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['F', '1', '3', ['B_p']]]]])
-#formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['B_q']]])
+formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['B_q']]])
 #formula = Node(*['||', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['B_q']], ['G', '1', '6', ['B_z']]])
 #formula = Node(*['F', '4', '7', ['B_q']])
 #formula = Node(*[',', ['G', '1', '9', ['F', '2', '5', ['B_q']]], ['G', '0', '10', ['B_p']]])
@@ -916,16 +1007,18 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = Node(*['U', '5', '8', ['B_q'], ['B_p']])
 #formula = Node(*['U', '1', '5', ['G', '1', '2', ['B_p']], ['B_q']])
 #formula = Node(*['U', '1', '3', ['B_p'], ['B_q']])
-#formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['U', '4', '7', ['B_q'], ['B_z']]]
+#formula = Node(*['&&', ['G', '3', '5', ['B_p']], ['U', '0', '7', ['B_q'], ['G', '0', '3', ['B_z']]]])
 #formula = Node(*['R', '2', '9', ['B_p'], ['B_q']])
 #formula = Node(*['R', '2', '9', ['G', '0', '9', ['B_p']], ['B_q']])
-#formula = Node(*['U', '0', '9', ['G', '0', '3', ['B_p']], ['B_q']]) #problematico il salto
-formula = Node(*['U', '0', '9', ['B_q'], ['G', '0', '3', ['B_p']]]) #no problemi
+#formula = Node(*['U', '0', '9', ['F', '0', '3', ['B_p']], ['B_q']]) #problematico il salto
+#formula = Node(*['U', '0', '9', ['B_q'], ['F', '0', '3', ['B_p']]]) #no problemi
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['R', '2', '4', ['B_q'], ['B_z']]])
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['G', '1', '7', ['||', ['B_q'], ['B_z']]]])
+#formula = Node(*['G', '0', '6', ['U', '0', '3', ['B_p'], ['B_q']]]) #problematico
+#formula = Node(*['F', '0', '6', ['G', '1', '3', ['B_p']]])
 
 formula = add_G_for_U(formula, formula.operator)
-max_depth = 10
+max_depth = 15
 
 # formula = normalize_bounds(formula)
 step = calculate_min_step(formula)  # va poi inserito per fare i jump
@@ -937,7 +1030,29 @@ plot_tree(tree)
 
 
 '''
-Considerazioni su casi problematici (tipo GF):
-1) nel ramo in cui faccio sempre i F al primo istante possibile, ho il nodo che si ripete shiftato ad ogni istante di tempo
-Ma posso condensarlo? perché è sempre in OR con il caso in cui NON decompongo subito il F
+CASI NON PROBLEMATICI:
+FG
+FF
+FU (non problematico, ma ogni volta che estrai U dovresti aggiungere il G)
+U con nesting nel secondo argument
+R con nesting nel primo argument
+
+CASI PROBLEMATICI:
+GF
+GG
+GU
+GR
+U con nesting nel primo argument (F,G)
+R con nesting nel secondo argument (F,G)
+
+CASI NON ANALIZZATI:
+
+FU
+FR
+UU
+UR
+RU
+RR
+
+
 '''
