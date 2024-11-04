@@ -361,7 +361,7 @@ def decompose(node, current_time):
             return decompose_F(node.to_list(), [], -1)
         elif node.operator == 'U' and node.operands[0].operator not in {'F', 'G', 'U', 'R'} and node.operands[1].operator not in {'F', 'G', 'U'}:
             return decompose_U(node.to_list(), [], -1)
-        elif node.operator == 'R' and node.operands[0].operator not in {'F', 'G', 'U', 'R'} and node.operands[1].operator not in {'F', 'G', 'U'}:
+        elif node.operator == 'R':
             return decompose_R(node.to_list(), [], -1)
         elif node[0] == '!':
             counter += 1
@@ -458,7 +458,7 @@ def decompose_U(node, formula, index):
     oppure può succedere q e così via fino a 5, se a 5 è sempre successo p e mai q elimino il ramo perché U non è soddisfatto
     :return:
     '''
-    if node[3][0] in {'G', 'F', 'U'}: #caso nested
+    if node[3][0] in {'G', 'F', 'U', 'R'}: #caso nested
         new_node = copy.deepcopy(node[3])
         new_node[1] = str(Fraction(new_node[1]) + Fraction(node[1]))
         new_node[2] = str(Fraction(new_node[2]) + Fraction(node[1]))
@@ -466,12 +466,14 @@ def decompose_U(node, formula, index):
         node_1.operands[1].is_derived = True
     else:
         node_1 = Node(*[',', ['O', node], node[3]])
-    if node[4][0] in {'G', 'F', 'U'}: #caso nested
+    if node[4][0] in {'G', 'F', 'U', 'R'}: #caso nested
         new_node2 = copy.deepcopy(node[4])
         new_node2[1] = str(Fraction(new_node2[1]) + Fraction(node[1]))
         new_node2[2] = str(Fraction(new_node2[2]) + Fraction(node[1]))
         node_2 = Node(*new_node2)
+        node_2_2 = Node(*[',', new_node2])
         node_2.is_derived = True
+        node_2_2.is_derived = True
     else:
         node_2 = Node(*node[4])
         node_2_2 = Node(*[',', node[4]]) #perché poi quando faccio extend lo faccio con gli operands e tolgo ','
@@ -505,7 +507,10 @@ def decompose_R(node, formula, index):
     '''
     if index == -1: #ho solo l'operatore R
         node_1 = Node(*node[3])
-        node_2 = Node(*[',', ['O', node], node[4]])
+        if node[1] == node[2]:
+            node_2 = Node(*node[4])
+        else:
+            node_2 = Node(*[',', ['O', node], node[4]])
         return node_1, node_2
     else:
             # (q and O(pRq)) OR p
@@ -514,7 +519,10 @@ def decompose_R(node, formula, index):
         del formula_1.operands[index]  # tolgo U dalla formula di partenza
         del formula_2.operands[index]
         node_1 = Node(*[',', node[3]])
-        node_2 = Node(*[',', ['O', node], node[4]])
+        if node[1] == node[2]:
+            node_2 = Node(*[',', node[4]])
+        else:
+            node_2 = Node(*[',', ['O', node], node[4]])
         formula_1.operands.extend(node_1.operands)
         formula_2.operands.extend(node_2.operands)
     return formula_1, formula_2
@@ -600,7 +608,7 @@ def decompose_nested(node, formula, index):
 
 def decompose_jump(node):
     """
-    dovrebbe essere ok: fa fare il salto agli elementi con 0, lascia come sono quelli con F,G non ancora attivi
+    dovrebbe essere ok: fa fare il salto agli elementi con 0, lascia come sono quelli con F,G,U,R non ancora attivi
     ed elimina il resto
     Se la formula di partenza NON ha operatori annidati, il salto è COMPLETO
 
@@ -622,6 +630,11 @@ def decompose_jump(node):
                     # ho solo un G nel ramo (ma è generato dalla dec di un operatore nested), posso passare all'ultimo istante
                     sub_formula = copy.deepcopy(node[i][1])
                     sub_formula[1] = sub_formula[2]
+                    new_node.extend([sub_formula])
+                elif node[i][1][0] == 'R' and nested and node[i][1][4][0] not in {'G', 'F', 'U', 'R'}: #controlla che sia ok
+                    sub_formula = copy.deepcopy(node[i][1])
+                    indice = bisect.bisect_right(time_instants, Fraction(sub_formula[1]))  # trovo il primo numero maggiore dell'istante corrente di tempo
+                    sub_formula[1] = str(time_instants[indice])
                     new_node.extend([sub_formula])
                 elif not nested:  # se non ho operatori annidati salto al prossimo istante in cui cambia qualcosa
                     sub_formula = copy.deepcopy(node[i][1])
@@ -764,13 +777,13 @@ def add_G_for_U(node, single):
         for operand in node.operands:
             if isinstance(operand, Node):
                 # Se troviamo un nodo con operatore 'U', creiamo il nuovo nodo 'G'
-                if operand.operator == 'U':
+                if operand.operator == 'U' and operand.lower != '0':
                     # Creiamo il nodo G con bounds [0, operand.lower] e primo operando di 'U'
                     new_G_node = Node('G', '0', operand.lower, operand.operands[0])
                     # Aggiungiamo sia l'operatore 'U' corrente sia il nuovo 'G' come figli del nodo
                     new_operands.append(operand)
                     new_operands.append(new_G_node)
-                elif operand.operator == 'R':
+                elif operand.operator == 'R' and operand.lower != '0':
                     new_G_node = Node(*['||', ['F', '0', operand.lower, operand.operands[0].to_list()], operand.to_list()])
                     #new_operands.append(operand) #Non lo metto perché voglio sostituire R con new_G_node
                     new_operands.append(new_G_node)
@@ -785,13 +798,15 @@ def add_G_for_U(node, single):
         node.operands = new_operands
         return node
     else:
-        if single == 'U':
+        if single == 'U' and node.lower != '0':
             new_G_node = Node(*['G', '0', node.lower, node.operands[0].to_list()])
             # Ritorna un nodo con ',' come operatore che include sia 'U' sia 'G'
             return Node(*[',', node.to_list(), new_G_node.to_list()])
-        else:
+        elif single == 'R' and node.lower != '0':
             new_G_node = Node(*['||', ['F', '0', node.lower, node.operands[0].to_list()], node.to_list()])
             return new_G_node
+        else:
+            return node
 
 def build_decomposition_tree(root, max_depth):
     G = nx.DiGraph()
@@ -903,7 +918,10 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = Node(*['U', '1', '3', ['B_p'], ['B_q']])
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['U', '4', '7', ['B_q'], ['B_z']]]
 #formula = Node(*['R', '2', '9', ['B_p'], ['B_q']])
-formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['R', '2', '4', ['B_q'], ['B_z']]])
+#formula = Node(*['R', '2', '9', ['G', '0', '9', ['B_p']], ['B_q']])
+#formula = Node(*['U', '0', '9', ['G', '0', '3', ['B_p']], ['B_q']]) #problematico il salto
+formula = Node(*['U', '0', '9', ['B_q'], ['G', '0', '3', ['B_p']]]) #no problemi
+#formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['R', '2', '4', ['B_q'], ['B_z']]])
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['G', '1', '7', ['||', ['B_q'], ['B_z']]]])
 
 formula = add_G_for_U(formula, formula.operator)
