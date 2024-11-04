@@ -64,21 +64,21 @@ def extract_min_time(formula, node):
             for i in range(1, len(formula)):
                 if len(formula[i]) > 1 and formula[i][0] not in {'O', '!', '||'}:
                     if formula[i][3][0] in {'G', 'F', 'U', 'R'}:  # caso nested, non O
-                        min_time = str(Fraction(formula[i][1]) + Fraction(formula[i][3][1]))
+                        min_time = str(Fraction(formula[i][1])) #+ Fraction(formula[i][3][1])) #tolgo la somma perché decompongono subito
                         min_times.append(min_time)
                     elif formula[i][0] in {'U', 'R'} and formula[i][4][0] in {'G', 'F', 'U', 'R'}:  # caso nested U second arg
-                        min_time = str(Fraction(formula[i][1]) + Fraction(formula[i][4][1]))
+                        min_time = str(Fraction(formula[i][1])) #+ Fraction(formula[i][4][1]))
                         min_times.append(min_time)
                     else:  # caso non nested e non O
                         min_time = formula[i][1]
                         min_times.append(min_time)
                 elif len(formula[i]) > 1 and formula[i][0] in {'O'}:
                     if formula[i][1][3][0] in {'G', 'F', 'U', 'R'}:  # caso nested,  O
-                        min_time = str(Fraction(formula[i][1][1]) + Fraction(formula[i][1][3][1]))
+                        min_time = str(Fraction(formula[i][1][1]))# + Fraction(formula[i][1][3][1]))
                         min_times.append(min_time)
                     elif formula[i][1][0] in {'U', 'R'} and formula[i][1][4][0] in {'G', 'F',
                                                                              'U', 'R'}:  # O U con nesting in second arg
-                        min_time = str(Fraction(formula[i][1][1]) + Fraction(formula[i][1][4][1]))
+                        min_time = str(Fraction(formula[i][1][1]))# + Fraction(formula[i][1][4][1]))
                         min_times.append(min_time)
                     else:  # caso non nested, O
                         min_time = formula[i][1][1]
@@ -91,10 +91,10 @@ def extract_min_time(formula, node):
                 min_time = formula[1]
                 min_times.append(min_time)
             elif formula[0] in {'U', 'R'} and formula[4][0] in {'G', 'F', 'U', 'R'}:  # caso nested secondo arg
-                min_time = str(Fraction(formula[1]) + Fraction(formula[4][1]))
+                min_time = str(Fraction(formula[1]))# + Fraction(formula[4][1]))
                 min_times.append(min_time)
             else:  # tutti gli altri casi nested
-                min_time = str(Fraction(formula[1]) + Fraction(formula[3][1]))
+                min_time = str(Fraction(formula[1]))# + Fraction(formula[3][1]))
                 min_times.append(min_time)
         elif formula[0] in {'O'}:  # formula ha un solo elemento in O
             if formula[1][3][0] not in {'G', 'F', 'U', 'R'} or (
@@ -103,10 +103,10 @@ def extract_min_time(formula, node):
                 min_times.append(min_time)
             elif formula[1][3][0] in {'G', 'F',
                                       'U', 'R'}:  # caso nested  modificare per inserire anche until con nesting in secondo arg
-                min_time = str(Fraction(formula[1][1]) + Fraction(formula[1][3][1]))
+                min_time = str(Fraction(formula[1][1]))# + Fraction(formula[1][3][1]))
                 min_times.append(min_time)
             elif formula[1][0] in {'U', 'R'} and formula[1][4][0] in {'G', 'F', 'U', 'R'}:
-                min_time = str(Fraction(formula[1][1]) + Fraction(formula[1][4][1]))
+                min_time = str(Fraction(formula[1][1]))# + Fraction(formula[1][4][1]))
                 min_times.append(min_time)
     if min_times:
         node.current_time = Fraction(min(min_times))
@@ -355,21 +355,20 @@ def decompose(node, current_time):
             return decompose_or(node, [], -1)
         # Se il nodo iniziale ha solo un elemento (quindi non è un and o or di più sottoformule) lo decompongo con i 5 elif di seguito
         elif node.operator == 'G' and node.operands[0].operator not in {'F', 'G',
-                                                   'U'}:  # non credo che in questi serva controllare il tempo perché se ho un solo elemento è sicuramente attivo perché considero solo il suo intervallo temp
+                                                   'U', 'R'}:  # non credo che in questi serva controllare il tempo perché se ho un solo elemento è sicuramente attivo perché considero solo il suo intervallo temp
             return decompose_G(node, [], -1)
-        elif node.operator == 'F' and node.operands[0].operator not in {'F', 'G', 'U'}:
+        elif node.operator == 'F' and node.operands[0].operator not in {'F', 'G', 'U', 'R'}:
             return decompose_F(node.to_list(), [], -1)
-        elif node.operator == 'U' and node.operands[0].operator not in {'F', 'G', 'U'} and node.operands[1].operator not in {'F', 'G', 'U'}:
+        elif node.operator == 'U' and node.operands[0].operator not in {'F', 'G', 'U', 'R'} and node.operands[1].operator not in {'F', 'G', 'U'}:
             return decompose_U(node.to_list(), [], -1)
-        elif node.operator == 'R' and node.operands[0].operator not in {'F', 'G', 'U'} and node.operands[1].operator not in {'F', 'G', 'U'}:
+        elif node.operator == 'R' and node.operands[0].operator not in {'F', 'G', 'U', 'R'} and node.operands[1].operator not in {'F', 'G', 'U'}:
             return decompose_R(node.to_list(), [], -1)
         elif node[0] == '!':
             counter += 1
         # Caso nested
-        elif node.operator in {'F', 'G'} and node.operands[0].operator in {'F', 'G', 'U'}:
+        elif node.operator in {'F', 'G'} and node.operands[0].operator in {'F', 'G', 'U', 'R'}:
             return decompose_nested(node.to_list(), node, -1)
-        elif node.operator in 'U' and (node.operands[0].operator in {'F', 'G', 'U'} or node.operands[1].operator in {'F', 'G', 'U'}):
-            # return decompose_nested(node, [], 0) serve??
+        elif node.operator in 'U' and (node.operands[0].operator in {'F', 'G', 'U', 'R'} or node.operands[1].operator in {'F', 'G', 'U', 'R'}):
             return decompose_U(node.to_list(), [], -1)  # dovrebbe estrarli già questo
         # Jump
         elif node.operator == 'O':  # se c'è un solo elemento non servono altre condizioni
@@ -390,7 +389,7 @@ def decompose(node, current_time):
                 elif node.operands[j].operator == 'F' and Fraction(node.operands[j].lower) == current_time and node.operands[j].operands[0].operator not in {'G', 'F',
                                                                                                           'U'}:
                     return decompose_F(node.operands[j].to_list(), node, j)
-                elif node.operands[j].operator == 'U' and Fraction(node.operands[j].lower) == current_time and node.operands[j].operands[0].operator not in {'G', 'F', 'U'} and node.operands[j].operands[1].operator not in {'G', 'F', 'U'}:
+                elif node.operands[j].operator == 'U' and Fraction(node.operands[j].lower) == current_time:
                     return decompose_U(node.operands[j].to_list(), node, j)
                 elif node.operands[j].operator == 'R' and Fraction(node.operands[j].lower) == current_time:
                     return decompose_R(node.operands[j].to_list(), node, j)
@@ -417,11 +416,17 @@ def decompose(node, current_time):
 def decompose_G(node, formula, index):
     # index < 0 indica che la formula è unica (non fa già parte di un and) e quindi devo aggiungere ',' all'inizio
     if index < 0:
-        new_node = Node(*[',', ['O', node.to_list()], node.operands[0].to_list()])
+        if node.lower == node.upper: #se sono all'ultimo istante non metto il OG
+            new_node = Node(*node.operands[0].to_list())
+        else:
+            new_node = Node(*[',', ['O', node.to_list()], node.operands[0].to_list()])
         new_node.current_time = node.current_time
         return [new_node]
     else:
-        new_node = Node(*[',', ['O', node.to_list()], node.operands[0].to_list()]) #bisogna mettere la virgola, altrimenti Node() non funziona, poi la tolgo dopo
+        if node.lower == node.upper:
+            new_node = Node(*[',', node.operands[0].to_list()])
+        else:
+            new_node = Node(*[',', ['O', node.to_list()], node.operands[0].to_list()]) #bisogna mettere la virgola, altrimenti Node() non funziona, poi la tolgo dopo
         del formula.operands[index]
         formula.operands.extend(new_node.operands)
         return [formula]
@@ -891,18 +896,18 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['B_q']]])
 #formula = Node(*['||', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['B_q']], ['G', '1', '6', ['B_z']]])
 #formula = Node(*['F', '4', '7', ['B_q']])
-#formula = Node(*[',', ['G', '1', '9', ['F', '2', '5', ['B_q']]], ['G', '3', '10', ['B_p']]])
-#formula = Node(*['F', '1', '9', ['G', '2', '5', ['B_q']]])
+#formula = Node(*[',', ['G', '1', '9', ['F', '2', '5', ['B_q']]], ['G', '0', '10', ['B_p']]])
+#formula = Node(*['G', '1', '6', ['F', '1', '3', ['B_q']]])
 #formula = Node(*['U', '5', '8', ['B_q'], ['B_p']])
-#formula = Node(*['U', '1', '3', ['G', '1', '4', ['B_p']], ['B_q']])
+formula = Node(*['U', '1', '5', ['G', '1', '2', ['B_p']], ['B_q']])
 #formula = Node(*['U', '1', '3', ['B_p'], ['B_q']])
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['U', '4', '7', ['B_q'], ['B_z']]]
-formula = Node(*['R', '2', '9', ['B_p'], ['B_q']])
+#formula = Node(*['R', '2', '9', ['B_p'], ['B_q']])
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['R', '2', '4', ['B_q'], ['B_z']]])
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['G', '1', '7', ['||', ['B_q'], ['B_z']]]])
 
 formula = add_G_for_U(formula, formula.operator)
-max_depth = 10
+max_depth = 5
 
 # formula = normalize_bounds(formula)
 step = calculate_min_step(formula)  # va poi inserito per fare i jump
@@ -913,3 +918,8 @@ plot_tree(tree)
 
 
 
+'''
+Considerazioni su casi problematici (tipo GF):
+1) nel ramo in cui faccio sempre i F al primo istante possibile, ho il nodo che si ripete shiftato ad ogni istante di tempo
+Ma posso condensarlo? perché è sempre in OR con il caso in cui NON decompongo subito il F
+'''
