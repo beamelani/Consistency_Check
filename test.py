@@ -154,7 +154,7 @@ def calculate_min_step(formula):
             for elem in formula:
                 if isinstance(elem, list):
                     if elem[0] in ['G', 'F',
-                                   'U']:  # Controlla operatori temporali G (Globally), F (Finally) e U (Until)
+                                   'U', 'R']:  # Controlla operatori temporali
                         start = Fraction(elem[1])
                         end = Fraction(elem[2])
                         difference = end - start
@@ -193,7 +193,7 @@ def calculate_time_quantum(formula):
             for elem in formula:
                 if isinstance(elem, list):
                     if elem[0] in ['G', 'F',
-                                   'U']:  # Controlla operatori temporali G (Globally), F (Finally) e U (Until)
+                                   'U', 'R']:  # Controlla operatori temporali G (Globally), F (Finally) e U (Until)
                         bounds.extend(elem[1:3])
                     bounds.extend(extract_bounds(elem))  # Ricorsione per esplorare strutture annidate
         return bounds
@@ -220,7 +220,7 @@ def normalize_bounds(formula):
                 return [formula[0]] + list(map(recompute_bounds, formula[1:]))
             elif formula[0] in {'G', 'F'}:
                 return [formula[0], norm_bound(formula[1]), norm_bound(formula[2]), recompute_bounds(formula[3])]
-            elif formula[0] == 'U':
+            elif formula[0] in {'U', 'R'}:
                 return [formula[0], norm_bound(formula[1]), norm_bound(formula[2]), recompute_bounds(formula[3]),
                         recompute_bounds(formula[4])]
             elif len(formula) == 1 and isinstance(formula[0], str):
@@ -242,7 +242,7 @@ def extract_time_instants(formula):
     if isinstance(formula, list):
         for elem in formula:
             if isinstance(elem, list):
-                if elem[0] in ['G', 'F', 'U']:  # Controlla operatori temporali G (Globally), F (Finally) e U (Until)
+                if elem[0] in ['G', 'F', 'U', 'R']:  # Controlla operatori temporali G (Globally), F (Finally) e U (Until)
                     time_instants.append(elem[1])
                     time_instants.append(elem[2])
                 elif elem[0] in ['O']:
@@ -263,22 +263,22 @@ def check_nested(formula):
         formula = formula[0]
     if formula[0] == ',':
         for element in formula:
-            if element[0] in {'G', 'F', 'U'} and element[3][0] in {'G', 'F', 'U'}:
+            if element[0] in {'G', 'F', 'U', 'R'} and element[3][0] in {'G', 'F', 'U', 'R'}:
                 return True
-            elif element[0] in {'U'} and element[4][0] in {'G', 'F', 'U'}: #until ha 2 args, il nesting può anche essere nel secondo
+            elif element[0] in {'U', 'R'} and element[4][0] in {'G', 'F', 'U', 'R'}: #until/release ha 2 args, il nesting può anche essere nel secondo
                 return True
-            elif element[0] == 'O' and element[1][0] in {'G', 'F', 'U'} and element[1][3][0] in {'G', 'F', 'U'}:
+            elif element[0] == 'O' and element[1][0] in {'G', 'F', 'U', 'R'} and element[1][3][0] in {'G', 'F', 'U', 'R'}:
                 return True
-            elif element[0] == 'O' and element[1][0] in 'U' and element[1][4][0] in {'G', 'F', 'U'}:
+            elif element[0] == 'O' and element[1][0] in {'U', 'R'} and element[1][4][0] in {'G', 'F', 'U', 'R'}:
                 return True
     else:
-        if formula[0] in {'G', 'F', 'U'} and formula[3][0] in {'G', 'F', 'U'}:
+        if formula[0] in {'G', 'F', 'U', 'R'} and formula[3][0] in {'G', 'F', 'U', 'R'}:
             return True
-        elif formula[0] in {'U'} and formula[4][0] in {'G', 'F','U'}:
+        elif formula[0] in {'U', 'R'} and formula[4][0] in {'G', 'F', 'U', 'R'}:
             return True
-        elif formula[0] == 'O' and formula[1][0] in {'G', 'F', 'U'} and formula[1][3][0] in {'G', 'F', 'U'}:
+        elif formula[0] == 'O' and formula[1][0] in {'G', 'F', 'U', 'R'} and formula[1][3][0] in {'G', 'F', 'U', 'R'}:
             return True
-        elif formula[0] == 'O' and formula[1][0] in 'U' and formula[1][4][0] in {'G', 'F', 'U'}:
+        elif formula[0] == 'O' and formula[1][0] in {'U', 'R'} and formula[1][4][0] in {'G', 'F', 'U', 'R'}:
             return True
     return False
 
@@ -615,10 +615,10 @@ def decompose_jump(node):
     if node[0] == ',':
         new_node = [',']
         for i in range(1, len(node)):
-            if node[i][0] in {'F', 'G', 'U'}:
+            if node[i][0] in {'F', 'G', 'U', 'R'}:
                 new_node.extend([node[i]])
             elif node[i][0] in {'O'} and Fraction(node[i][1][1]) < Fraction(node[i][1][2]):  # incremento solo se lb < ub
-                if node[i][1][0] == 'G' and len(node) == 3 and node[i][1][3][0] not in {'G', 'F', 'U'} and nested:
+                if node[i][1][0] == 'G' and len(node) == 3 and node[i][1][3][0] not in {'G', 'F', 'U', 'R'} and nested:
                     # ho solo un G nel ramo (ma è generato dalla dec di un operatore nested), posso passare all'ultimo istante
                     sub_formula = copy.deepcopy(node[i][1])
                     sub_formula[1] = sub_formula[2]
@@ -643,7 +643,7 @@ def decompose_jump(node):
         if Fraction(node[1][1]) < Fraction(node[1][2]):
             # nel caso GF non posso skippare, perché devo attraversare tutto l'intervallo temporale del F
             if len(node[1][3]) > 2 and node[1][0] == 'G' and node[1][3][0] in {'F',
-                                                                               'G'}:  # SBAGLIATO, non entri mai qui, perché appena decomponi hai già almeno 2 elementi in questo caso
+                                                                               'G', 'U', 'R'}:  # SBAGLIATO, non entri mai qui, perché appena decomponi hai già almeno 2 elementi in questo caso
                 sub_formula = copy.deepcopy(node[1])  # node[1] dovrebbe essere l'argomenti di 'O'
                 sub_formula[1] = str(Fraction(sub_formula[1]) + step)
                 new_node.extend([sub_formula])
@@ -899,15 +899,15 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = Node(*[',', ['G', '1', '9', ['F', '2', '5', ['B_q']]], ['G', '0', '10', ['B_p']]])
 #formula = Node(*['G', '1', '6', ['F', '1', '3', ['B_q']]])
 #formula = Node(*['U', '5', '8', ['B_q'], ['B_p']])
-formula = Node(*['U', '1', '5', ['G', '1', '2', ['B_p']], ['B_q']])
+#formula = Node(*['U', '1', '5', ['G', '1', '2', ['B_p']], ['B_q']])
 #formula = Node(*['U', '1', '3', ['B_p'], ['B_q']])
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['U', '4', '7', ['B_q'], ['B_z']]]
 #formula = Node(*['R', '2', '9', ['B_p'], ['B_q']])
-#formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['R', '2', '4', ['B_q'], ['B_z']]])
+formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['R', '2', '4', ['B_q'], ['B_z']]])
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['G', '1', '7', ['||', ['B_q'], ['B_z']]]])
 
 formula = add_G_for_U(formula, formula.operator)
-max_depth = 5
+max_depth = 10
 
 # formula = normalize_bounds(formula)
 step = calculate_min_step(formula)  # va poi inserito per fare i jump
