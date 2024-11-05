@@ -57,6 +57,7 @@ def formula_to_string(formula):
 class Node:
     def __init__(self, operator, *args):
         self.current_time = None
+        self.initial_time = None
         self.is_derived = False
         self.operator = operator
         if operator in {'&&', '||', ',', '!', 'O'}:
