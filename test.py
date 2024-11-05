@@ -632,12 +632,14 @@ def decompose_nested(node, formula, index):
 
 def decompose_jump(node): #Devi farlo usando Node invece di lista
     '''
-    nuova versione del codice, distingue casi problematici da non problematici, dovrebbe lavorare sui Node
+    nuova versione del codice, distingue casi problematici da non problematici
 
     NB nei casi PROBLEMATICI (flag = True) posso saltare a partire dal minimo tra range dell'operatore esterno
-    e a+d (G[a,b]F[c,d]...) e salto fino al minimo successivo della formula completa. Se il minimo tra i 2 è l'op
-    esterno in realta non devo fare nulla perché avanzo di 1 in 1 finche non sparisce il nesting, a quel punto la
-    flag dicenta False ed entro nell'altro caso.
+    e a+d (G[a,b]F[c,d]...) e salto fino al minimo successivo della formula completa (senza contare i bound degli op derivati dalla decomposizione dei nested).
+    Se il minimo tra i 2 è l'op esterno in realta non devo fare nulla perché avanzo di 1 in 1 finche non sparisce il nesting, a quel punto la
+    flag diventa False ed entro nell'altro caso.
+
+    NB: NON CONTARE I BOUND DEGLI OPERATORI DERIVED DAI NESTED, PUò CREARE PROBLEMI SE HO + DI UN OP. NESTED?
     '''
     nested = check_nested(node.to_list()) #credo non serva +
     time_instants = extract_time_instants(node)
@@ -728,7 +730,7 @@ def decompose_jump(node): #Devi farlo usando Node invece di lista
             sub_formula[1] = sub_formula[2]  # se ho una sola formula posso già saltare all'ultimo istante di tempo
             new_node.extend(sub_formula)
             return [Node(*new_node)]
-        elif flag and Fraction(node.operands[0].lower) < Fraction(node.operands[0].upper):
+        elif flag and Fraction(node.operands[0].lower) < Fraction(node.operands[0].upper): #mi sa che non ci entro mai
             sub_formula = copy.deepcopy(node.operands[0].to_list())
             sub_formula[1] = str(Fraction(sub_formula[1]) + step)
             new_node.extend([sub_formula])
@@ -738,6 +740,7 @@ def decompose_jump(node): #Devi farlo usando Node invece di lista
 '''
 def decompose_jump(node):
     """
+    VECCHIA VERSIONE
     dovrebbe essere ok: fa fare il salto agli elementi con 0, lascia come sono quelli con F,G,U,R non ancora attivi
     ed elimina il resto
     Se la formula di partenza NON ha operatori annidati, il salto è COMPLETO
