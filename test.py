@@ -235,13 +235,14 @@ def extract_time_instants(formula):
     time_instants = sorted(time_instants)
     return time_instants
 
-
+'''
 def check_nested(formula):
-    '''
-    :param formula:
-    :return: la formula controlla che non ci siano operatori nested (serve per fare i salti)
-    Restituisce true se ci sono, false se non ci sono
-    '''
+
+    #NON SERVE +
+    #:param formula:
+    #:return: la formula controlla che non ci siano operatori nested (serve per fare i salti)
+    #Restituisce true se ci sono, false se non ci sono
+
     if len(formula) == 1:
         formula = formula[0]
     if formula[0] == ',':
@@ -264,7 +265,7 @@ def check_nested(formula):
         elif formula[0] == 'O' and formula[1][0] in {'U', 'R'} and formula[1][4][0] in {'G', 'F', 'U', 'R'}:
             return True
     return False
-
+'''
 
 def flagging(formula):
     '''
@@ -362,7 +363,6 @@ def decompose(node, current_time):
     :param current_time: istante di tempo attuale, per capire quali operatori sono attivi e quali no
     :return: ritorna la lista decomposta (i.e. il successivo nodo del tree)
     """
-    list_node = node.to_list()
     if node.operator != 'P':
         counter = 0
         #if len(node) == 1:
@@ -641,7 +641,7 @@ def decompose_jump(node): #Devi farlo usando Node invece di lista
 
     NB: NON CONTARE I BOUND DEGLI OPERATORI DERIVED DAI NESTED, PUò CREARE PROBLEMI SE HO + DI UN OP. NESTED?
     '''
-    nested = check_nested(node.to_list()) #credo non serva +
+    #nested = check_nested(node.to_list()) #credo non serva +
     time_instants = extract_time_instants(node)
     flag = flagging(node.to_list())
     # Caso in cui input sia della forma [',', [], [], ....] (un and di tante sottoformule)
@@ -677,7 +677,7 @@ def decompose_jump(node): #Devi farlo usando Node invece di lista
                 #controllando se ogni operatore è derivato da un nested o no (perché saltano in modo diverso)
                 if operand.operator in {'O'} and Fraction(operand.operands[0].lower) <= Fraction(operand.operands[0].upper):
                     if operand.operands[0].operator in {'G', 'U'} and operand.operands[0].operands[0].operator in {'G', 'F', 'U', 'R'}:
-                        if Fraction(operand.operands[0].lower) == Fraction(operand.operands[0].initial_time) + Fraction(operand.operands[0].operands[0].upper): #se operatore interno è esaurito
+                        if Fraction(operand.operands[0].lower) >= Fraction(operand.operands[0].initial_time) + Fraction(operand.operands[0].operands[0].upper): #se operatore interno è esaurito
                             sub_formula = copy.deepcopy(operand.operands[0].to_list())
                             #NB problema, in time_instants non dovrei includere quelli degli op che derivano dalla dec dei nested
                             indice = bisect.bisect_right(time_instants, Fraction(
@@ -686,7 +686,7 @@ def decompose_jump(node): #Devi farlo usando Node invece di lista
                         else: #se sono qui non posso saltare, devo andare avanti di 1 in 1
                             jump.append(Fraction(1))
                     elif operand.operands[0].operator in {'R'} and operand.operands[0].operands[1].operator in {'G', 'F', 'U','R'}:
-                        if Fraction(operand.operands[0].lower) == Fraction(operand.operands[0].initial_time) + Fraction(operand.operands[0].operands[1].upper): #VERIFICA INDICE upper
+                        if Fraction(operand.operands[0].lower) >= Fraction(operand.operands[0].initial_time) + Fraction(operand.operands[0].operands[1].upper): #VERIFICA INDICE upper
                             sub_formula = copy.deepcopy(operand.operands[0].to_list())
                             indice = bisect.bisect_right(time_instants, Fraction(
                                 sub_formula[1]))  # trovo il primo numero maggiore dell'istante corrente di tempo
@@ -900,6 +900,12 @@ def modify_node(node):
     return new_node
 
 def set_initial_time(formula):
+    '''
+
+    :param formula:
+    :return: Serve per il jump nei casi nested problematici (devo sapere qual era il lower bound iniziale
+    del nested + esterno per sapere se posso saltare)
+    '''
     if formula.operator in {'&&', '||', ',', '!'}:
         for operand in formula.operands:
             if operand.operator in {'G'} and operand.operands[0].operator in {'F', 'G', 'U', 'R'}:
@@ -925,7 +931,7 @@ def add_G_for_U(node, single):
     Invece per R sostituisce R con F[0,a] p OR (p R[a,b] q)
 
     :param node: Oggetto di tipo Node su cui effettuare la modifica.
-    :return: Il nodo modificato con l'operatore 'G' aggiunto dove necessario.
+    :return: Il nodo modificato
     """
     if single not in {'U', 'R'}:
         new_operands = []
@@ -1067,8 +1073,8 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = Node(*['||', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['B_q']], ['G', '1', '6', ['B_z']]])
 #formula = Node(*['F', '4', '7', ['B_q']])
 #formula = Node(*[',', ['G', '1', '9', ['F', '2', '5', ['B_q']]], ['G', '0', '10', ['B_p']]])
-#formula = Node(*['&&', ['G', '0', '10', ['F', '1', '2', ['B_p']]], ['G', '6', '9', ['B_q']]]) #sembra ok
-formula = Node(*['&&', ['G', '0', '2', ['F', '1', '10', ['B_p']]], ['G', '6', '9', ['B_q']]])
+formula = Node(*['&&', ['G', '0', '10', ['F', '1', '2', ['B_p']]], ['G', '6', '9', ['B_q']]]) #sembra ok
+#formula = Node(*['&&', ['G', '0', '2', ['F', '1', '10', ['B_p']]], ['G', '6', '9', ['B_q']]])
 #formula = Node(*['U', '5', '8', ['B_q'], ['B_p']])
 #formula = Node(*['U', '1', '5', ['G', '1', '2', ['B_p']], ['B_q']])
 #formula = Node(*['U', '1', '3', ['B_p'], ['B_q']])
