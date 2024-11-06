@@ -214,23 +214,35 @@ def normalize_bounds(formula):
     return recompute_bounds(formula)
 
 
-def extract_time_instants(formula):
+def extract_time_instants(formula, flag):
     """
     NB: MODIFICALA, non dovrebbe considerare gli operatori generati da decomp. di nested
     :return: funzione che restituisce gli estremi di tutti gli intervalli della formula in un vettore ordinato
     Come fare per operatori annidati? Forse la funzione andrebbe richiamata ogni volta e non solo una, perché
     si generano nuovi elementi
     """
-    time_instants = []
-    if formula.operator not in {'P'}:
-        for elem in formula:
-            if elem.operator not in {'P'}:
-                if elem.operator in ['G', 'F', 'U', 'R'] and not elem.is_derived:  # Controlla operatori temporali G (Globally), F (Finally) e U (Until)
-                    time_instants.append(elem.lower)
-                    time_instants.append(elem.upper)
-                elif elem.operator in ['O'] and not elem.operands[0].is_derived:
-                    time_instants.append(elem.operands[0].lower)
-                    time_instants.append(elem.operands[0].upper)
+    if flag:
+        time_instants = []
+        if formula.operator not in {'P'}:
+            for elem in formula:
+                if elem.operator not in {'P'}:
+                    if elem.operator in ['G', 'F', 'U', 'R'] and not elem.is_derived:  # Controlla operatori temporali G (Globally), F (Finally) e U (Until)
+                        time_instants.append(elem.lower)
+                        time_instants.append(elem.upper)
+                    elif elem.operator in ['O'] and not elem.operands[0].is_derived:
+                        time_instants.append(elem.operands[0].lower)
+                        time_instants.append(elem.operands[0].upper)
+    else:
+        time_instants = []
+        if formula.operator not in {'P'}:
+            for elem in formula:
+                if elem.operator not in {'P'}:
+                    if elem.operator in ['G', 'F', 'U', 'R']:  # Controlla operatori temporali G (Globally), F (Finally) e U (Until)
+                        time_instants.append(elem.lower)
+                        time_instants.append(elem.upper)
+                    elif elem.operator in ['O']:
+                        time_instants.append(elem.operands[0].lower)
+                        time_instants.append(elem.operands[0].upper)
     time_instants = [Fraction(x) for x in time_instants]
     time_instants = sorted(time_instants)
     return time_instants
@@ -443,6 +455,7 @@ def decompose_G(node, formula, index):
             new_node = Node(*[',', node.operands[0].to_list()])
         else:
             new_node = Node(*[',', ['O', node.to_list()], node.operands[0].to_list()]) #bisogna mettere la virgola, altrimenti Node() non funziona, poi la tolgo dopo
+            new_node.operands[0].operands[0].is_derived = formula.operands[index].is_derived #non voglio perdere info su is_derived nella decomposizione
         del formula.operands[index]
         formula.operands.extend(new_node.operands)
         return [formula]
@@ -645,8 +658,8 @@ def decompose_jump(node): #Devi farlo usando Node invece di lista
     NB: NON CONTARE I BOUND DEGLI OPERATORI DERIVED DAI NESTED, PUò CREARE PROBLEMI SE HO + DI UN OP. NESTED?
     '''
     #nested = check_nested(node.to_list()) #credo non serva +
-    time_instants = extract_time_instants(node)
     flag = flagging(node.to_list())
+    time_instants = extract_time_instants(node, flag) #metto anche la flag perché se sono in caso non probelmatico prendo tutti i bound, altrimenti evito quelli degli operatori derivati
     # Caso in cui input sia della forma [',', [], [], ....] (un and di tante sottoformule)
     new_node = []
     if node.operator == '!':
@@ -1086,7 +1099,7 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = Node(*['R', '2', '9', ['G', '0', '9', ['B_p']], ['B_q']]) #no problemi
 #formula = Node(*['R', '0', '9', ['B_q'], ['G', '0', '9', ['B_p']]]) #problemi
 #formula = Node(*['&&', ['G', '0', '5', ['B_z']], ['R', '0', '9', ['B_q'], ['G', '0', '9', ['B_p']]]])
-formula = Node(*['U', '0', '9', ['F', '0', '3', ['B_p']], ['B_q']]) #problematico il salto
+formula = Node(*['U', '0', '9', ['G', '0', '2', ['B_p']], ['B_q']]) #problematico il salto
 #formula = Node(*['U', '0', '9', ['B_q'], ['F', '0', '3', ['B_p']]]) #no problemi
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['R', '2', '4', ['B_q'], ['B_z']]])
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['G', '1', '7', ['||', ['B_q'], ['B_z']]]])
@@ -1095,7 +1108,7 @@ formula = Node(*['U', '0', '9', ['F', '0', '3', ['B_p']], ['B_q']]) #problematic
 
 formula = add_G_for_U(formula, formula.operator)
 set_initial_time(formula)
-max_depth = 10
+max_depth = 15
 
 # formula = normalize_bounds(formula)
 step = calculate_min_step(formula)  # va poi inserito per fare i jump
