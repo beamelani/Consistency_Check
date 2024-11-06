@@ -480,7 +480,10 @@ def decompose_U(node, formula, index):
         new_node[2] = str(Fraction(new_node[2]) + Fraction(node[1]))
         node_1 = Node(*[',', ['O', node], new_node])
         node_1.operands[1].is_derived = True
-        node_1.operands[0].operands[0].initial_time = formula.initial_time
+        if index < 0:
+            node_1.operands[0].operands[0].initial_time = formula.initial_time
+        else:
+            node_1.operands[0].operands[0].initial_time = formula.operands[index].initial_time
     else:
         node_1 = Node(*[',', ['O', node], node[3]])
     if node[4][0] in {'G', 'F', 'U', 'R'}: #caso nested, in questo caso il salto non crea probelmi, non mi serve initial time
@@ -489,8 +492,6 @@ def decompose_U(node, formula, index):
         new_node2[2] = str(Fraction(new_node2[2]) + Fraction(node[1]))
         node_2 = Node(*new_node2)
         node_2_2 = Node(*[',', new_node2])
-        node_2.is_derived = True
-        node_2_2.is_derived = True
     else:
         node_2 = Node(*node[4])
         node_2_2 = Node(*[',', node[4]]) #perché poi quando faccio extend lo faccio con gli operands e tolgo ','
@@ -501,6 +502,8 @@ def decompose_U(node, formula, index):
         del formula_2.operands[index]
         formula_1.operands.extend(
             node_1.operands)  # sdoppio la formula di partenza (senza U) e aggiungo a una un pezzo e all'altra l'altro
+        for operand in formula_2.operands:
+            operand.is_derived = False  #nel ramo in or non non voglio che siano su is_derived, perché poi crea problemi nell'estrarre i bound
         formula_2.operands.extend(node_2_2.operands)
     else:  # se U è l'unica formula
         formula_1 = node_1
@@ -720,7 +723,7 @@ def decompose_jump(node): #Devi farlo usando Node invece di lista
                             new_node.extend([sub_formula])
         if new_node[0] == ',' and len(new_node) == 2:  # se uno degli elementi iniziale è della forma OG[x,x],
             # cioè ha esaurito l'intervallo e viene eliminato, è possibile  che rimanga un solo elemento, ma preceduto dalla virgola anche se non dovrebbe
-            return [node[1]]
+            return [new_node[1]]
         else:
             node.operands = new_node[1:]
             return [node]
@@ -1073,7 +1076,7 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = Node(*['||', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['B_q']], ['G', '1', '6', ['B_z']]])
 #formula = Node(*['F', '4', '7', ['B_q']])
 #formula = Node(*[',', ['G', '1', '9', ['F', '2', '5', ['B_q']]], ['G', '0', '10', ['B_p']]])
-formula = Node(*['&&', ['G', '0', '10', ['F', '1', '2', ['B_p']]], ['G', '6', '9', ['B_q']]]) #sembra ok
+#formula = Node(*['&&', ['G', '0', '10', ['F', '1', '2', ['B_p']]], ['G', '6', '9', ['B_q']]]) #sembra ok
 #formula = Node(*['&&', ['G', '0', '2', ['F', '1', '10', ['B_p']]], ['G', '6', '9', ['B_q']]])
 #formula = Node(*['U', '5', '8', ['B_q'], ['B_p']])
 #formula = Node(*['U', '1', '5', ['G', '1', '2', ['B_p']], ['B_q']])
@@ -1083,7 +1086,7 @@ formula = Node(*['&&', ['G', '0', '10', ['F', '1', '2', ['B_p']]], ['G', '6', '9
 #formula = Node(*['R', '2', '9', ['G', '0', '9', ['B_p']], ['B_q']]) #no problemi
 #formula = Node(*['R', '0', '9', ['B_q'], ['G', '0', '9', ['B_p']]]) #problemi
 #formula = Node(*['&&', ['G', '0', '5', ['B_z']], ['R', '0', '9', ['B_q'], ['G', '0', '9', ['B_p']]]])
-#formula = Node(*['U', '0', '9', ['F', '0', '3', ['B_p']], ['B_q']]) #problematico il salto
+formula = Node(*['U', '0', '9', ['F', '0', '3', ['B_p']], ['B_q']]) #problematico il salto
 #formula = Node(*['U', '0', '9', ['B_q'], ['F', '0', '3', ['B_p']]]) #no problemi
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['R', '2', '4', ['B_q'], ['B_z']]])
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['G', '1', '7', ['||', ['B_q'], ['B_z']]]])
@@ -1092,7 +1095,7 @@ formula = Node(*['&&', ['G', '0', '10', ['F', '1', '2', ['B_p']]], ['G', '6', '9
 
 formula = add_G_for_U(formula, formula.operator)
 set_initial_time(formula)
-max_depth = 15
+max_depth = 10
 
 # formula = normalize_bounds(formula)
 step = calculate_min_step(formula)  # va poi inserito per fare i jump
