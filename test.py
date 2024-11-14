@@ -205,7 +205,29 @@ def extract_time_instants(formula, flag):
     time_instants = sorted(time_instants)
     return time_instants
 
-
+def assign_identifier(formula):
+    '''
+    :param formula:
+    :return: la formula assegna un identificatore agli operatori nested, in modo che nella decomposizione gli operatori
+    derivati dalla decomposizione di un nested siano riconducibili all'operatore originario
+    '''
+    counter = 0
+    if formula.operator in {'&&', '||', ','}:
+        for operand in formula.operands:
+            if operand.operator in {'G', 'F'} and operand.operands[0].operator in {'G', 'F', 'U', 'R'}:
+                operand.identifier = counter
+                counter += 1
+            elif operand.operator in {'U', 'R'} and (operand.operands[0].operator in {'G', 'F', 'U', 'R'} or operand.operands[1].operator in {'G', 'F', 'U', 'R'}):
+                operand.identifier = counter
+                counter += 1
+    elif formula.operator in {'G', 'F', 'U', 'R'}:
+        if formula.operator in {'G', 'F'} and formula.operands[0].operator in {'G', 'F', 'U', 'R'}:
+            formula.identifier = counter
+            counter += 1
+        elif formula.operator in {'U', 'R'} and (formula.operands[0].operator in {'G', 'F', 'U', 'R'} or formula.operands[1].operator in {'G', 'F', 'U', 'R'}):
+            formula.identifier = counter
+            counter += 1
+    return formula
 
 def flagging(formula):
     '''
@@ -384,6 +406,7 @@ def decompose_G(node, formula, index):
         else:
             new_node = Node(*[',', ['O', node.to_list()], node.operands[0].to_list()]) #bisogna mettere la virgola, altrimenti Node() non funziona, poi la tolgo dopo
             new_node.operands[0].operands[0].is_derived = formula.operands[index].is_derived #non voglio perdere info su is_derived nella decomposizione
+            new_node.operands[0].operands[0].identifier = formula.operands[index].identifier
         del formula.operands[index]
         formula.operands.extend(new_node.operands)
         return [formula]
@@ -395,6 +418,7 @@ def decompose_F(node, formula, index):
         node_2 = [',', node[3]]
         node_1 = Node(*node_1)
         node_1.operands[0].operands[0].is_derived = formula.operands[index].is_derived
+        node_1.operands[0].operands[0].identifier = formula.operands[index].identifier
         node_2 = Node(*node_2)
         del formula.operands[index]
         new_node1 = copy.deepcopy(formula)
@@ -423,8 +447,12 @@ def decompose_U(node, formula, index):
         node_1.operands[1].is_derived = True
         if index < 0:
             node_1.operands[0].operands[0].initial_time = formula.initial_time
+            node_1.operands[0].operands[0].identifier = formula.identifier
+            node_1.operands[1].identifier = formula.identifier
         else:
             node_1.operands[0].operands[0].initial_time = formula.operands[index].initial_time
+            node_1.operands[0].operands[0].identifier = formula.operands[index].identifier
+            node_1.operands[1].identifier = formula.operands[index].identifier
     else:
         node_1 = Node(*[',', ['O', node], node[3]])
     if node[4][0] in {'G', 'F', 'U', 'R'}: #caso nested, in questo caso il salto non crea probelmi, non mi serve initial time
@@ -444,7 +472,8 @@ def decompose_U(node, formula, index):
         formula_1.operands.extend(
             node_1.operands)  # sdoppio la formula di partenza (senza U) e aggiungo a una un pezzo e all'altra l'altro
         for operand in formula_2.operands:
-            operand.is_derived = False  #nel ramo in or non non voglio che siano su is_derived, perché poi crea problemi nell'estrarre i bound
+            if operand.identifier == formula.operands[index].identifier:
+                operand.is_derived = False  #nel ramo in or non non voglio che siano su is_derived, perché poi crea problemi nell'estrarre i bound
         formula_2.operands.extend(node_2_2.operands)
     else:  # se U è l'unica formula
         formula_1 = node_1
@@ -491,7 +520,9 @@ def decompose_R(node, formula, index):
                 new_node[2] = str(int(new_node[2]) + int(node[1]))
                 node_2 = Node(*[',', ['O', node], new_node])
             node_2.operands[0].operands[0].initial_time = formula.initial_time
+            node_2.operands[0].operands[0].identifier = formula.identifier
             node_2.operands[1].is_derived = True
+            node_2.operands[1].identifier = formula.identifier
         return node_1, node_2
     else:
             #p R[a,b] q diventa:
@@ -523,11 +554,13 @@ def decompose_R(node, formula, index):
                 new_node[1] = str(int(new_node[1]) + int(node[1]))
                 new_node[2] = str(int(new_node[2]) + int(node[1]))
                 node_2 = Node(*[',', ['O', node], new_node])
-        node_2.operands[0].operands[0].initial_time = formula.operands[index].initial_time
-        if len(node_2.operands) >= 2:
+        if len(node_2.operands) >= 2: #se ho OR
             node_2.operands[1].is_derived = True
-        else: #caso in cui sono a R[b,b] e quindi non ho OR
-            node_2.operands[0].is_derived = True
+            node_2.operands[1].identifier = formula.operands[index].identifier
+            node_2.operands[0].operands[0].initial_time = formula.operands[index].initial_time
+            node_2.operands[0].operands[0].identifier = formula.operands[index].identifier
+        #else: #caso in cui sono a R[b,b] e quindi non ho OR, credo non serva mettere is_derived a questo punto
+            #node_2.operands[0].is_derived = True
         formula_1.operands.extend(node_1.operands)
         formula_2.operands.extend(node_2.operands)
     return formula_1, formula_2
@@ -559,7 +592,13 @@ def decompose_or(node, formula, index):
 
 
 def decompose_nested(node, formula, index):
-    #devo fare in modo che l'initial time venga mantenuto
+    '''
+
+    :param node:
+    :param formula:
+    :param index:
+    :return: decompone i nested che hanno come operatore esterno G o F
+    '''
     # se la formula è unica (non un and di sottoformule), allora index==-1
     if index == -1: #node == formula
         if node[0] == 'G':
@@ -570,7 +609,9 @@ def decompose_nested(node, formula, index):
             node = [',', ['O', node], extract]
             res = Node(*node)
             res.operands[1].is_derived = True #ok
+            res.operands[1].identifier = formula.identifier #operatore estratto eredita identifier
             res.operands[0].operands[0].initial_time = formula.initial_time
+            res.operands[0].operands[0].identifier = formula.identifier #anche il G del OG lo eredita
             return [res]
         elif node[0] == 'F':
             extract = copy.deepcopy(node[3])
@@ -582,6 +623,7 @@ def decompose_nested(node, formula, index):
             res_2 = Node(*extract)
             res_2.is_derived = True #ok
             res_1.current_time = formula.current_time
+            res_1.operands[0].identifier = formula.identifier
             res_2.current_time = formula.current_time
             return res_1, res_2
     else:
@@ -594,7 +636,9 @@ def decompose_nested(node, formula, index):
             extract[2] = str(Fraction(node[1]) + Fraction(extract[2]))
             node = Node(*[',', ['O', node], extract])
             node.operands[1].is_derived = True #ok
+            node.operands[1].identifier = formula.operands[index].identifier #elemento estratto eredita identifier
             node.operands[0].operands[0].initial_time = formula.operands[index].initial_time
+            node.operands[0].operands[0].identifier = formula.operands[index].identifier #G di OG eredita identifier
             res_1.operands.extend(node.operands)
             return [res_1]
         elif node[0] == 'F':
@@ -606,8 +650,9 @@ def decompose_nested(node, formula, index):
             extract[1] = str(Fraction(node[1]) + Fraction(extract[1]))
             extract[2] = str(Fraction(node[1]) + Fraction(extract[2]))
             extract = Node(*[',', extract])
-            extract.operands[0].is_derived = True #ok
+            #extract.operands[0].is_derived = True #ok, ma credo non serva
             node = Node(*[',', ['O', node]])
+            node.operands[0].operands[0].identifier = formula.operands[index].identifier
             res_1.operands.extend(node.operands)
             res_2.operands.extend(extract.operands)
             return res_1, res_2  # ricontrolla se le parentesi vanno bene
@@ -974,7 +1019,8 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = Node(*['||', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['B_q']], ['G', '1', '6', ['B_z']]])
 #formula = Node(*['F', '4', '7', ['B_q']])
 #formula = Node(*[',', ['G', '1', '9', ['F', '2', '5', ['B_q']]], ['G', '0', '10', ['B_p']]])
-formula = Node(*['&&', ['G', '0', '10', ['F', '1', '2', ['B_p']]], ['G', '6', '9', ['B_q']]]) #sembra ok
+#formula = Node(*['&&', ['G', '0', '10', ['F', '1', '2', ['B_p']]], ['G', '6', '9', ['B_q']]]) #sembra ok
+#formula = Node(*['&&', ['G', '0', '10', ['F', '1', '2', ['B_p']]], ['F', '3', '10', ['F', '1', '2', ['B_p']]]])
 #formula = Node(*['&&', ['G', '0', '2', ['F', '1', '10', ['B_p']]], ['G', '6', '9', ['B_q']]])
 #formula = Node(*['U', '5', '8', ['B_q'], ['B_p']])
 #formula = Node(*['U', '1', '5', ['G', '1', '2', ['B_p']], ['B_q']])
@@ -989,9 +1035,10 @@ formula = Node(*['&&', ['G', '0', '10', ['F', '1', '2', ['B_p']]], ['G', '6', '9
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['R', '2', '4', ['B_q'], ['B_z']]])
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['G', '1', '7', ['||', ['B_q'], ['B_z']]]])
 #formula = Node(*['G', '0', '6', ['U', '0', '3', ['B_p'], ['B_q']]])
-#formula = Node(*['G', '1', '6', ['F', '1', '3', ['B_p']]])
+formula = Node(*['F', '1', '6', ['G', '1', '3', ['B_p']]])
 
 formula = add_G_for_U(formula, formula.operator)
+formula = assign_identifier(formula)
 set_initial_time(formula)
 max_depth = 15
 
