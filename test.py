@@ -8,6 +8,8 @@
 F come sopra
 [['O', 'arg']]
 [['U', 'lowerb', 'upperb', 'arg1', 'arg2']]
+[['R', 'lowerb', 'upperb', 'arg1', 'arg2']]
+[['->', 'lowerb', 'upperb', 'arg1', 'arg2']]
 
 Sintassi Z3
 Definire variabili:
@@ -60,9 +62,9 @@ def extract_min_time(formula, node):
             return extract_min_time(formula[0], node)
         if formula[0] == '!':
             return None
-        if formula[0] in {'&&', '||', ','}:
+        if formula[0] in {'&&', '||', ',', '->'}:
             for i in range(1, len(formula)):
-                if len(formula[i]) > 1 and formula[i][0] not in {'O', '!', '||'}:
+                if len(formula[i]) > 1 and formula[i][0] not in {'O', '!', '||', '->'}:
                     if formula[i][3][0] in {'G', 'F', 'U', 'R'}:  # caso nested, non O
                         min_time = str(Fraction(formula[i][1]))# + Fraction(formula[i][3][1])) #tolgo la somma perché decompongono subito
                         min_times.append(min_time)
@@ -212,7 +214,7 @@ def assign_identifier(formula):
     derivati dalla decomposizione di un nested siano riconducibili all'operatore originario
     '''
     counter = 0
-    if formula.operator in {'&&', '||', ','}:
+    if formula.operator in {'&&', '||', ',', '->'}:
         for operand in formula.operands:
             if operand.operator in {'G', 'F'} and operand.operands[0].operator in {'G', 'F', 'U', 'R'}:
                 operand.identifier = counter
@@ -315,9 +317,9 @@ def formula_to_string(formula):
         subformulas = [f"({formula_to_string(subformula)})" for subformula in formula[1:]]
         return " || ".join(subformulas)
 
-    #elif operator == '->':  # Implication
-        #subformulas = [f"({formula_to_string(subformula)})" for subformula in formula[1:]]
-        #return " -> ".join(subformulas)
+    elif operator == '->':  # Implication
+        _, arg1, arg2 = formula
+        return f"({formula_to_string(arg1)}) -> ({formula_to_string(arg2)})"
 
 def decompose(node, current_time):
     """
@@ -333,6 +335,8 @@ def decompose(node, current_time):
             return decompose_and(node)
         elif node.operator == '||':
             return decompose_or(node, [], -1)
+        elif node.operator == '->':
+            return decompose_imply(node.to_list(), node, -1)
         # Se il nodo iniziale ha solo un elemento (quindi non è un and o or di più sottoformule) lo decompongo con i 5 elif di seguito
         elif node.operator == 'G' and node.operands[0].operator not in {'F', 'G',
                                                    'U', 'R'}:  # non credo che in questi serva controllare il tempo perché se ho un solo elemento è sicuramente attivo perché considero solo il suo intervallo temp
@@ -362,6 +366,8 @@ def decompose(node, current_time):
             for j in range(len(node.operands)):
                 if node.operands[j].operator == '||':
                     return decompose_or(node.operands[j], node, j)
+                elif node.operands[j].operator == '->': #controlla
+                    return decompose_imply(node.operands[j].to_list(), node, j)
                 elif node.operands[j].operator == 'G' and Fraction(node.operands[j].lower) == current_time and node.operands[j].operands[0].operator not in {'G', 'F', 'U'}:
                     return decompose_G(node.operands[j], node, j)
                 elif node.operands[j].operator == 'F' and Fraction(node.operands[j].lower) == current_time and node.operands[j].operands[0].operator not in {'G', 'F',
@@ -589,7 +595,19 @@ def decompose_or(node, formula, index):
             del new_node
         return res
 
-
+def decompose_imply(node, formula, index):
+    if index >= 0:
+        node_1 = Node(*[',', ['!', node[3]]]) #verifica che node[3] sia l'antecedente
+        node_2 = Node(*[',', node[3], node[4]])
+        del formula.operands[index]
+        new_node1 = copy.deepcopy(formula)
+        new_node2 = copy.deepcopy(formula)
+        new_node1.operands.extend(node_1.operands)
+        new_node2.operands.extend(node_2.operands)
+    else:
+        new_node1 = Node(*['!', node[3]])
+        new_node2 = Node(*[',', node[3], node[4]])
+    return new_node1, new_node2
 
 def decompose_nested(node, formula, index):
     '''
@@ -865,7 +883,7 @@ def set_initial_time(formula):
     :return: Serve per il jump nei casi nested problematici (devo sapere qual era il lower bound iniziale
     del nested + esterno per sapere se posso saltare)
     '''
-    if formula.operator in {'&&', '||', ',', '!'}:
+    if formula.operator in {'&&', '||', ',', '!', '->'}:
         for operand in formula.operands:
             if operand.operator in {'G'} and operand.operands[0].operator in {'F', 'G', 'U', 'R'}:
                 operand.initial_time = operand.lower

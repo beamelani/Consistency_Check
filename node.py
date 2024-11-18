@@ -52,6 +52,9 @@ def formula_to_string(formula):
         subformulas = [f"({formula_to_string(subformula)})" for subformula in formula[1:]]
         return " || ".join(subformulas)
 
+    elif operator == '->':  # Implication
+        _,  arg1, arg2 = formula
+        return f"({formula_to_string(arg1)}) -> ({formula_to_string(arg2)})"
 
 
 class Node:
@@ -61,7 +64,7 @@ class Node:
         self.is_derived = False
         self.identifier = None
         self.operator = operator
-        if operator in {'&&', '||', ',', '!', 'O'}:
+        if operator in {'&&', '||', ',', '!', 'O', '->'}:
             self.lower = self.upper = -1
             self.operands = args
         elif operator in {'G', 'F', 'U', 'R'}:
@@ -95,7 +98,7 @@ class Node:
         '''
         Convert node to list representation
         '''
-        if self.operator in {'&&', '||', ',', '!', 'O'}:
+        if self.operator in {'&&', '||', ',', '!', 'O', '->'}:
             return [self.operator] + [op.to_list() for op in self.operands]
         elif self.operator in {'G', 'F', 'U', 'R'}:
             return [self.operator, self.lower, self.upper] + [op.to_list() for op in self.operands]
