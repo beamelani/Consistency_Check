@@ -596,17 +596,27 @@ def decompose_or(node, formula, index):
         return res
 
 def decompose_imply(node, formula, index):
+    '''
+
+    :param node:
+    :param formula:
+    :param index:
+    :return: NON MI SEMBRA CORRETTO A LIVELLO TEMPORALE (ramo di dx con l'AND non torna)
+    '''
     if index >= 0:
-        node_1 = Node(*[',', ['!', node[3]]]) #verifica che node[3] sia l'antecedente
-        node_2 = Node(*[',', node[3], node[4]])
+        #node_1 = Node(*[',', ['!', node[1]]]) #crea problemi in smt_check perché ! è contemplato solo all'interno
+        node_1 = 'Rejected'
+        node_2 = Node(*[',', node[1], node[2]])
         del formula.operands[index]
-        new_node1 = copy.deepcopy(formula)
+        #new_node1 = copy.deepcopy(formula)
         new_node2 = copy.deepcopy(formula)
-        new_node1.operands.extend(node_1.operands)
+        #new_node1.operands.extend(node_1.operands)
         new_node2.operands.extend(node_2.operands)
+        new_node1 = node_1
     else:
-        new_node1 = Node(*['!', node[3]])
-        new_node2 = Node(*[',', node[3], node[4]])
+        #new_node1 = Node(*['!', node[1]])
+        new_node1 = 'Rejected'
+        new_node2 = Node(*[',', node[1], node[2]])
     return new_node1, new_node2
 
 def decompose_nested(node, formula, index):
@@ -1065,7 +1075,9 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = Node(*['G', '0', '6', ['U', '0', '3', ['B_p'], ['B_q']]])
 #formula = Node(*['F', '1', '6', ['G', '1', '3', ['B_p']]])
 #formula = Node(*['G', '0', '2', ['G', '1', '4', ['B_p']]])
-formula = Node(*['U', '0', '2', ['G', '1', '4', ['B_p']], ['B_q']])
+#formula = Node(*['U', '0', '2', ['G', '1', '4', ['B_p']], ['B_q']])
+#formula = Node(*['->', ['G', '1', '4', ['B_p']], ['B_q']])
+formula = Node(*['&&', ['->', ['G', '1', '4', ['B_p']], ['B_q']], ['G', '1', '7', ['||', ['B_x'], ['B_z']]]])
 
 formula = add_G_for_U(formula, formula.operator)
 formula = assign_identifier(formula)
