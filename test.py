@@ -605,17 +605,18 @@ def decompose_imply(node, formula, index):
     plus serve il counter che tiene conto del numero di -> per verificare in quale ramo tutti gli antecedenti sono negati
     '''
     if index >= 0:
-        #node_1 = Node(*[',', ['!', node[1]]]) #crea problemi in smt_check perché ! è contemplato solo all'interno
-        node_1 = 'Rejected'
         node_2 = Node(*[',', node[1], node[2]])
         del formula.operands[index]
-        #new_node1 = copy.deepcopy(formula)
+        new_node1 = copy.deepcopy(formula)
         new_node2 = copy.deepcopy(formula)
-        #new_node1.operands.extend(node_1.operands)
         new_node2.operands.extend(node_2.operands)
-        new_node1 = node_1
-    else:
-        #new_node1 = Node(*['!', node[1]])
+        if formula.implications > 0:
+            node_1 = Node(*[',', ['!', node[1]]]) #crea problemi in smt_check perché ! è contemplato solo all'interno
+            new_node1.operands.extend(node_1.operands)
+            new_node1.implications -= 1 #decremento di 1 ogni volta che passo dal ramo che nega l'antecedente, se arrivo a 0 significa che li ho negati tutti e rigetto il ramo
+        else:
+            new_node1 = 'Rejected'
+    else: #se l'imply non è in and con nulla significa che è unico e posso direttamente rigettare il ramo negato
         new_node1 = 'Rejected'
         new_node2 = Node(*[',', node[1], node[2]])
     return new_node1, new_node2
@@ -956,6 +957,20 @@ def add_G_for_U(node, single):
         else:
             return node
 
+def count_implications(formula):
+    if formula.operator == '&&':
+        # Conta quante implicazioni ('->') ci sono tra gli operandi
+        implication_count = sum(1 for operand in formula.operands if operand.operator == '->')
+
+        # Aggiungi l'attributo 'implications' al nodo e assegna il conteggio
+        formula.implications = implication_count
+    else:
+        # Se il nodo non è un '&&', esplora ricorsivamente i suoi operandi
+        for operand in formula.operands:
+            if isinstance(operand, Node):
+                count_implications(operand)
+    return formula
+
 def build_decomposition_tree(root, max_depth):
     G = nx.DiGraph()
     time = extract_min_time(root.to_list(), root)
@@ -1078,9 +1093,9 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = Node(*['G', '0', '2', ['G', '1', '4', ['B_p']]])
 #formula = Node(*['U', '0', '2', ['G', '1', '4', ['B_p']], ['B_q']])
 #formula = Node(*['->', ['G', '1', '4', ['B_p']], ['B_q']])
-formula = Node(*['&&', ['->', ['G', '1', '4', ['B_p']], ['B_q']], ['G', '1', '7', ['||', ['B_x'], ['B_z']]]])
-
-
+#formula = Node(*['&&', ['->', ['G', '1', '4', ['B_p']], ['B_q']], ['G', '1', '7', ['||', ['B_x'], ['B_z']]]])
+formula = Node(*['&&', ['->', ['G', '1', '4', ['B_p']], ['B_q']], ['->', ['G', '1', '7', ['B_p']], ['B_z']]])
+#formula = Node(*['->', ['B_p'], ['B_q']])
 
 # Benchmark: (requisiti Leonardo)
 # 1) stabilire un time horizon (T)
@@ -1097,13 +1112,13 @@ formula = Node(*['&&', ['->', ['G', '1', '4', ['B_p']], ['B_q']], ['G', '1', '7'
 # formula = Node(*['G', '0', 'T', ['->', ['&&', ['B_active'], ['!', ['B_X_over']]], ['F', '0', '5', ['R_LME_cr == 1']]]])
 # formula = Node(*['G', '0', 'T', ['->', ['B_inactive'], ['F', '0', '5', ['R_LME_cr == 0']]]])
 # formula = Node(*['G', '0', 'T', ['->', ['B_armed'], ['F', '0', '5', ['R_LMA_cr == 1']]]])
-# formula = Node(*['G', '0', 'T', ['->',  ['B_active'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]])
+# formula = Node(*['G', '0', 'T', ['->', ['B_active'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]])
 # formula = Node(*['G', '0', 'T', ['->', ['B_inactive'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]])
 # formula = Node(*['G', '0', 'T', ['->', ['B_X_over'] , ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]])
 # formula = Node(*['G', '0', 'T', ['->', ['&&', ['B_X_over'], ['B_active'] ] , ['F', '0', '5', ['B_LME_cr']]]])
 # formula = Node(*['G', '0', 'T', ['->', ['B_active'] , ['F', '0', '1', ['R_Y_pushbutton == 1']]]])
 # formula = Node(*['G', '0', 'T', ['->', ['B_armed'] , ['F', '0', '1', ['R_Y_pushbutton == 2']]]])
-# formula = Node(*['G', '0', 'T', ['->', ['&&', ['R_airspeed < Vmin'], [????] ] , ['F', '0', '5', ['B_LS_amr']]]])
+# formula = Node(*['G', '0', 'T', ['->', ['&&', ['R_airspeed < Vmin'], [????]] , ['F', '0', '5', ['B_LS_amr']]]])
 
 #Range parametri:
 
@@ -1122,6 +1137,7 @@ formula = Node(*['&&', ['->', ['G', '1', '4', ['B_p']], ['B_q']], ['G', '1', '7'
 
 formula = add_G_for_U(formula, formula.operator)
 formula = assign_identifier(formula)
+formula = count_implications(formula)
 set_initial_time(formula)
 max_depth = 15
 

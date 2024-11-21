@@ -63,6 +63,7 @@ class Node:
         self.initial_time = None
         self.is_derived = False
         self.identifier = None
+        self.implications = None
         self.operator = operator
         if operator in {'&&', '||', ',', '!', 'O', '->'}:
             self.lower = self.upper = -1
