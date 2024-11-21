@@ -601,7 +601,8 @@ def decompose_imply(node, formula, index):
     :param node:
     :param formula:
     :param index:
-    :return: NON MI SEMBRA CORRETTO A LIVELLO TEMPORALE (ramo di dx con l'AND non torna)
+    :return: Bisogna ripristinare l'OR con il not(antecedente) quando ci sarà la funzione per spingere dentro la negazione
+    plus serve il counter che tiene conto del numero di -> per verificare in quale ramo tutti gli antecedenti sono negati
     '''
     if index >= 0:
         #node_1 = Node(*[',', ['!', node[1]]]) #crea problemi in smt_check perché ! è contemplato solo all'interno
@@ -1078,6 +1079,46 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = Node(*['U', '0', '2', ['G', '1', '4', ['B_p']], ['B_q']])
 #formula = Node(*['->', ['G', '1', '4', ['B_p']], ['B_q']])
 formula = Node(*['&&', ['->', ['G', '1', '4', ['B_p']], ['B_q']], ['G', '1', '7', ['||', ['B_x'], ['B_z']]]])
+
+
+
+# Benchmark: (requisiti Leonardo)
+# 1) stabilire un time horizon (T)
+# formula = Node(*['G', '0', 'T', ['||', ['&&', ['B_active'], ['!', [B_inactive]], ['!', ['B_armed']] ], ['&&', ['B_inactive'], ['!', [B_active]], ['!', ['B_armed']]], ['&&', ['B_armed'], ['!', [B_inactive]], ['!', ['B_active']]]]])
+# formula = Node(*['G', '0', 'T', ['->', ['&&', ['B_inactive'], ['R_n_s == 1'],  ['R_X_c-R_X_b <= 5'], ['R_X_c-R_X_b>= -5'], ['G', '0', '5', ['R_airspeed>= R_Vmin']], ['!', ['B_X_over']], ['B_X_Activation_Request']], ['F', '0', '2', ['&&', ['!', ['inactive']], ['active']]]]])
+# formula = Node(*['G', '0', 'T', ['->', ['&&', ['active'], ['!', ['B_r_actuation']], ['!', ['B_X_Activation_Request']], ['||', ['!', ['R_n_s == 1']], ['F', '0', '10', ['B_X_ch']], ['G', '0', '5', ['R_airspeed < R_Vmin']]]], ['F', '0', '2', ['&&', ['!', ['B_active']], ['B_inactive']]]]])
+# formula = Node(*['G', '0', 'T', ['->', ['&&', ['B_armed'], ['!', ['B_X_over']], ['R_X_c - R_X_b <=5'], ['R_X_c - R_X_b >=-5'], ['G', '0', '5', ['R_airspeed >= R_Vmin']] ], ['F', '0', '2', ['&&', ['!', ['B_armed']], ['B_active']]]]])
+# formula = Node(*['G', '0', 'T', ['->', ['&&', ['B_inactive'], ['R_n_s ==1'], ['||', ['R_X_c - R_X_b >5'], ['R_X_c - R_X_b <-5']], ['B_X_Activation_Request'] ], ['F', '0', '2', ['&&', ['!', ['B_inactive']], ['B_armed']]]]])
+# formula = Node(*['G', '0', 'T', ['->', ['&&', ['B_armed'], ['!', ['B_X_over']], ['R_X_c - R_X_b <=5'], ['R_X_c - R_X_b >=-5'], ['G', '0', '5', ['R_airspeed >= R_Vmin']] ], ['F', '0', '2', ['&&', ['!', ['B_armed']], ['B_active']]]]]) #DOPPIONE
+# formula = Node(*['G', '0', 'T', ['||', ['&&', ['B_active'], ['B_A'] ], ['&&', ['B_active'], ['B_B']], ['&&', ['B_active'], ['B_C']]]])
+# formula = Node(*['G', '0', 'T', ['->', ['&&', ['B_active'], ['B_A'], ['!', ['B_X_over']], ['Delta T Error reference < |T Error|'], ['Delta_T_Error_reference > -|T_Error|]], ['F', '0', '1', ['&&', ['!', ['B_A']], ['B_B']]]]])
+# formula = Node(*['G', '0', 'T', ['->', ['&&', ['B_active'], ['B_B'], ['!', ['B_X_over']], ['R_T_Error < | 3'], ['R_T_Error  > -3] ,  ['R_Roll_attitude < 0.8'], ['R_Roll_attitude > -0.8'],  ['R_X_deviation < 0.5'], ['R_X_deviation > -0.5'] , ['R_dalfa/dt < 0.002'], ['R_dalfa/dt > -0.002'], ['!', ['B_h_on]], ['!', ['B_f_on']]], ['F', '0', '1', ['&&', ['!', ['B_B']], ['B_C']]]]])
+# formula = Node(*['G', '0', 'T', ['->', ['&&', ['B_active'], ['B_C'], ['!', [B_X_over]], ['||', ['R_T_Error > 5'], ['R_T_Error < -5']], ['||', ['R_Roll_attitude > 2.6'], ['R_Roll_attitude < -2.6']], ['||', ['R_X_deviation > 1.5'], ['R_X_deviation < -1.5']], ['||', ['R_dalfa/dt > 0.075'], ['R_dalfa/dt < -0.075']], ['||', ['B_h_on'], ['B_f_on']]], ['F', '0', '1', ['&&', ['!', ['B_C']], ['B_B']]]]])
+# formula = Node(*['G', '0', 'T', ['->', ['&&', ['B_active'], ['!', ['B_X_over']]], ['F', '0', '5', ['R_LME_cr == 1']]]])
+# formula = Node(*['G', '0', 'T', ['->', ['B_inactive'], ['F', '0', '5', ['R_LME_cr == 0']]]])
+# formula = Node(*['G', '0', 'T', ['->', ['B_armed'], ['F', '0', '5', ['R_LMA_cr == 1']]]])
+# formula = Node(*['G', '0', 'T', ['->',  ['B_active'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]])
+# formula = Node(*['G', '0', 'T', ['->', ['B_inactive'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]])
+# formula = Node(*['G', '0', 'T', ['->', ['B_X_over'] , ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]])
+# formula = Node(*['G', '0', 'T', ['->', ['&&', ['B_X_over'], ['B_active'] ] , ['F', '0', '5', ['B_LME_cr']]]])
+# formula = Node(*['G', '0', 'T', ['->', ['B_active'] , ['F', '0', '1', ['R_Y_pushbutton == 1']]]])
+# formula = Node(*['G', '0', 'T', ['->', ['B_armed'] , ['F', '0', '1', ['R_Y_pushbutton == 2']]]])
+# formula = Node(*['G', '0', 'T', ['->', ['&&', ['R_airspeed < Vmin'], [????] ] , ['F', '0', '5', ['B_LS_amr']]]])
+
+#Range parametri:
+
+# formula = Node(*['G', '0', 'T', ['&&', ['R_X_c >=0'], ['R_X_c <= 360']]])
+# formula = Node(*['G', '0', 'T', ['&&', ['R_X_b >=0'], ['R_X_b <= 360']]])
+# formula = Node(*['G', '0', 'T', ['&&', ['R_airspeed >=0'], ['R_airspeed <= 200']]])
+# formula = Node(*['G', '0', 'T', ['&&', ['R_a >= 0'], ['R_a <= 360']]])
+# formula = Node(*['G', '0', 'T', ['||', ['R_n_s == 0'], ['R_n_s == 1'], ['R_n_s == 2']]])
+# formula = Node(*['G', '0', 'T', ['&&', ['R_T error >= -180'], ['R_T error <= 180']]])
+# formula = Node(*['G', '0', 'T', ['&&', ['R_Roll attitude >= -50'], ['R_Roll attitude <= 50']]])
+# formula = Node(*['G', '0', 'T', ['&&', ['R_X deviation >= -180'], ['R_X deviation <= 180'] ]])
+# formula = Node(*['G', '0', 'T', ['||', ['R_LME_cr == 0'], ['R_LME_cr == 1'], ['R_LME_cr == 2']]])
+# formula = Node(*['G', '0', 'T', ['||', ['R_LMA_cr == 0'], ['R_LMA_cr == 1'], ['R_LMA_cr == 2']]])
+# formula = Node(*['G', '0', 'T', ['||', ['R_Y_pushbutton == 0'], ['R_Y_pushbutton == 1'], ['R_Y_pushbutton == 2']]])
+
 
 formula = add_G_for_U(formula, formula.operator)
 formula = assign_identifier(formula)
