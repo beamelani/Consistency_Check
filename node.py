@@ -80,7 +80,7 @@ class Node:
             raise ValueError('Bad formula')
 
         # Convert operands to Nodes, if any
-        if self.operator != 'P':
+        if self.operator != 'P' and len(self.operands) > 0 and not isinstance(self.operands[0], Node):
             self.operands = [Node(*op) for op in self.operands]
 
     def set_current_time(self, time):

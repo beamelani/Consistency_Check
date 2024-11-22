@@ -50,6 +50,54 @@ import bisect
 from node import Node
 
 
+def push_negation(node):
+    if node.operator == '!':
+        operand = node[0]
+        new_node = copy.copy(node)
+        if operand.operator == 'P':
+            return node
+        elif operand.operator == ',' or operand.operator == '&&':
+            new_node.operator = '||'
+            new_node.operands = [push_negation(Node('!', op)) for op in operand]
+        elif operand.operator == '||':
+            new_node.operator = ','
+            new_node.operands = [push_negation(Node('!', op)) for op in operand]
+        elif operand.operator == '->':
+            new_node.operator = ','
+            new_node.operands = [operand[0], push_negation(Node('!', operand[1]))]
+        elif operand.operator == '!':
+            new_node.operator = operand[0].operator
+            new_node.operands = operand[0].operands
+        elif operand.operator == 'O':
+            new_node.operator = operand.operator
+            new_node.operands = [push_negation(Node('!', operand[0]))]
+        elif operand.operator == 'G':
+            new_node.operator = 'F'
+            new_node.lower, new_node.upper = operand.lower, operand.upper
+            new_node.operands = [push_negation(Node('!', operand[0]))]
+        elif operand.operator == 'F':
+            new_node.operator = 'G'
+            new_node.lower, new_node.upper = operand.lower, operand.upper
+            new_node.operands = [push_negation(Node('!', operand[0]))]
+        elif operand.operator == 'U':
+            new_node.operator = 'R'
+            new_node.lower, new_node.upper = operand.lower, operand.upper
+            new_node.operands = [push_negation(Node('!', operand[0])), push_negation(Node('!', operand[1]))]
+        elif operand.operator == 'R':
+            new_node.operator = 'U'
+            new_node.lower, new_node.upper = operand.lower, operand.upper
+            new_node.operands = [push_negation(Node('!', operand[0])), push_negation(Node('!', operand[1]))]
+        else:
+            raise ValueError('Bad formula')
+
+        return new_node
+    elif node.operator == 'P':
+        return node
+    else: # Any non-negated operator
+        new_node = copy.copy(node)
+        new_node.operands = [push_negation(op) for op in node.operands]
+        return new_node
+
 def extract_min_time(formula, node):
     """
     Estrae l'istante di tempo minimo da una formula STL, serve per sapere l'istante corrente
