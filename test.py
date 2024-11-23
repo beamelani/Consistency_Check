@@ -658,10 +658,11 @@ def decompose_imply(node, formula, index):
         new_node1 = copy.deepcopy(formula)
         new_node2 = copy.deepcopy(formula)
         new_node2.operands.extend(node_2.operands)
-        if formula.implications > 0:
+        if formula.implications > 1:
             node_1 = Node(*[',', ['!', node[1]]]) #crea problemi in smt_check perché ! è contemplato solo all'interno
             new_node1.operands.extend(node_1.operands)
             new_node1.implications -= 1 #decremento di 1 ogni volta che passo dal ramo che nega l'antecedente, se arrivo a 0 significa che li ho negati tutti e rigetto il ramo
+            new_node1 = push_negation(new_node1)
         else:
             new_node1 = 'Rejected'
     else: #se l'imply non è in and con nulla significa che è unico e posso direttamente rigettare il ramo negato
@@ -1142,15 +1143,16 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = Node(*['U', '0', '2', ['G', '1', '4', ['B_p']], ['B_q']])
 #formula = Node(*['->', ['G', '1', '4', ['B_p']], ['B_q']])
 #formula = Node(*['&&', ['->', ['G', '1', '4', ['B_p']], ['B_q']], ['G', '1', '7', ['||', ['B_x'], ['B_z']]]])
-formula = Node(*['&&', ['->', ['G', '1', '4', ['B_p']], ['B_q']], ['->', ['G', '1', '7', ['B_p']], ['B_z']]])
+#formula = Node(*['&&', ['->', ['G', '1', '4', ['B_p']], ['B_q']], ['->', ['G', '1', '7', ['B_p']], ['B_z']]])
 #formula = Node(*['->', ['B_p'], ['B_q']])
+formula = Node(*['&&', ['->', ['G', '1', '4', ['B_p']], ['B_q']], ['->', ['F', '2', '3', ['!', ['B_p']]], ['B_z']]])
 
 # Benchmark: (requisiti Leonardo)
 # 1) stabilire un time horizon (T)
 # formula = Node(*['G', '0', 'T', ['||', ['&&', ['B_active'], ['!', [B_inactive]], ['!', ['B_armed']] ], ['&&', ['B_inactive'], ['!', [B_active]], ['!', ['B_armed']]], ['&&', ['B_armed'], ['!', [B_inactive]], ['!', ['B_active']]]]])
 # formula = Node(*['G', '0', 'T', ['->', ['&&', ['B_inactive'], ['R_n_s == 1'],  ['R_X_c-R_X_b <= 5'], ['R_X_c-R_X_b>= -5'], ['G', '0', '5', ['R_airspeed>= R_Vmin']], ['!', ['B_X_over']], ['B_X_Activation_Request']], ['F', '0', '2', ['&&', ['!', ['inactive']], ['active']]]]])
-# formula = Node(*['G', '0', 'T', ['->', ['&&', ['active'], ['!', ['B_r_actuation']], ['!', ['B_X_Activation_Request']], ['||', ['!', ['R_n_s == 1']], ['F', '0', '10', ['B_X_ch']], ['G', '0', '5', ['R_airspeed < R_Vmin']]]], ['F', '0', '2', ['&&', ['!', ['B_active']], ['B_inactive']]]]])
-# formula = Node(*['G', '0', 'T', ['->', ['&&', ['B_armed'], ['!', ['B_X_over']], ['R_X_c - R_X_b <=5'], ['R_X_c - R_X_b >=-5'], ['G', '0', '5', ['R_airspeed >= R_Vmin']] ], ['F', '0', '2', ['&&', ['!', ['B_armed']], ['B_active']]]]])
+# formula = Node(*['G', '0', 'T', ['->', ['&&', ['active'], ['||', ['!', ['R_n_s == 1']], ['F', '0', '10', ['B_X_ch']], ['G', '0', '5', ['R_airspeed < R_Vmin']],  ['!', ['B_r_actuation']], ['!', ['B_X_Activation_Request']]], ['F', '0', '2', ['&&', ['!', ['B_active']], ['B_inactive']]]]])
+# formula = Node(*['G', '0', 'T', ['->', ['&&', ['B_armed'], ['||', ['!', ['R_n_s ==1']], ['F', '0', '5', ['B_X_ch']], ['!', ['B_X_Activation_Request']], ['!', ['B_r_actuation']]]], ['F', '0', '2', ['&&', ['!', ['B_armed']], ['B_inactive']]]]])
 # formula = Node(*['G', '0', 'T', ['->', ['&&', ['B_inactive'], ['R_n_s ==1'], ['||', ['R_X_c - R_X_b >5'], ['R_X_c - R_X_b <-5']], ['B_X_Activation_Request'] ], ['F', '0', '2', ['&&', ['!', ['B_inactive']], ['B_armed']]]]])
 # formula = Node(*['G', '0', 'T', ['->', ['&&', ['B_armed'], ['!', ['B_X_over']], ['R_X_c - R_X_b <=5'], ['R_X_c - R_X_b >=-5'], ['G', '0', '5', ['R_airspeed >= R_Vmin']] ], ['F', '0', '2', ['&&', ['!', ['B_armed']], ['B_active']]]]]) #DOPPIONE
 # formula = Node(*['G', '0', 'T', ['||', ['&&', ['B_active'], ['B_A'] ], ['&&', ['B_active'], ['B_B']], ['&&', ['B_active'], ['B_C']]]])
@@ -1187,7 +1189,7 @@ formula = add_G_for_U(formula, formula.operator)
 formula = assign_identifier(formula)
 formula = count_implications(formula)
 set_initial_time(formula)
-max_depth = 15
+max_depth = 10
 
 # formula = normalize_bounds(formula)
 
