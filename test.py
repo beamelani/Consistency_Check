@@ -129,8 +129,7 @@ def extract_min_time(formula, node):
                     elif formula[i][1][0] in {'U', 'R'} and formula[i][1][3][0] in {'G', 'F', 'U', 'R'}:
                         min_time = str(Fraction(formula[i][1][1]))
                         min_times.append(min_time)
-                    elif formula[i][1][0] in {'U', 'R'} and formula[i][1][4][0] in {'G', 'F',
-                                                                             'U', 'R'}:  # O U con nesting in second arg
+                    elif formula[i][1][0] in {'U', 'R'} and formula[i][1][4][0] in {'G', 'F', 'U', 'R'}:  # O U con nesting in second arg
                         min_time = str(Fraction(formula[i][1][1]))
                         min_times.append(min_time)
                     else:  # caso non nested, O
@@ -183,8 +182,7 @@ def calculate_time_quantum(formula):
         if isinstance(formula, list):
             for elem in formula:
                 if isinstance(elem, list):
-                    if elem[0] in ['G', 'F',
-                                   'U', 'R']:  # Controlla operatori temporali G (Globally), F (Finally) e U (Until)
+                    if elem[0] in ['G', 'F', 'U', 'R']:  # Controlla operatori temporali
                         bounds.extend(elem[1:3])
                     bounds.extend(extract_bounds(elem))  # Ricorsione per esplorare strutture annidate
         return bounds
@@ -207,7 +205,7 @@ def normalize_bounds(formula):
         if isinstance(formula, list) and formula[0]:
             if isinstance(formula[0], list):
                 return list(map(recompute_bounds, formula))
-            elif formula[0] in {'&&', '||', ','}:
+            elif formula[0] in {'&&', '||', ',', '->'}:
                 return [formula[0]] + list(map(recompute_bounds, formula[1:]))
             elif formula[0] in {'G', 'F'}:
                 return [formula[0], norm_bound(formula[1]), norm_bound(formula[2]), recompute_bounds(formula[3])]
@@ -386,8 +384,7 @@ def decompose(node, current_time):
         elif node.operator == '->':
             return decompose_imply(node.to_list(), node, -1)
         # Se il nodo iniziale ha solo un elemento (quindi non è un and o or di più sottoformule) lo decompongo con i 5 elif di seguito
-        elif node.operator == 'G' and node.operands[0].operator not in {'F', 'G',
-                                                   'U', 'R'}:  # non credo che in questi serva controllare il tempo perché se ho un solo elemento è sicuramente attivo perché considero solo il suo intervallo temp
+        elif node.operator == 'G' and node.operands[0].operator not in {'F', 'G', 'U', 'R'}:
             return decompose_G(node, [], -1)
         elif node.operator == 'F' and node.operands[0].operator not in {'F', 'G', 'U', 'R'}:
             return decompose_F(node.to_list(), [], -1)
@@ -414,12 +411,11 @@ def decompose(node, current_time):
             for j in range(len(node.operands)):
                 if node.operands[j].operator == '||':
                     return decompose_or(node.operands[j], node, j)
-                elif node.operands[j].operator == '->': #controlla
+                elif node.operands[j].operator == '->':
                     return decompose_imply(node.operands[j].to_list(), node, j)
                 elif node.operands[j].operator == 'G' and Fraction(node.operands[j].lower) == current_time and node.operands[j].operands[0].operator not in {'G', 'F', 'U'}:
                     return decompose_G(node.operands[j], node, j)
-                elif node.operands[j].operator == 'F' and Fraction(node.operands[j].lower) == current_time and node.operands[j].operands[0].operator not in {'G', 'F',
-                                                                                                          'U'}:
+                elif node.operands[j].operator == 'F' and Fraction(node.operands[j].lower) == current_time and node.operands[j].operands[0].operator not in {'G', 'F', 'U'}:
                     return decompose_F(node.operands[j].to_list(), node, j)
                 elif node.operands[j].operator == 'U' and Fraction(node.operands[j].lower) == current_time:
                     return decompose_U(node.operands[j].to_list(), node, j)
@@ -442,7 +438,7 @@ def decompose(node, current_time):
                     res[0].current_time = node.current_time
                 return res
 
-    return None  # se non c'è niente da decomporre
+    return None  # forse non serve
 
 
 def decompose_G(node, formula, index):
@@ -487,7 +483,6 @@ def decompose_F(node, formula, index):
 
 def decompose_U(node, formula, index):
     '''
-    NB:nei casi nested devo sommare gli estremi degli intervalli?
     Potrei decomporlo dicende che all'istante 2 può succedere p o q, se succede q il req è già soddisfatto e non mi interessa
     più cosa succede dopo (posso eliminare U da quel ramo. Mentre se succede p dovrò riportare che voglio avere pU[3,5]q all'ora all'istante successivo può succedere di nuovo p,
     oppure può succedere q e così via fino a 5, se a 5 è sempre successo p e mai q elimino il ramo perché U non è soddisfatto
@@ -619,7 +614,7 @@ def decompose_R(node, formula, index):
         formula_2.operands.extend(node_2.operands)
     return formula_1, formula_2
 
-def decompose_and(node):  # voglio che tolga TUTTI gli '&&'
+def decompose_and(node):  # voglio che tolga TUTTI gli '&&' in una volta per fare prima
     if node.operator == '&&':
         node.operator = ','
         # Sostituisco ovunque
@@ -645,12 +640,8 @@ def decompose_or(node, formula, index):
 
 def decompose_imply(node, formula, index):
     '''
-
-    :param node:
-    :param formula:
-    :param index:
-    :return: Bisogna ripristinare l'OR con il not(antecedente) quando ci sarà la funzione per spingere dentro la negazione
-    plus serve il counter che tiene conto del numero di -> per verificare in quale ramo tutti gli antecedenti sono negati
+    :return: decompone p->q come not(p) OR (p and q). Se ci sono più -> in and, viene rigettato il nodo in cui tutti
+    gli antecedenti sono negati. Se c'è un solo -> viene rigettato il nodo con antecedente negato
     '''
     if index >= 0:
         node_2 = Node(*[',', node[1], node[2]])
@@ -659,23 +650,19 @@ def decompose_imply(node, formula, index):
         new_node2 = copy.deepcopy(formula)
         new_node2.operands.extend(node_2.operands)
         if formula.implications > 1:
-            node_1 = Node(*[',', ['!', node[1]]]) #crea problemi in smt_check perché ! è contemplato solo all'interno
+            node_1 = Node(*[',', ['!', node[1]]])
             new_node1.operands.extend(node_1.operands)
-            new_node1.implications -= 1 #decremento di 1 ogni volta che passo dal ramo che nega l'antecedente, se arrivo a 0 significa che li ho negati tutti e rigetto il ramo
+            new_node1.implications -= 1 #decremento di 1 ogni volta che passo dal ramo che nega l'antecedente per poter sapere quando li ho negati tutti
             new_node1 = push_negation(new_node1)
         else:
             new_node1 = 'Rejected'
-    else: #se l'imply non è in and con nulla significa che è unico e posso direttamente rigettare il ramo negato
+    else: #se l'imply non è in and con nulla posso direttamente rigettare il ramo negato
         new_node1 = 'Rejected'
         new_node2 = Node(*[',', node[1], node[2]])
     return new_node1, new_node2
 
 def decompose_nested(node, formula, index):
     '''
-
-    :param node:
-    :param formula:
-    :param index:
     :return: decompone i nested che hanno come operatore esterno G o F
     '''
     # se la formula è unica (non un and di sottoformule), allora index==-1
@@ -698,13 +685,11 @@ def decompose_nested(node, formula, index):
             return [res]
         elif node[0] == 'F':
             extract = copy.deepcopy(node[3])
-            extract[1] = str(Fraction(node[1]) + Fraction(
-                extract[1]))  # quando estraggo l'op annidato devo modificare l'intervallo temporale
+            extract[1] = str(Fraction(node[1]) + Fraction(extract[1]))
             extract[2] = str(Fraction(node[1]) + Fraction(extract[2]))
             res_1 = copy.deepcopy(node)
             res_1 = Node(*['O', res_1])
             res_2 = Node(*extract)
-            #res_2.is_derived = True #ok
             res_1.current_time = formula.current_time
             res_1.operands[0].identifier = formula.identifier
             res_2.current_time = formula.current_time
@@ -714,12 +699,11 @@ def decompose_nested(node, formula, index):
             res_1 = copy.deepcopy(formula)
             del res_1.operands[index]  # tolgo il nested dalla formula
             extract = copy.deepcopy(node[3])
-            extract[1] = str(Fraction(node[1]) + Fraction(
-                extract[1]))  # quando estraggo l'op annidato devo modificare l'intervallo temporale
+            extract[1] = str(Fraction(node[1]) + Fraction(extract[1]))
             extract[2] = str(Fraction(node[1]) + Fraction(extract[2]))
             if node[1] < node[2]:
                 node = Node(*[',', ['O', node], extract])
-                node.operands[1].is_derived = True #ok
+                node.operands[1].is_derived = True
                 node.operands[1].identifier = formula.operands[index].identifier #elemento estratto eredita identifier
                 node.operands[0].operands[0].initial_time = formula.operands[index].initial_time
                 node.operands[0].operands[0].identifier = formula.operands[index].identifier #G di OG eredita identifier
@@ -739,7 +723,6 @@ def decompose_nested(node, formula, index):
             extract[1] = str(Fraction(node[1]) + Fraction(extract[1]))
             extract[2] = str(Fraction(node[1]) + Fraction(extract[2]))
             extract = Node(*[',', extract])
-            #extract.operands[0].is_derived = True #credo non serva
             node = Node(*[',', ['O', node]])
             node.operands[0].operands[0].identifier = formula.operands[index].identifier
             res_1.operands.extend(node.operands)
@@ -748,19 +731,19 @@ def decompose_nested(node, formula, index):
     return
 
 
-def decompose_jump(node): #Devi farlo usando Node invece di lista
+def decompose_jump(node):
     '''
-    nuova versione del codice, distingue casi problematici da non problematici
+    Distingue casi problematici da non problematici
 
     NB nei casi PROBLEMATICI (flag = True) posso saltare a partire dal minimo tra range dell'operatore esterno
     e a+d (G[a,b]F[c,d]...) e salto fino al minimo successivo della formula completa (senza contare i bound degli op derivati dalla decomposizione dei nested).
     Se il minimo tra i 2 è l'op esterno in realta non devo fare nulla perché avanzo di 1 in 1 finche non sparisce il nesting, a quel punto la
     flag diventa False ed entro nell'altro caso.
 
-    NB: NON CONTARE I BOUND DEGLI OPERATORI DERIVED DAI NESTED, PUò CREARE PROBLEMI SE HO + DI UN OP. NESTED?
+    NB: NON CONTARE I BOUND DEGLI OPERATORI DERIVED DAI NESTED
     '''
     flag = flagging(node.to_list())
-    time_instants = extract_time_instants(node, flag) #metto anche la flag perché se sono in caso non probelmatico prendo tutti i bound, altrimenti evito quelli degli operatori derivati
+    time_instants = extract_time_instants(node, flag)
     # Caso in cui input sia della forma [',', [], [], ....] (un and di tante sottoformule)
     new_node = []
     if node.operator == '!':
@@ -783,7 +766,7 @@ def decompose_jump(node): #Devi farlo usando Node invece di lista
                 return [Node(*new_node)]
             else:
                 return None
-        else: #caso con operatori problematici, vorrei usare direttamente i nodi per non perdere info su is_derived e initial_time
+        else: #caso con operatori problematici, uso direttamente i nodi per non perdere info su is_derived e initial_time
             jump = []
             for operand in node.operands:
                 #Controllo prima gli operatori nested problematici perché il salto dipende da loro:
@@ -848,26 +831,21 @@ def decompose_jump(node): #Devi farlo usando Node invece di lista
 
 def smt_check(node):
     """
-    NB : Potresti avere anche variabili Bool, qui setti tutte le variabili come Real
-    in realtà però dovrebbe già esistere un data dictionary con tutte le variabili del problema (serve per riempire
-    i pattern, quindi il tipo di ogni variabile potrebbe essere automaticamente estratto da lì, così come i vincoli
-    sui bound della variabile che possono essere aggiunti come espressioni atomiche nel nodo
-    :param node:
-    :return: ritorna il nodo di partenza se è accepted, ritorna None se il nodo è rejected
+    :return: restituisce il nodo di partenza se è accepted,  'Rejected' se il nodo è rejected
     """
     new_node = []
     variabili_z3 = {}
     variabili = []
     vincoli = []
     for i in range(len(node)):
-        if node[0] == ',':  # caso con più elementi
+        if node[0] == ',':
             if node[i][0] == 'O' and node[i][1][0] in {'F', 'U'} and node[i][1][1] == node[i][1][2]:
                 if node[i][1][0] in 'F':
                     print("Node is rejected because finally was never satisfied in this branch")
                 else:
                     print("Node is rejected because until was never satisfied in this branch")
                 return 'Rejected'
-            if node[i][0] not in {'O', 'F', 'G', 'U', ',', 'R'}:
+            if node[i][0] not in {'O', 'F', 'G', 'U', ',', 'R', '->'}:
                 new_node.extend(node[i])
                 if len(node[i]) == 1:
                     new_var = re.findall(r'\b[B|R]_[a-zA-Z]\w*\b', new_node[-1])
@@ -878,7 +856,7 @@ def smt_check(node):
             if node[0] == 'O' and node[i][0] in 'F' and node[1][1] == node[1][2]:
                 print("Node is rejected because finally was never satisfied in this branch")
                 return 'Rejected'
-            if node[0] not in {'O', 'F', 'G', 'U', ',', 'R'}:
+            if node[0] not in {'O', 'F', 'G', 'U', ',', 'R', '->'}:
                 new_node.extend(node[i])
                 new_var = re.findall(r'\b[B|R]_[a-zA-Z]\w*\b', new_node[-1])
                 variabili.extend(new_var)
@@ -892,15 +870,11 @@ def smt_check(node):
                 variabili_z3[var] = Real(var)
     new_node = modify_node(new_node)  # tolgo B_ e R_ che non servono più
     for i in range(len(new_node)):
-        # devo estrarre le espressioni e definirle in SMT tipo
-        # x= Real('x')
         if new_node[i] == '!':
             new_node[i + 1] = 'Not(' + new_node[i + 1][0] + ')'
-        # Scrivere vincoli (in realtà sono già scritti in new node, bisogna solo inserirci le variabili z
         else:
             esp_z3 = new_node[i]
-            for var in variabili_z3:
-                # esp_z3 = esp_z3.replace(var, f'variabili_z3["{var}"]')
+            for var in variabili_z3: #inserire la variabile nel vincolo
                 esp_z3 = re.sub(rf'\b{var}\b', f'variabili_z3["{var}"]', esp_z3)
             vincoli.append(eval(esp_z3))
     solver = Solver()
@@ -909,7 +883,6 @@ def smt_check(node):
     # Verifica se vincoli sono sat
     if solver.check() == sat:
         print("Node is accepted, expressions are consistent")
-        # print(solver.model())
         return node
     else:
         print("Node is rejected, expressions are inconsistent")
@@ -918,8 +891,6 @@ def smt_check(node):
 
 def modify_node(node):
     '''
-
-    :param node:
     :return: dopo aver definito le variabili per smt check, posso togliere B_ e R_ dalla formula per poi definire i
     vincoli
     '''
@@ -939,8 +910,6 @@ def modify_node(node):
 
 def set_initial_time(formula):
     '''
-
-    :param formula:
     :return: Serve per il jump nei casi nested problematici (devo sapere qual era il lower bound iniziale
     del nested + esterno per sapere se posso saltare)
     '''
@@ -1118,7 +1087,8 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 
 # Crea nuovi nodi così:
 # formula = Node(*['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['F', '1', '3', ['B_p']]]]])
-#formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['B_q']]])
+formula = Node(*['&&', ['G', '0', '9', ['R_x>5']], ['F', '4', '7', ['R_x>4']]])
+#formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['!', ['B_p']]]])
 #formula = Node(*['||', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['B_q']], ['G', '1', '6', ['B_z']]])
 #formula = Node(*['F', '4', '7', ['B_q']])
 #formula = Node(*[',', ['G', '1', '9', ['F', '2', '5', ['B_q']]], ['G', '0', '10', ['B_p']]])
@@ -1145,7 +1115,7 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = Node(*['&&', ['->', ['G', '1', '4', ['B_p']], ['B_q']], ['G', '1', '7', ['||', ['B_x'], ['B_z']]]])
 #formula = Node(*['&&', ['->', ['G', '1', '4', ['B_p']], ['B_q']], ['->', ['G', '1', '7', ['B_p']], ['B_z']]])
 #formula = Node(*['->', ['B_p'], ['B_q']])
-formula = Node(*['&&', ['->', ['G', '1', '4', ['B_p']], ['B_q']], ['->', ['F', '2', '3', ['!', ['B_p']]], ['B_z']]])
+#formula = Node(*['&&', ['->', ['G', '1', '4', ['B_p']], ['B_q']], ['->', ['F', '2', '3', ['!', ['B_p']]], ['B_z']]])
 
 # Benchmark: (requisiti Leonardo)
 # 1) stabilire un time horizon (T)
@@ -1215,15 +1185,6 @@ GU
 GR
 U con nesting nel primo argument (F,G)
 R con nesting nel secondo argument (F,G)
-
-CASI NON ANALIZZATI:
-
-FU
-FR
-UU
-UR
-RU
-RR
 
 
 '''
