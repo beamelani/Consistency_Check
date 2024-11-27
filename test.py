@@ -494,6 +494,8 @@ def decompose_U(node, formula, index):
         new_node[2] = str(Fraction(new_node[2]) + Fraction(node[1]))
         node_1 = Node(*[',', ['O', node], new_node])
         node_1.operands[1].is_derived = True
+        if node[3][0] in {'U', 'R'}:
+            node_1 = add_G_for_U(node_1, ',', True)
         if index < 0:
             node_1.operands[0].operands[0].initial_time = formula.initial_time
             node_1.operands[0].operands[0].identifier = formula.identifier
@@ -510,6 +512,9 @@ def decompose_U(node, formula, index):
         new_node2[2] = str(Fraction(new_node2[2]) + Fraction(node[1]))
         node_2 = Node(*new_node2)
         node_2_2 = Node(*[',', new_node2])
+        if node[4][0] in {'U', 'R'}:
+            node_2 = add_G_for_U(node_2, node[4][0], False)
+            node_2_2 = add_G_for_U(node_2_2, ',', False)
     else:
         node_2 = Node(*node[4])
         node_2_2 = Node(*[',', node[4]]) #perché poi quando faccio extend lo faccio con gli operands e tolgo ','
@@ -549,7 +554,9 @@ def decompose_R(node, formula, index):
             node_1 = copy.deepcopy(node[3])
             node_1[1] = str(int(node_1[1]) + int(node[1]))
             node_1[2] = str(int(node_1[2]) + int(node[1]))
-            node_1 = Node(*node[1])
+            node_1 = Node(*node_1)
+            if node[3][0] in {'U', 'R'}:
+                node_1 = add_G_for_U(node_1, node[3][0], False)
         if node[1] == node[2]: #se sono all'ultimo istante non ho il O
             if node[4][0] not in {'G', 'F', 'U', 'R'}:
                 node_2 = Node(*node[4])
@@ -558,6 +565,8 @@ def decompose_R(node, formula, index):
                 new_node[1] = str(int(new_node[1]) + int(node[1]))
                 new_node[2] = str(int(new_node[2]) + int(node[1]))
                 node_2 = Node(*new_node)
+                if node[4][0] in {'U', 'R'}:
+                    node_2 = add_G_for_U(node_2, node[4][0], False)
         else:
             if node[4][0] not in {'G', 'F', 'U', 'R'}:
                 node_2 = Node(*[',', ['O', node], node[4]])
@@ -570,6 +579,8 @@ def decompose_R(node, formula, index):
             node_2.operands[0].operands[0].identifier = formula.identifier
             node_2.operands[1].is_derived = True
             node_2.operands[1].identifier = formula.identifier
+            if node[4][0] in {'U', 'R'}:
+                node_2 = add_G_for_U(node_2, ',', True)
         return node_1, node_2
     else:
             #p R[a,b] q diventa:
@@ -585,6 +596,8 @@ def decompose_R(node, formula, index):
             node_1[1] = str(int(node_1[1]) + int(node[1]))
             node_1[2] = str(int(node_1[2]) + int(node[1]))
             node_1 = Node(*node[1])
+            if node[3][0] in {'U', 'R'}:
+                node_1 = add_G_for_U(node_1, node[3][0], False)
         if node[1] == node[2]: #se sono all'ultimo istante non ho O
             if node[4][0] not in {'G', 'F', 'U', 'R'}:
                 node_2 = Node(*[',', node[4]])
@@ -593,6 +606,8 @@ def decompose_R(node, formula, index):
                 new_node[1] = str(int(new_node[1]) + int(node[1]))
                 new_node[2] = str(int(new_node[2]) + int(node[1]))
                 node_2 = Node(*[',', new_node])
+                if node[4][0] in {'U', 'R'}:
+                    node_2 = add_G_for_U(node_2, ',', False)
         else:
             if node[4][0] not in {'G', 'F', 'U', 'R'}:
                 node_2 = Node(*[',', ['O', node], node[4]])
@@ -601,7 +616,9 @@ def decompose_R(node, formula, index):
                 new_node[1] = str(int(new_node[1]) + int(node[1]))
                 new_node[2] = str(int(new_node[2]) + int(node[1]))
                 node_2 = Node(*[',', ['O', node], new_node])
-        if len(node_2.operands) >= 2: #se ho OR
+                if node[4][0] in {'U', 'R'}:
+                    node_2 = add_G_for_U(node_2, ',', True)
+        if len(node_2.operands) >= 2: #se ho O(R...)
             node_2.operands[1].is_derived = True
             node_2.operands[1].identifier = formula.operands[index].identifier
             node_2.operands[0].operands[0].initial_time = formula.operands[index].initial_time
@@ -989,6 +1006,8 @@ def add_G_for_U(node, single, derived):
         elif single == 'R' and node.lower != '0':
             new_G_node = Node(*['||', ['F', '0', node.lower, node.operands[0].to_list()], node.to_list()])
             return new_G_node
+        else:
+            return node
     else:
         return node
 
@@ -1116,14 +1135,15 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = Node(*['U', '1', '3', ['B_p'], ['B_q']])
 #formula = Node(*['&&', ['G', '3', '5', ['B_p']], ['U', '0', '7', ['B_q'], ['G', '0', '3', ['B_z']]]])
 #formula = Node(*['R', '2', '9', ['B_p'], ['B_q']])
-#formula = Node(*['R', '0', '9', ['G', '0', '9', ['B_p']], ['B_q']]) #no problemi
+#formula = Node(*['R', '0', '9', ['U', '2', '9', ['B_p'], ['B_z']], ['B_q']]) #no problemi
+formula = Node(*['R', '0', '9', ['B_q'], ['R', '2', '9', ['B_p'], ['B_z']]])
 #formula = Node(*['R', '2', '9', ['B_q'], ['B_p']])
 #formula = Node(*['&&', ['G', '0', '5', ['B_z']], ['R', '0', '9', ['B_q'], ['G', '0', '9', ['B_p']]]])
 #formula = Node(*['U', '0', '9', ['G', '0', '2', ['B_p']], ['B_q']]) #problematico il salto
 #formula = Node(*['U', '0', '9', ['B_q'], ['F', '0', '3', ['B_p']]]) #no problemi
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['R', '2', '4', ['B_q'], ['B_z']]])
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['G', '1', '7', ['||', ['B_q'], ['B_z']]]])
-formula = Node(*['G', '0', '6', ['U', '2', '4', ['B_p'], ['B_q']]])
+#formula = Node(*['G', '0', '6', ['U', '2', '4', ['B_p'], ['B_q']]])
 #formula = Node(*['F', '1', '6', ['G', '1', '3', ['B_p']]])
 #formula = Node(*['G', '0', '2', ['G', '1', '4', ['B_p']]])
 #formula = Node(*['U', '0', '2', ['G', '1', '4', ['B_p']], ['B_q']])
@@ -1175,7 +1195,7 @@ formula = add_G_for_U(formula, formula.operator, False)
 formula = assign_identifier(formula)
 formula = count_implications(formula)
 set_initial_time(formula)
-max_depth = 4
+max_depth = 3
 
 # formula = normalize_bounds(formula)
 
