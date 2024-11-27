@@ -47,7 +47,7 @@ from fractions import Fraction
 from math import gcd, lcm
 from functools import reduce
 import bisect
-from node import Node
+from src.stl_consistency.node import Node
 
 
 def push_negation(node):
