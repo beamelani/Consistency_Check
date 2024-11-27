@@ -649,7 +649,7 @@ def decompose_imply(node, formula, index):
         new_node1 = copy.deepcopy(formula)
         new_node2 = copy.deepcopy(formula)
         new_node2.operands.extend(node_2.operands)
-        if formula.implications > 1:
+        if formula.implications > 1: #quando sono a 1 significa che quello che sto negando ora è l'ultimo e quindi li ho negati tutti
             node_1 = Node(*[',', ['!', node[1]]])
             new_node1.operands.extend(node_1.operands)
             new_node1.implications -= 1 #decremento di 1 ogni volta che passo dal ramo che nega l'antecedente per poter sapere quando li ho negati tutti
@@ -675,10 +675,12 @@ def decompose_nested(node, formula, index):
             if node[1] < node[2]:
                 node = [',', ['O', node], extract]
                 res = Node(*node)
-                res.operands[1].is_derived = True #ok
+                res.operands[1].is_derived = True
                 res.operands[1].identifier = formula.identifier #operatore estratto eredita identifier
                 res.operands[0].operands[0].initial_time = formula.initial_time
                 res.operands[0].operands[0].identifier = formula.identifier #anche il G del OG lo eredita
+                if formula.operands[0].operator in {'U', 'R'}:
+                    res = add_G_for_U(res, ',', True)
             else:
                 node = [extract]
                 res = Node(*node)
@@ -693,6 +695,8 @@ def decompose_nested(node, formula, index):
             res_1.current_time = formula.current_time
             res_1.operands[0].identifier = formula.identifier
             res_2.current_time = formula.current_time
+            if node[3][0] in {'U', 'R'}:
+                res_2 = add_G_for_U(res_2, node[3][0], False) #false perché è in OR quindi non serve is_derived
             return res_1, res_2
     else:
         if node[0] == 'G':
@@ -707,11 +711,15 @@ def decompose_nested(node, formula, index):
                 node.operands[1].identifier = formula.operands[index].identifier #elemento estratto eredita identifier
                 node.operands[0].operands[0].initial_time = formula.operands[index].initial_time
                 node.operands[0].operands[0].identifier = formula.operands[index].identifier #G di OG eredita identifier
+                if formula.operands[index].operands[0].operator in {'U', 'R'}: #verifica che sia giusto
+                    node = add_G_for_U(node, ',', True)
             else:
                 node = Node(*[',', extract])
                 for operand in res_1.operands: #visto che il G esterno è esaurito, togli is_derived dagli op che aveva prodotto
                     if operand.identifier == formula.operands[index].identifier:
                         operand.is_derived = False
+                if extract[0] in {'U', 'R'}:
+                    node = add_G_for_U(node, ',', False)
             res_1.operands.extend(node.operands)
             return [res_1]
         elif node[0] == 'F':
@@ -723,6 +731,8 @@ def decompose_nested(node, formula, index):
             extract[1] = str(Fraction(node[1]) + Fraction(extract[1]))
             extract[2] = str(Fraction(node[1]) + Fraction(extract[2]))
             extract = Node(*[',', extract])
+            if node[3][0] in {'U', 'R'}:
+                extract = add_G_for_U(extract, 'F', False)
             node = Node(*[',', ['O', node]])
             node.operands[0].operands[0].identifier = formula.operands[index].identifier
             res_1.operands.extend(node.operands)
@@ -930,8 +940,9 @@ def set_initial_time(formula):
     return formula
 
 
-def add_G_for_U(node, single):
+def add_G_for_U(node, single, derived):
     """
+    NB: devo applicarlo non solo all'inizio, ma anche dopo (es se ho GU o FU o GR...)
     Cerca un operatore 'U' in un nodo e, se presente, aggiunge un nodo 'G' con scope [0, lower]
     avente come operando il primo argomento dell'operatore 'U' a pari livello.
 
@@ -939,8 +950,10 @@ def add_G_for_U(node, single):
 
     :param node: Oggetto di tipo Node su cui effettuare la modifica.
     :return: Il nodo modificato
+
+    NB: da sistemare!!! se U è interno ad un nested non bisogna aggiungere!!!
     """
-    if single not in {'U', 'R'}:
+    if single in {',', '&&', '||', '->'}:
         new_operands = []
         for operand in node.operands:
             if isinstance(operand, Node):
@@ -948,15 +961,17 @@ def add_G_for_U(node, single):
                 if operand.operator == 'U' and operand.lower != '0':
                     # Creiamo il nodo G con bounds [0, operand.lower] e primo operando di 'U'
                     new_G_node = Node('G', '0', operand.lower, operand.operands[0])
+                    if derived:
+                        new_G_node.is_derived = True
                     # Aggiungiamo sia l'operatore 'U' corrente sia il nuovo 'G' come figli del nodo
                     new_operands.append(operand)
                     new_operands.append(new_G_node)
-                elif operand.operator == 'R' and operand.lower != '0':
+                elif operand.operator == 'R' and operand.lower != '0': #qui non serve is_derived perché F è in OR
                     new_G_node = Node(*['||', ['F', '0', operand.lower, operand.operands[0].to_list()], operand.to_list()])
                     new_operands.append(new_G_node)
                 else:
                     # Se non è un nodo 'U', richiamiamo ricorsivamente la funzione
-                    add_G_for_U(operand, ',')
+                    add_G_for_U(operand, ',', False)
                     new_operands.append(operand)
             else:
                 new_operands.append(operand)
@@ -964,7 +979,7 @@ def add_G_for_U(node, single):
         # Aggiorna gli operandi del nodo corrente con quelli modificati
         node.operands = new_operands
         return node
-    else:
+    elif single in {'U', 'R'}: #nel caso in cui U e R escano dalla decomp di nested non sono mai qui
         if single == 'U' and node.lower != '0':
             new_G_node = Node(*['G', '0', node.lower, node.operands[0].to_list()])
             # Ritorna un nodo con ',' come operatore che include sia 'U' sia 'G'
@@ -972,14 +987,13 @@ def add_G_for_U(node, single):
         elif single == 'R' and node.lower != '0':
             new_G_node = Node(*['||', ['F', '0', node.lower, node.operands[0].to_list()], node.to_list()])
             return new_G_node
-        else:
-            return node
+    else:
+        return node
 
 def count_implications(formula):
     if formula.operator == '&&':
         # Conta quante implicazioni ('->') ci sono tra gli operandi
         implication_count = sum(1 for operand in formula.operands if operand.operator == '->')
-
         # Aggiungi l'attributo 'implications' al nodo e assegna il conteggio
         formula.implications = implication_count
     else:
@@ -1087,7 +1101,7 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 
 # Crea nuovi nodi così:
 # formula = Node(*['G', '0', '3', ['F', '1', '4', ['G', '0', '2', ['F', '1', '3', ['B_p']]]]])
-formula = Node(*['&&', ['G', '0', '9', ['R_x>5']], ['F', '4', '7', ['R_x>4']]])
+#formula = Node(*['&&', ['G', '0', '9', ['R_x>5']], ['F', '4', '7', ['R_x<4']]])
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['!', ['B_p']]]])
 #formula = Node(*['||', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['B_q']], ['G', '1', '6', ['B_z']]])
 #formula = Node(*['F', '4', '7', ['B_q']])
@@ -1101,13 +1115,13 @@ formula = Node(*['&&', ['G', '0', '9', ['R_x>5']], ['F', '4', '7', ['R_x>4']]])
 #formula = Node(*['&&', ['G', '3', '5', ['B_p']], ['U', '0', '7', ['B_q'], ['G', '0', '3', ['B_z']]]])
 #formula = Node(*['R', '2', '9', ['B_p'], ['B_q']])
 #formula = Node(*['R', '0', '9', ['G', '0', '9', ['B_p']], ['B_q']]) #no problemi
-#formula = Node(*['R', '0', '9', ['B_q'], ['G', '0', '2', ['B_p']]]) #problemi
+#formula = Node(*['R', '2', '9', ['B_q'], ['B_p']])
 #formula = Node(*['&&', ['G', '0', '5', ['B_z']], ['R', '0', '9', ['B_q'], ['G', '0', '9', ['B_p']]]])
 #formula = Node(*['U', '0', '9', ['G', '0', '2', ['B_p']], ['B_q']]) #problematico il salto
 #formula = Node(*['U', '0', '9', ['B_q'], ['F', '0', '3', ['B_p']]]) #no problemi
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['R', '2', '4', ['B_q'], ['B_z']]])
 #formula = Node(*['&&', ['G', '0', '9', ['B_p']], ['G', '1', '7', ['||', ['B_q'], ['B_z']]]])
-#formula = Node(*['G', '0', '6', ['U', '0', '3', ['B_p'], ['B_q']]])
+formula = Node(*['G', '0', '6', ['U', '2', '4', ['B_p'], ['B_q']]])
 #formula = Node(*['F', '1', '6', ['G', '1', '3', ['B_p']]])
 #formula = Node(*['G', '0', '2', ['G', '1', '4', ['B_p']]])
 #formula = Node(*['U', '0', '2', ['G', '1', '4', ['B_p']], ['B_q']])
@@ -1155,11 +1169,11 @@ formula = Node(*['&&', ['G', '0', '9', ['R_x>5']], ['F', '4', '7', ['R_x>4']]])
 # formula = Node(*['G', '0', 'T', ['||', ['R_Y_pushbutton == 0'], ['R_Y_pushbutton == 1'], ['R_Y_pushbutton == 2']]])
 
 
-formula = add_G_for_U(formula, formula.operator)
+formula = add_G_for_U(formula, formula.operator, False)
 formula = assign_identifier(formula)
 formula = count_implications(formula)
 set_initial_time(formula)
-max_depth = 10
+max_depth = 5
 
 # formula = normalize_bounds(formula)
 
