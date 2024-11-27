@@ -969,9 +969,11 @@ def add_G_for_U(node, single, derived):
                 elif operand.operator == 'R' and operand.lower != '0': #qui non serve is_derived perché F è in OR
                     new_G_node = Node(*['||', ['F', '0', operand.lower, operand.operands[0].to_list()], operand.to_list()])
                     new_operands.append(new_G_node)
-                else:
+                elif operand.operator not in {'G', 'F', 'O'}:
                     # Se non è un nodo 'U', richiamiamo ricorsivamente la funzione
                     add_G_for_U(operand, ',', False)
+                    new_operands.append(operand)
+                else:
                     new_operands.append(operand)
             else:
                 new_operands.append(operand)
@@ -1173,7 +1175,7 @@ formula = add_G_for_U(formula, formula.operator, False)
 formula = assign_identifier(formula)
 formula = count_implications(formula)
 set_initial_time(formula)
-max_depth = 5
+max_depth = 4
 
 # formula = normalize_bounds(formula)
 
