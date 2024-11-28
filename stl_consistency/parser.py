@@ -2,7 +2,7 @@ from pyparsing import (
     Optional, Combine, Literal, Word, alphas, nums, alphanums, Group, Forward, infixNotation,
     opAssoc, oneOf
     )
-from node import Node
+from stl_consistency.node import Node
 
 class STLParser:
     def __init__(self):
@@ -99,8 +99,3 @@ class STLParser:
         else:
             assert isinstance(formula, str) and formula.isdigit()
             return formula
-
-formula = "(y>6) U[3,7] (y < 3)"
-parser = STLParser()
-print(parser.parse_formula_as_stl_list(formula))
-parser.parse_formula_as_node(formula)
