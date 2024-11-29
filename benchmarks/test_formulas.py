@@ -49,7 +49,7 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 # formula = [['U', '1', '3', ['B_q'], ['G', '1', '4', ['B_p']]]]
 # formula = [['U', '1', '3', ['G', '1', '4', ['B_p']], ['G', '2', '5', ['B_q']]]]
 # formula = [['&&', ['G', '0', '7', ['F', '1', '3', ['B_p']]], ['G', '2', '9', ['B_y']]]]
-formula = [['G', '0', '7', ['F', '1', '3', ['B_p']]]]
+# formula = [['G', '0', '7', ['F', '1', '3', ['B_p']]]]
 
 #formula = ['&&', ['G', '0', '9', ['R_x>5']], ['F', '4', '7', ['R_x<4']]]
 #formula = ['&&', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['!', ['B_p']]]]
@@ -81,15 +81,20 @@ formula = [['G', '0', '7', ['F', '1', '3', ['B_p']]]]
 #formula = ['&&', ['->', ['G', '1', '4', ['B_p']], ['B_q']], ['->', ['G', '1', '7', ['B_p']], ['B_z']]]
 #formula = ['->', ['B_p'], ['B_q']]
 #formula = ['&&', ['->', ['G', '1', '4', ['B_p']], ['B_q']], ['->', ['F', '2', '3', ['!', ['B_p']]], ['B_z']]]
+#formula = ['G', '1', '5', ['&&', ['F', '1', '3', ['B_p']], ['G', '2', '4', ['B_q']]]]
+#formula = [',', ['G', '5', '5', ['&&', ['F', '1', '3', ['B_p']], ['G', '2', '4', ['B_q']]]], ['G', '7', '8', ['F','1', '2', ['B_p']]]]
+formula = ['F', '1', '5', ['&&', ['F', '1', '3', ['B_p']], ['G', '2', '4', ['B_q']]]]
+#formula = [',', ['F', '1', '5', ['&&', ['F', '1', '3', ['B_p']], ['G', '2', '4', ['B_q']]]], ['G', '7', '8', ['F', '1', '2', ['B_p']]]]
 
 # TODO: to be removed after making intermediate representation uniform
 parser = STLParser()
 print(formula_to_string(formula))
 parsed_formula = parser.parse_formula_as_list(formula_to_string(formula))
 
+# Comment this out to avoid smt check
 smt_check_consistency(parsed_formula, True)
 
 max_depth = 5
-tableau = make_tableau(Node(*formula[0]), max_depth)
+tableau = make_tableau(Node(*formula), max_depth)
 
 plot_tree(tableau)
