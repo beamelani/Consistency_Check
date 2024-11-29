@@ -9,7 +9,7 @@ def formula_to_string(formula):
         formula = formula[0]
 
     if isinstance(formula, list) and len(formula) == 1 and isinstance(formula[0], str): #serve per formule del tipo ['p']
-        return formula[0]
+        return formula[0][2:]
 
     if isinstance(formula, str): #probabilemente non serve
         return formula
