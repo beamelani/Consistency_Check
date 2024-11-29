@@ -112,14 +112,15 @@ def extract_min_time(formula):
     elif formula.operator in {'O'}:
         min_time = Fraction(formula.operands[0].lower)
     elif formula.operator in {'&&', '||', ',', '->'}:
-        times = [extract_min_time(op) for op in formula.operands]
-        filtered_times = [t for t in times if t is not None]
-        min_time = min(filtered_times, default=None)
-    if min_time:
-        formula.current_time = min_time
-        return min_time
-    else:
-        return None
+        times = []
+        for op in formula.operands:
+            op_time = extract_min_time(op)
+            if op_time is not None:
+                times.append(op_time)
+        min_time = min(times, default=None)
+    formula.current_time = min_time
+    return min_time
+
 
 
 def calculate_time_quantum(formula):
@@ -438,16 +439,18 @@ def decompose_G(node, formula, index):
         return [new_node]
     else:
         if node.lower == node.upper:
-            new_node = Node(*[',', ['O', node.to_list()]])
+            new_node = Node(*[',', ['O', node.to_list()]]) #poi il O lo cancelli, qui serve per comodità
             new_operands = modify_argument(node.operands[0], identifier)
             new_node.operands.append(new_operands)
             del new_node.operands[0]
             for operand in new_node.operands[0].operands:
-                operand.is_derived = False
+                if not isinstance(operand, str) and operand.operator in {'G', 'F', 'U', 'R'}: #caso &&, || etc?
+                    operand.is_derived = False
         else:
             new_node = Node(*[',', ['O', node.to_list()]])
             new_node.operands[0].operands[0].is_derived = node.is_derived
-            new_node.operands[0].operands[0].identifier = node.identifier
+            new_node.operands[0].operands[0].initial_time = initial_time
+            new_node.operands[0].operands[0].identifier = identifier
             new_operands = modify_argument(node.operands[0], identifier)
             new_node.operands.append(new_operands)
         del formula.operands[index]
@@ -753,10 +756,7 @@ def decompose_jump(node):
                 # controllando se ogni operatore è derivato da un nested o no (perché saltano in modo diverso)
                 if operand.operator in {'O'} and Fraction(operand.operands[0].lower) <= Fraction(
                         operand.operands[0].upper):
-                    if operand.operands[0].operator in {'G', 'U'} and operand.operands[0].operands[0].operator in {'G',
-                                                                                                                   'F',
-                                                                                                                   'U',
-                                                                                                                   'R'}:
+                    if operand.operands[0].operator in {'G', 'U'} and operand.operands[0].operands[0].operator in {'G','F','U','R'}:
                         if Fraction(operand.operands[0].lower) >= Fraction(operand.operands[0].initial_time) + Fraction(
                                 operand.operands[0].operands[0].upper):  # se operatore interno è esaurito
                             sub_formula = copy.deepcopy(operand.operands[0].to_list())
@@ -767,10 +767,7 @@ def decompose_jump(node):
                                                                              0].lower))  # il jump che devo fare è l'istante in cui devo arrivare- quello corrente
                         else:  # se sono qui non posso saltare, devo andare avanti di 1 in 1
                             jump.append(Fraction(1))
-                    elif operand.operands[0].operator in {'R'} and operand.operands[0].operands[1].operator in {'G',
-                                                                                                                'F',
-                                                                                                                'U',
-                                                                                                                'R'}:
+                    elif operand.operands[0].operator in {'R'} and operand.operands[0].operands[1].operator in {'G', 'F','U','R'}:
                         if Fraction(operand.operands[0].lower) >= Fraction(operand.operands[0].initial_time) + Fraction(
                                 operand.operands[0].operands[1].upper):  # VERIFICA INDICE upper
                             sub_formula = copy.deepcopy(operand.operands[0].to_list())
@@ -1059,7 +1056,7 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = Node(*[',', ['G', '1', '9', ['F', '2', '5', ['B_q']]], ['G', '0', '10', ['B_p']]])
 #formula = Node(*['&&', ['G', '0', '10', ['F', '1', '2', ['B_p']]], ['G', '6', '9', ['B_q']]]) #sembra ok
 #formula = Node(*['&&', ['G', '0', '10', ['F', '1', '2', ['B_p']]], ['F', '3', '10', ['F', '1', '2', ['B_p']]]])
-#formula = Node(*['&&', ['G', '0', '2', ['F', '1', '10', ['B_p']]], ['G', '6', '9', ['B_q']]])
+formula = Node(*['&&', ['G', '0', '2', ['F', '1', '10', ['B_p']]], ['G', '6', '9', ['B_q']]])
 #formula = Node(*['U', '5', '8', ['B_q'], ['B_p']])
 #formula = Node(*['U', '1', '5', ['G', '1', '2', ['B_p']], ['B_q']])
 #formula = Node(*['U', '1', '3', ['B_p'], ['B_q']])
@@ -1084,8 +1081,8 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = Node(*['&&', ['->', ['G', '1', '4', ['B_p']], ['B_q']], ['->', ['F', '2', '3', ['!', ['B_p']]], ['B_z']]])
 #formula = Node(*['G', '1', '5', ['&&', ['F', '1', '3', ['B_p']], ['G', '2', '4', ['B_q']]]])
 #formula = Node(*[',', ['G', '5', '5', ['&&', ['F', '1', '3', ['B_p']], ['G', '2', '4', ['B_q']]]], ['G', '7', '8', ['F','1', '2', ['B_p']]]])
-formula = Node(*['F', '1', '5', ['&&', ['F', '1', '3', ['B_p']], ['G', '2', '4', ['B_q']]]])
-#formula = Node(*[',', ['F', '1', '5', ['&&', ['F', '1', '3', ['B_p']], ['G', '2', '4', ['B_q']]]], ['G', '7', '8', ['F','1', '2', ['B_p']]]])
+#formula = Node(*['F', '1', '5', ['&&', ['F', '1', '3', ['B_p']], ['G', '2', '4', ['B_q']]]])
+#formula = Node(*[',', ['F', '1', '5', ['&&', ['F', '1', '3', ['B_p']], ['G', '2', '4', ['B_q']]]], ['G', '7', '8', ['F', '1', '2', ['B_p']]]])
 
 # Benchmark: (requisiti Leonardo)
 # 1) stabilire un time horizon (T)
