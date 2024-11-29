@@ -463,72 +463,12 @@ class SMTSTLConsistencyChecker:
         print(self._binary_constraints)
         print(self._sub_formulas)
 
-    def _create_stl_parser(self):
-        # Basic elements
-        identifier = Word(alphas, alphanums + "_")
-
-        # Expression for integer
-        non_zero_digit = "123456789"
-        zero = "0"
-        integer_number = Word(non_zero_digit, nums) | zero
-
-        # Expression for real
-        point = "."
-        e = Word("eE", exact=1)
-        plus_or_minus = Word("+-", exact=1)
-        real_number = Combine(Optional(plus_or_minus) + Word(nums) + Optional(point + Optional(Word(nums))) + Optional(
-            e + Optional(plus_or_minus) + Word(nums)))
-
-        # Define relational operators
-        relational_op = oneOf("< <= > >= == !=")
-
-        # Logical operators
-        unary_logical_op = Literal('!')
-        binary_logical_op = oneOf("&& || -> <->")
-
-        interval = Literal('[') + integer_number + Literal(',') + integer_number + Literal(']')
-
-        # Temporal operators
-        unary_temporal_op = oneOf("G F")
-        unary_temporal_prefix = unary_temporal_op + interval
-
-        binary_temporal_op = Literal('U')
-        binary_temporal_prefix = binary_temporal_op + interval
-
-        # Define expressions
-        expr = Forward()
-
-        # Parentheses for grouping
-        parens = Group(Literal("(") + expr + Literal(")"))
-
-        # Building the expressions
-        binary_relation = Group(identifier + relational_op + real_number) | Group(
-            identifier + relational_op + identifier)
-        binary_variable = Group(identifier)
-        unary_relation = Group(Optional(binary_temporal_prefix) + unary_logical_op + expr)
-
-        # Expression with all options
-        expr <<= infixNotation(binary_relation | unary_relation | binary_variable | parens,
-                               [(unary_temporal_prefix, 1, opAssoc.RIGHT),
-                                (unary_logical_op, 1, opAssoc.RIGHT),
-                                (binary_temporal_prefix, 2, opAssoc.LEFT),
-                                (binary_logical_op, 2, opAssoc.LEFT)
-                                ])
-
-        return expr
-
-    # Example parser usage
-    def parseSTL(self, expression):
-        stl_parser = self._create_stl_parser()
-        parsed_expression = stl_parser.parseString(expression, parseAll=True)
-        return parsed_expression.asList()
-
     def visit(self, node):
         # Determine the type of the node and call the appropriate visit method
         if isinstance(node, list):
             if len(node) == 1:
                 # Single element (either a terminal or a unary expression)
-                if isinstance(node[0], str) and len(node[0]) == 1:
+                if isinstance(node[0], str):
                     print(node[0])
                     return self.visit_binary_variable(node[0])
                 return self.visit(node[0])
@@ -538,8 +478,8 @@ class SMTSTLConsistencyChecker:
             elif not isinstance(node[0], list):
                 if node[0] in {'!'}:
                     return self.visit_unary_logical(node[0], node[1])
-                elif node[0] in {'('} and node[len(node) - 1] in {')'}:
-                    return self.visit_parenthesis(node[0], node[len(node) - 1], node[1])
+                elif node[0] == '(' and node[-1] == ')':
+                    return self.visit_parenthesis(node[0], node[-1], node[1])
                 elif node[0] in {'G', 'F'}:  # Temporal operators with a single argument
                     if (int(node[2]) > int(node[4])):
                         raise SyntaxError("The lower bound of the time interval is greater than the upper bound")
