@@ -3,8 +3,18 @@ import os
 sys.path.append(os.getcwd())
 
 from stl_consistency.parser import STLParser
-from stl_consistency.node import formula_to_string
+from stl_consistency.node import Node, formula_to_string
 from stl_consistency.smtchecker import smt_check_consistency
+
+from stl_consistency.tableau import make_tableau, plot_tree
+
+'''
+Come scrivere le formule:
+gli estremi degli intervalli possono essere scritti come numeri interi, frazioni o numeri decimali (ma razionali)
+le variabili devono essere precedute da B_ se sono booleane e R_ se sono reali
+l'argomento di un operatore temporale, se non contiene un alto op temporale, deve essere scritto già come vincolo SMT
+(vedi sintassi all'inizio)
+'''
 
 # formula = [['&&', ['G', '1/3', '9', ['B_p']], ['F', '4', '7', ['B_q']]]]
 # formula = [['&&', ['G', '0.5', '9', ['B_p']], ['F', '4', '7', ['B_q']]]]
@@ -39,7 +49,7 @@ from stl_consistency.smtchecker import smt_check_consistency
 # formula = [['U', '1', '3', ['B_q'], ['G', '1', '4', ['B_p']]]]
 # formula = [['U', '1', '3', ['G', '1', '4', ['B_p']], ['G', '2', '5', ['B_q']]]]
 # formula = [['&&', ['G', '0', '7', ['F', '1', '3', ['B_p']]], ['G', '2', '9', ['B_y']]]]
-# formula = [['G', '0', '7', ['F', '1', '3', ['B_p']]]]
+formula = [['G', '0', '7', ['F', '1', '3', ['B_p']]]]
 
 #formula = ['&&', ['G', '0', '9', ['R_x>5']], ['F', '4', '7', ['R_x<4']]]
 #formula = ['&&', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['!', ['B_p']]]]
@@ -78,3 +88,8 @@ print(formula_to_string(formula))
 parsed_formula = parser.parse_formula_as_list(formula_to_string(formula))
 
 smt_check_consistency(parsed_formula, True)
+
+max_depth = 5
+tableau = make_tableau(Node(*formula[0]), max_depth)
+
+plot_tree(tableau)

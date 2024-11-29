@@ -8,6 +8,8 @@ from stl_consistency.parser import STLParser
 from stl_consistency.node import Node, formula_to_string
 from stl_consistency.smtchecker import smt_check_consistency
 
+from stl_consistency.tableau import make_tableau, plot_tree
+
 # Benchmark: (avionics requirements)
 # 1) stabilire un time horizon (T)
 T = str(10)
@@ -61,3 +63,9 @@ smt_check_consistency(parsed_formula, True)
 
 elapsed = time.perf_counter() - start_t
 print('Elapsed time:', elapsed)
+
+
+max_depth = 5
+tableau = make_tableau(Node(*formula), max_depth)
+
+plot_tree(tableau)
