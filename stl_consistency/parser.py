@@ -1,6 +1,6 @@
 from pyparsing import (
-    Optional, Combine, Literal, Word, alphas, nums, alphanums, Group, Forward, infixNotation,
-    opAssoc, oneOf
+    Optional, Combine, Literal, Word, alphas, nums, alphanums, Group, Forward, infix_notation,
+    opAssoc, one_of
     )
 from stl_consistency.node import Node
 
@@ -21,17 +21,24 @@ class STLParser:
         real_number = Combine(Optional(plus_or_minus) + Word(nums) + Optional(point + Optional(Word(nums))) + Optional(
             e + Optional(plus_or_minus) + Word(nums)))
 
+        # Arithmetic expressions
+        arith_expr = infix_notation(identifier | real_number,
+            [
+                (one_of('+ -'), 2, opAssoc.RIGHT)
+            ]
+        )
+
         # Define relational operators
-        relational_op = oneOf("< <= > >= == !=")
+        relational_op = one_of("< <= > >= == !=")
 
         # Logical operators
         unary_logical_op = Literal('!')
-        binary_logical_op = oneOf("&& || -> <->")
+        binary_logical_op = one_of("&& || -> <->")
 
         interval = Literal('[') + integer_number + Literal(',') + integer_number + Literal(']')
 
         # Temporal operators
-        unary_temporal_op = oneOf("G F")
+        unary_temporal_op = one_of("G F")
         unary_temporal_prefix = unary_temporal_op + interval
 
         binary_temporal_op = Literal('U')
@@ -44,14 +51,12 @@ class STLParser:
         parens = Group(Literal("(") + expr + Literal(")"))
 
         # Building the expressions
-        binary_relation = Group(identifier + relational_op + real_number) | Group(
-            identifier + relational_op + identifier)
+        binary_relation = Group(arith_expr + relational_op + arith_expr)
         binary_variable = Group(identifier)
-        unary_relation = Group(Optional(binary_temporal_prefix) + unary_logical_op + expr)
 
         # Expression with all options
-        expr <<= infixNotation(binary_relation | unary_relation | binary_variable | parens,
-                               [(unary_temporal_prefix, 1, opAssoc.RIGHT),
+        expr <<= infix_notation(binary_relation | binary_variable,
+                                [(unary_temporal_prefix, 1, opAssoc.RIGHT),
                                 (unary_logical_op, 1, opAssoc.RIGHT),
                                 (binary_temporal_prefix, 2, opAssoc.LEFT),
                                 (binary_logical_op, 2, opAssoc.LEFT)
@@ -72,8 +77,12 @@ class STLParser:
     def is_stl_operator(f):
         return any(map(lambda x: f == x, ['G', 'F', 'U', '!', '&&', '||', '->', '<->']))
 
-    def is_comp_operator(o):
-        return any(map(lambda x: o == x, ['<', '<=', '>', '>=', '==', '!=']))
+    def arith_expr_prefix(expr):
+        if isinstance(expr, list):
+            assert len(expr) == 3 and isinstance(expr[1], str) and expr[1] in {'+', '-'}
+            return [expr[1], STLParser.arith_expr_prefix(expr[0]), STLParser.arith_expr_prefix(expr[2])]
+        assert isinstance(expr, str)
+        return expr
 
     def list_to_stl_list(formula):
         if isinstance(formula, list):
@@ -88,11 +97,9 @@ class STLParser:
                     del stl_list[1:3]
                     return prefix + stl_list
                 return [op] + stl_list
+            elif len(formula) == 3 and isinstance(formula[1], str) and formula[1] in {'<', '<=', '>', '>=', '==', '!='}:
+                return [formula[1], STLParser.arith_expr_prefix(formula[0]), STLParser.arith_expr_prefix(formula[2])]
             else:
-                op = next(filter(STLParser.is_comp_operator, formula), None)
-                if op is not None:
-                    return ['R_' + ' '.join(formula)]
-
                 # Should be a proposition in this case
                 assert len(formula) == 1
                 return ['B_' + formula[0]]
