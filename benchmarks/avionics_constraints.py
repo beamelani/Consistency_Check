@@ -15,8 +15,8 @@ from stl_consistency.tableau import make_tableau, plot_tree
 T = str(10)
 requirements = [
     ['G', '0', T, ['||', ['&&', ['B_active'], ['!', ['B_inactive']], ['!', ['B_armed']] ], ['&&', ['B_inactive'], ['!', ['B_active']], ['!', ['B_armed']]], ['&&', ['B_armed'], ['!', ['B_inactive']], ['!', ['B_active']]]]],
-    ['G', '0', T, ['->', ['&&', ['B_inactive'], ['R_n_s == 1'],  ['R_X_c-R_X_b <= 5'], ['R_X_c-R_X_b>= -5'], ['G', '0', '5', ['R_airspeed>= R_Vmin']], ['!', ['B_X_over']], ['B_X_Activation_Request']], ['F', '0', '2', ['&&', ['!', ['inactive']], ['active']]]]],
-    ['G', '0', T, ['->', ['&&', ['active'], ['||', ['!', ['R_n_s == 1']], ['F', '0', '10', ['B_X_ch']], ['G', '0', '5', ['R_airspeed < R_Vmin']],  ['!', ['B_r_actuation']], ['!', ['B_X_Activation_Request']]], ['F', '0', '2', ['&&', ['!', ['B_active']], ['B_inactive']]]]]],
+    ['G', '0', T, ['->', ['&&', ['B_inactive'], ['R_n_s == 1'],  ['R_X_c-R_X_b <= 5'], ['R_X_c-R_X_b>= -5'], ['G', '0', '5', ['R_airspeed>= R_Vmin']], ['!', ['B_X_over']], ['B_X_Activation_Request']], ['F', '0', '2', ['&&', ['!', ['B_inactive']], ['B_active']]]]],
+    ['G', '0', T, ['->', ['&&', ['B_active'], ['||', ['!', ['R_n_s == 1']], ['F', '0', '10', ['B_X_ch']], ['G', '0', '5', ['R_airspeed < R_Vmin']],  ['!', ['B_r_actuation']], ['!', ['B_X_Activation_Request']]]], ['F', '0', '2', ['&&', ['!', ['B_active']], ['B_inactive']]]]],
     ['G', '0', T, ['->', ['&&', ['B_armed'], ['||', ['!', ['R_n_s ==1']], ['F', '0', '5', ['B_X_ch']], ['!', ['B_X_Activation_Request']], ['!', ['B_r_actuation']]]], ['F', '0', '2', ['&&', ['!', ['B_armed']], ['B_inactive']]]]],
     ['G', '0', T, ['->', ['&&', ['B_inactive'], ['R_n_s ==1'], ['||', ['R_X_c - R_X_b >5'], ['R_X_c - R_X_b <-5']], ['B_X_Activation_Request'] ], ['F', '0', '2', ['&&', ['!', ['B_inactive']], ['B_armed']]]]],
     ['G', '0', T, ['->', ['&&', ['B_armed'], ['!', ['B_X_over']], ['R_X_c - R_X_b <=5'], ['R_X_c - R_X_b >=-5'], ['G', '0', '5', ['R_airspeed >= R_Vmin']] ], ['F', '0', '2', ['&&', ['!', ['B_armed']], ['B_active']]]]], #DOPPIONE
@@ -33,7 +33,7 @@ requirements = [
     ['G', '0', T, ['->', ['&&', ['B_X_over'], ['B_active'] ] , ['F', '0', '5', ['B_LME_cr']]]],
     ['G', '0', T, ['->', ['B_active'] , ['F', '0', '1', ['R_Y_pushbutton == 1']]]],
     ['G', '0', T, ['->', ['B_armed'] , ['F', '0', '1', ['R_Y_pushbutton == 2']]]],
-    # ['G', '0', T, ['->', ['&&', ['R_airspeed < Vmin'], [????]] , ['F', '0', '5', ['B_LS_amr']]]],
+    ['G', '0', T, ['->', ['R_airspeed < Vmin'], ['F', '0', '5', ['B_LS_amr']]]],
 ]
 
 parameter_ranges = [
@@ -50,7 +50,15 @@ parameter_ranges = [
     ['G', '0', T, ['||', ['R_Y_pushbutton == 0'], ['R_Y_pushbutton == 1'], ['R_Y_pushbutton == 2']]],
 ]
 
-formula = requirements[18]
+def make_and(formulas):
+    if len(formulas) == 1:
+        return formulas[0]
+    else:
+        return ['&&', formulas[0], make_and(formulas[1:])]
+
+# formula = requirements[18]
+formula = make_and(requirements[0:2])
+print(formula)
 
 # TODO: to be removed after making intermediate representation uniform
 parser = STLParser()
@@ -66,6 +74,6 @@ print('Elapsed time:', elapsed)
 
 
 max_depth = 5
-tableau = make_tableau(Node(*formula), max_depth)
+#tableau = make_tableau(Node(*formula), max_depth)
 
-plot_tree(tableau)
+#plot_tree(tableau)
