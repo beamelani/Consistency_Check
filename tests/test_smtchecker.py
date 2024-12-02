@@ -7,7 +7,7 @@ class TestSMTChecker(unittest.TestCase):
 
     def make_test(self, formula, result):
         parser = STLParser()
-        parsed_formula = parser.parse_formula_as_stl_list(formula)
+        parsed_formula = parser.parse_formula_as_list(formula)
         self.assertEqual(smt_check_consistency(parsed_formula, False), result)
 
     def test_and(self):
