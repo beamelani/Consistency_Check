@@ -83,18 +83,27 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = ['&&', ['->', ['G', '1', '4', ['B_p']], ['B_q']], ['->', ['F', '2', '3', ['!', ['B_p']]], ['B_z']]]
 #formula = ['G', '1', '5', ['&&', ['F', '1', '3', ['B_p']], ['G', '2', '4', ['B_q']]]]
 #formula = [',', ['G', '5', '5', ['&&', ['F', '1', '3', ['B_p']], ['G', '2', '4', ['B_q']]]], ['G', '7', '8', ['F','1', '2', ['B_p']]]]
-formula = ['F', '1', '5', ['&&', ['F', '1', '3', ['B_p']], ['G', '2', '4', ['B_q']]]]
+#formula = ['F', '1', '5', ['&&', ['F', '1', '3', ['B_p']], ['G', '2', '4', ['B_q']]]]
 #formula = [',', ['F', '1', '5', ['&&', ['F', '1', '3', ['B_p']], ['G', '2', '4', ['B_q']]]], ['G', '7', '8', ['F', '1', '2', ['B_p']]]]
+#formula = Node(*['||', ['F', '0', '5', ['&&', ['B_q'], ['!', ['B_q']]]], ['G', '0', '10', ['B_p']]])
+#formula = Node(*['||', ['G', '0', '10', ['B_p']], ['F', '0', '5', ['B_q']]])
+formula = Node(*['||', ['F', '0', '5', ['B_q']], ['G', '0', '10', ['B_p']]])
 
 # TODO: to be removed after making intermediate representation uniform
-parser = STLParser()
-print(formula_to_string(formula))
-parsed_formula = parser.parse_formula_as_list(formula_to_string(formula))
+#parser = STLParser()
+#print(formula_to_string(formula))
+#parsed_formula = parser.parse_formula_as_list(formula_to_string(formula))
 
 # Comment this out to avoid smt check
-smt_check_consistency(parsed_formula, True)
+#smt_check_consistency(parsed_formula, True)
 
-max_depth = 5
-tableau = make_tableau(Node(*formula), max_depth)
+max_depth = 10
+'''
+mode: default value is 'complete' (the entire tree is built until a depth equal to max_depth
+other values:
+sat = when a branch that satisfies the formula is found, the construction of the tree stops
+strong_sat = the input that are vacuously satisfied are not explored (when the antecedent of an implication is false)
+'''
+tableau = make_tableau(formula, max_depth, 'sat')
 
 plot_tree(tableau)

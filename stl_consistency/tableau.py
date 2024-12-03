@@ -412,7 +412,7 @@ def decompose_G(node, formula, index):
 
     # Funzione interna ricorsiva per modificare l'argomento
     def modify_argument(arg, identifier):
-        if arg.operator == 'P':
+        if arg.operator in {'P', '!'}:
             return arg
         elif arg.operator in {'G', 'F', 'U', 'R'}:
             # Modifica bounds sommando quelli del nodo G
@@ -472,7 +472,7 @@ def decompose_F(node, formula, index):
 
     # Funzione interna ricorsiva per modificare l'argomento
     def modify_argument(arg):
-        if arg.operator == 'P':
+        if arg.operator in {'P', '!'}:
             return arg
         elif arg.operator in {'G', 'F', 'U', 'R'}:
             # Modifica bounds sommando quelli del nodo G
@@ -1012,7 +1012,7 @@ def count_implications(formula):
     return formula
 
 
-def build_decomposition_tree(root, max_depth):
+def build_decomposition_tree(root, max_depth, mode = 'complete'):
     G = nx.DiGraph()
     time = extract_min_time(root)
     counter = 0
@@ -1020,7 +1020,7 @@ def build_decomposition_tree(root, max_depth):
     G.add_node(root_label)
     print(root_label)
 
-    def add_children(node, depth, current_time):
+    def add_children(node, depth, current_time, mode):
         nonlocal counter
         if depth < max_depth:
             node_copy = copy.deepcopy(node)
@@ -1029,21 +1029,19 @@ def build_decomposition_tree(root, max_depth):
             children = decompose(node_copy, current_time)
             if children is None:
                 print('No more children in this branch')
-                #return True
+                return True
             else:
                 for child in children:
                     if not isinstance(child, str):
                         print(child.to_list())
                     else:
                         print(child)
-                #return False
             for child in children:
                 if child == 'Rejected':
                     counter += 1
                     child_label = " ".join([child, str(counter)])
                     G.add_node(child_label)
                     G.add_edge(node_label, child_label)
-                    #return False
                 else:
                     counter += 1
                     # Compute child time for the label (for debugging)
@@ -1052,12 +1050,12 @@ def build_decomposition_tree(root, max_depth):
                     child_label = child.to_label(counter)
                     G.add_node(child_label)
                     G.add_edge(node_label, child_label)
-                    add_children(child, depth + 1, current_time)
-                    #res = add_children(child, depth + 1, current_time)
-                    #if res:
-                        #break
+                    res = add_children(child, depth + 1, current_time, mode)
+                    if res and mode == 'sat':
+                        return True
+        return False
 
-    add_children(root, 0, time)
+    add_children(root, 0, time, mode)
     return G
 
 
@@ -1070,15 +1068,15 @@ def plot_tree(G):
     plt.show()
 
 
-def make_tableau(formula, max_depth):
+def make_tableau(formula, max_depth, mode='complete'):
     formula = add_G_for_U(formula, formula.operator, False)
     formula = assign_identifier(formula)
     formula = count_implications(formula)
     set_initial_time(formula)
 
     # formula = normalize_bounds(formula)
-    
-    return build_decomposition_tree(formula, max_depth)
+
+    return build_decomposition_tree(formula, max_depth, mode)
 
 
 '''
