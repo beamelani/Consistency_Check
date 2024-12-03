@@ -334,7 +334,7 @@ def formula_to_string(formula):
         return f"({formula_to_string(arg1)}) -> ({formula_to_string(arg2)})"
 
 
-def decompose(node, current_time):
+def decompose(node, current_time, mode):
     """
     :param node: lista da decomporre che ha la forma esplicitata sopra
     :param current_time: istante di tempo attuale, per capire quali operatori sono attivi e quali no
@@ -347,7 +347,10 @@ def decompose(node, current_time):
         elif node.operator == '||':
             return decompose_or(node, [], -1)
         elif node.operator == '->':
-            return decompose_imply(node.to_list(), node, -1)
+            if mode == 'complete' or mode == 'sat':
+                return decompose_imply_sat(node.to_list(), node, -1)
+            else:
+                return decompose_imply(node.to_list(), node, -1)
         # Se il nodo iniziale ha solo un elemento (quindi non è un and o or di più sottoformule) lo decompongo con i 5 elif di seguito
         elif node.operator == 'G':
             return decompose_G(node, node, -1)
@@ -376,7 +379,10 @@ def decompose(node, current_time):
                 if node.operands[j].operator == '||':
                     return decompose_or(node.operands[j], node, j)
                 elif node.operands[j].operator == '->':
-                    return decompose_imply(node.operands[j].to_list(), node, j)
+                    if mode == 'complete' or mode == 'sat':
+                        return decompose_imply_sat(node.operands[j].to_list(), node, j)
+                    else:
+                        return decompose_imply(node.operands[j].to_list(), node, j)
                 elif node.operands[j].operator == 'G' and Fraction(node.operands[j].lower) == current_time:
                     return decompose_G(node.operands[j], node, j)
                 elif node.operands[j].operator == 'F' and Fraction(node.operands[j].lower) == current_time:
@@ -691,6 +697,25 @@ def decompose_or(node, formula, index):
             res.append(new_node)
             del new_node
         return res
+
+def decompose_imply_sat(node, formula, index):
+    '''
+    :return: decompone p->q come not(p) OR (p and q), senza evitare il caso vacuously true
+    '''
+    if index >= 0:
+        node_2 = Node(*[',', node[1], node[2]])
+        del formula.operands[index]
+        new_node1 = copy.deepcopy(formula)
+        new_node2 = copy.deepcopy(formula)
+        new_node2.operands.extend(node_2.operands)
+        node_1 = Node(*[',', ['!', node[1]]])
+        new_node1.operands.extend(node_1.operands)
+        new_node1 = push_negation(new_node1)
+    else:  # se l'imply non è in and con nulla posso direttamente rigettare il ramo negato
+        new_node1 = Node(*[',', ['!', node[1]]])
+        new_node1 = push_negation(new_node1)
+        new_node2 = Node(*[',', node[1], node[2]])
+    return new_node1, new_node2
 
 
 def decompose_imply(node, formula, index):
@@ -1027,7 +1052,7 @@ def build_decomposition_tree(root, max_depth, mode = 'complete'):
             node_copy = copy.deepcopy(node)
             current_time = extract_min_time(node_copy)
             node_label = node.to_label(counter)
-            children = decompose(node_copy, current_time)
+            children = decompose(node_copy, current_time, mode)
             if children is None:
                 print('No more children in this branch')
                 return True
