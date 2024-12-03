@@ -1096,8 +1096,8 @@ def build_decomposition_tree(root, max_depth, mode = 'complete'):
                         return True
         return False
 
-    add_children(root, 0, time, mode)
-    return G
+    res = add_children(root, 0, time, mode)
+    return G, res
 
 
 def plot_tree(G):

@@ -1,4 +1,3 @@
-
 ## TODO: adapt for class representation
 def formula_to_string(formula):
     """
@@ -57,6 +56,18 @@ def formula_to_string(formula):
         return f"({formula_to_string(arg1)}) -> ({formula_to_string(arg2)})"
 
 
+def arith_expr_to_string(expr):
+    if isinstance(expr, list):
+        if len(expr) == 3 and expr[0] in {'<', '<=', '>', '>=', '==', '!=', '+', '-'}:
+            return ' '.join([arith_expr_to_string(expr[1]), expr[0], arith_expr_to_string(expr[2])])
+        elif len(expr) == 1 and isinstance(expr[0], str):
+            return expr[0]
+    elif isinstance(expr, str):
+        return expr
+    else:
+        raise ValueError('Bad operator')
+
+
 class Node:
     def __init__(self, operator, *args):
         self.current_time = None
@@ -74,12 +85,19 @@ class Node:
             self.lower = args[0]
             self.upper = args[1]
             self.operands = args[2:]
+        elif operator in {'<', '<=', '>', '>=', '==', '!='}:
+            # The comparison is flattened into a str in this case
+            # TODO: fix smt_check in tableau to accept list representation
+            self.lower = self.upper = -1
+            self.operator = 'P'
+            self.operands = [arith_expr_to_string([operator] + list(args))]
         elif isinstance(operator, str) and len(args) == 0:
             self.lower = self.upper = -1
             self.operator = 'P'
             self.operands = [operator]
         else:
-            raise ValueError('Bad formula')
+            print(operator, args)
+            raise ValueError('Bad formula' + operator + str(args))
 
         # Convert operands to Nodes, if any
         if self.operator != 'P' and len(self.operands) > 0 and not isinstance(self.operands[0], Node):
