@@ -697,6 +697,7 @@ def decompose_imply(node, formula, index):
     '''
     :return: decompone p->q come not(p) OR (p and q). Se ci sono più -> in and, viene rigettato il nodo in cui tutti
     gli antecedenti sono negati. Se c'è un solo -> viene rigettato il nodo con antecedente negato
+    MODIFICA: voglio che si comporti così solo in strong_sat, altrimenti voglio che non abbia rami rejected perché antecedente è falso
     '''
     if index >= 0:
         node_2 = Node(*[',', node[1], node[2]])
