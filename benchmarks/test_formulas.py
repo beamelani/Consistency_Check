@@ -80,14 +80,15 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = ['&&', ['->', ['G', '1', '4', ['B_p']], ['B_q']], ['G', '1', '7', ['||', ['B_x'], ['B_z']]]]
 #formula = ['&&', ['->', ['G', '1', '4', ['B_p']], ['B_q']], ['->', ['G', '1', '7', ['B_p']], ['B_z']]]
 #formula = ['->', ['B_p'], ['B_q']]
-#formula = ['&&', ['->', ['G', '1', '4', ['B_p']], ['B_q']], ['->', ['F', '2', '3', ['!', ['B_p']]], ['B_z']]]
+#formula = ['&&', ['->', ['G', '1', '4', ['B_p']], ['B_q']], ['->', ['F', '2', '3', ['!', ['B_c']]], ['B_z']], ['->', ['B_o'], ['B_l']]]
 #formula = ['G', '1', '5', ['&&', ['F', '1', '3', ['B_p']], ['G', '2', '4', ['B_q']]]]
 #formula = [',', ['G', '5', '5', ['&&', ['F', '1', '3', ['B_p']], ['G', '2', '4', ['B_q']]]], ['G', '7', '8', ['F','1', '2', ['B_p']]]]
 #formula = ['F', '1', '5', ['&&', ['F', '1', '3', ['B_p']], ['G', '2', '4', ['B_q']]]]
 #formula = [',', ['F', '1', '5', ['&&', ['F', '1', '3', ['B_p']], ['G', '2', '4', ['B_q']]]], ['G', '7', '8', ['F', '1', '2', ['B_p']]]]
-#formula = Node(*['||', ['F', '0', '5', ['&&', ['B_q'], ['!', ['B_q']]]], ['G', '0', '10', ['B_p']]])
-#formula = Node(*['||', ['G', '0', '10', ['B_p']], ['F', '0', '5', ['B_q']]])
-formula = Node(*['||', ['F', '0', '5', ['B_q']], ['G', '0', '10', ['B_p']]])
+#formula = ['||', ['F', '0', '5', ['&&', ['B_q'], ['!', ['B_q']]]], ['G', '0', '10', ['B_p']]]
+#formula = ['||', ['G', '0', '10', ['B_p']], ['F', '0', '5', ['B_q']]]
+#formula = ['||', ['F', '0', '5', ['B_q']], ['G', '0', '10', ['B_p']]]
+formula = ['&&', ['->', ['B_p'], ['B_q']], ['->', ['B_c'], ['B_z']], ['->', ['B_o'], ['B_l']]]
 
 # TODO: to be removed after making intermediate representation uniform
 #parser = STLParser()
@@ -97,13 +98,14 @@ formula = Node(*['||', ['F', '0', '5', ['B_q']], ['G', '0', '10', ['B_p']]])
 # Comment this out to avoid smt check
 #smt_check_consistency(parsed_formula, True)
 
-max_depth = 10
+max_depth = 5
 '''
-mode: default value is 'complete' (the entire tree is built until a depth equal to max_depth
+mode: default value is 'complete' (the entire tree is built until depth is equal to max_depth)
 other values:
-sat = when a branch that satisfies the formula is found, the construction of the tree stops
+sat = when a branch that satisfies the formula is found (with classical sat definition), the construction of the tree stops
 strong_sat = the input that are vacuously satisfied are not explored (when the antecedent of an implication is false)
+the construction of the tree is stopped when a branch that satisfies the formula is found (with the strong def of satisfiability)
 '''
-tableau = make_tableau(formula, max_depth, 'sat')
+tableau = make_tableau(Node(*formula), max_depth, 'strong_sat')
 
 plot_tree(tableau)

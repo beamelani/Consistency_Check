@@ -68,6 +68,8 @@ class Node:
         if operator in {'&&', '||', ',', '!', 'O', '->'}:
             self.lower = self.upper = -1
             self.operands = args
+            if operator in {'&&', ','}:
+                self.satisfied_implications = []
         elif operator in {'G', 'F', 'U', 'R'}:
             self.lower = args[0]
             self.upper = args[1]

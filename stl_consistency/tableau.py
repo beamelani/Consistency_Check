@@ -348,9 +348,9 @@ def decompose(node, current_time, mode):
             return decompose_or(node, [], -1)
         elif node.operator == '->':
             if mode == 'complete' or mode == 'sat':
-                return decompose_imply_sat(node.to_list(), node, -1)
+                return decompose_imply_classic(node.to_list(), node, -1)
             else:
-                return decompose_imply(node.to_list(), node, -1)
+                return decompose_imply_new(node.to_list(), node, -1)
         # Se il nodo iniziale ha solo un elemento (quindi non è un and o or di più sottoformule) lo decompongo con i 5 elif di seguito
         elif node.operator == 'G':
             return decompose_G(node, node, -1)
@@ -380,9 +380,9 @@ def decompose(node, current_time, mode):
                     return decompose_or(node.operands[j], node, j)
                 elif node.operands[j].operator == '->':
                     if mode == 'complete' or mode == 'sat':
-                        return decompose_imply_sat(node.operands[j].to_list(), node, j)
+                        return decompose_imply_classic(node.operands[j].to_list(), node, j)
                     else:
-                        return decompose_imply(node.operands[j].to_list(), node, j)
+                        return decompose_imply_new(node.operands[j].to_list(), node, j)
                 elif node.operands[j].operator == 'G' and Fraction(node.operands[j].lower) == current_time:
                     return decompose_G(node.operands[j], node, j)
                 elif node.operands[j].operator == 'F' and Fraction(node.operands[j].lower) == current_time:
@@ -698,7 +698,7 @@ def decompose_or(node, formula, index):
             del new_node
         return res
 
-def decompose_imply_sat(node, formula, index):
+def decompose_imply_classic(node, formula, index):
     '''
     :return: decompone p->q come not(p) OR (p and q), senza evitare il caso vacuously true
     '''
@@ -718,7 +718,7 @@ def decompose_imply_sat(node, formula, index):
     return new_node1, new_node2
 
 
-def decompose_imply(node, formula, index):
+def decompose_imply_new(node, formula, index):
     '''
     :return: decompone p->q come not(p) OR (p and q). Se ci sono più -> in and, viene rigettato il nodo in cui tutti
     gli antecedenti sono negati. Se c'è un solo -> viene rigettato il nodo con antecedente negato
@@ -726,9 +726,11 @@ def decompose_imply(node, formula, index):
     '''
     if index >= 0:
         node_2 = Node(*[',', node[1], node[2]])
-        del formula.operands[index]
         new_node1 = copy.deepcopy(formula)
         new_node2 = copy.deepcopy(formula)
+        del new_node1.operands[index]
+        del new_node2.operands[index]
+        new_node2.satisfied_implications.append(formula.operands[index].identifier)
         new_node2.operands.extend(node_2.operands)
         if formula.implications > 1:  # quando sono a 1 significa che quello che sto negando ora è l'ultimo e quindi li ho negati tutti
             node_1 = Node(*[',', ['!', node[1]]])
@@ -1025,11 +1027,16 @@ def add_G_for_U(node, single, derived):
 
 
 def count_implications(formula):
+    counter = 1
     if formula.operator == '&&':
         # Conta quante implicazioni ('->') ci sono tra gli operandi
         implication_count = sum(1 for operand in formula.operands if operand.operator == '->')
         # Aggiungi l'attributo 'implications' al nodo e assegna il conteggio
         formula.implications = implication_count
+        for operand in formula.operands:
+            if operand.operator == '->':
+                operand.identifier = counter
+                counter += 1
     else:
         # Se il nodo non è un '&&', esplora ricorsivamente i suoi operandi
         for operand in formula.operands:
@@ -1048,6 +1055,7 @@ def build_decomposition_tree(root, max_depth, mode = 'complete'):
 
     def add_children(node, depth, current_time, mode):
         nonlocal counter
+        global true_implications
         if depth < max_depth:
             node_copy = copy.deepcopy(node)
             current_time = extract_min_time(node_copy)
@@ -1055,7 +1063,14 @@ def build_decomposition_tree(root, max_depth, mode = 'complete'):
             children = decompose(node_copy, current_time, mode)
             if children is None:
                 print('No more children in this branch')
-                return True
+                if mode == 'sat':
+                    return True
+                elif mode == 'strong_sat':
+                    true_implications.update(node.satisfied_implications)
+                    if len(true_implications) == number_of_implications:
+                        return True
+                    else:
+                        return False
             else:
                 for child in children:
                     if not isinstance(child, str):
@@ -1077,7 +1092,7 @@ def build_decomposition_tree(root, max_depth, mode = 'complete'):
                     G.add_node(child_label)
                     G.add_edge(node_label, child_label)
                     res = add_children(child, depth + 1, current_time, mode)
-                    if res and mode == 'sat':
+                    if res and mode in {'sat', 'strong_sat'}:
                         return True
         return False
 
@@ -1095,16 +1110,19 @@ def plot_tree(G):
 
 
 def make_tableau(formula, max_depth, mode='complete'):
+    global number_of_implications
     formula = add_G_for_U(formula, formula.operator, False)
     formula = assign_identifier(formula)
     formula = count_implications(formula)
+    number_of_implications = formula.implications
     set_initial_time(formula)
 
     # formula = normalize_bounds(formula)
 
     return build_decomposition_tree(formula, max_depth, mode)
 
-
+true_implications = set()
+number_of_implications = None
 '''
 CASI NON PROBLEMATICI:
 FG
