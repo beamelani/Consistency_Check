@@ -1110,7 +1110,8 @@ def plot_tree(G):
 
 
 def make_tableau(formula, max_depth, mode='complete'):
-    global number_of_implications
+    global number_of_implications, true_implications
+    true_implications = set()
     formula = add_G_for_U(formula, formula.operator, False)
     formula = assign_identifier(formula)
     formula = count_implications(formula)
@@ -1121,8 +1122,6 @@ def make_tableau(formula, max_depth, mode='complete'):
 
     return build_decomposition_tree(formula, max_depth, mode)
 
-true_implications = set()
-number_of_implications = None
 '''
 CASI NON PROBLEMATICI:
 FG
