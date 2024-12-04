@@ -57,23 +57,24 @@ def make_and(formulas):
         return ['&&', formulas[0], make_and(formulas[1:])]
 
 # formula = requirements[18]
+# requirements[0:2] takes requirements from 0 to 1
 formula = make_and(requirements[0:2])
 print(formula)
 
 # TODO: to be removed after making intermediate representation uniform
-parser = STLParser()
-print(formula_to_string(formula))
-parsed_formula = parser.parse_formula_as_list(formula_to_string(formula))
+# parser = STLParser()
+# print(formula_to_string(formula))
+# parsed_formula = parser.parse_formula_as_list(formula_to_string(formula))
 
-start_t = time.perf_counter()
+# start_t = time.perf_counter()
 
-smt_check_consistency(parsed_formula, True)
+# smt_check_consistency(parsed_formula, True)
 
-elapsed = time.perf_counter() - start_t
-print('Elapsed time:', elapsed)
+# elapsed = time.perf_counter() - start_t
+# print('Elapsed time:', elapsed)
 
 
 max_depth = 5
-#tableau = make_tableau(Node(*formula), max_depth)
+tableau, _ = make_tableau(Node(*formula), max_depth, 'sat')
 
-#plot_tree(tableau)
+plot_tree(tableau)
