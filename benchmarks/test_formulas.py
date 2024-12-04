@@ -88,7 +88,7 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = ['||', ['F', '0', '5', ['&&', ['B_q'], ['!', ['B_q']]]], ['G', '0', '10', ['B_p']]]
 #formula = ['||', ['G', '0', '10', ['B_p']], ['F', '0', '5', ['B_q']]]
 #formula = ['||', ['F', '0', '5', ['B_q']], ['G', '0', '10', ['B_p']]]
-formula = ['&&', ['->', ['B_p'], ['B_q']], ['->', ['B_c'], ['B_z']], ['->', ['B_o'], ['B_l']]]
+formula = ['&&', ['->', ['B_p'], ['!', ['B_q']]], ['->', ['B_c'], ['!', ['B_z']]], ['->', ['B_o'], ['B_l']]]
 
 # TODO: to be removed after making intermediate representation uniform
 #parser = STLParser()
