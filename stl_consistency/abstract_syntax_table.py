@@ -20,6 +20,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from stl_consistency.parser import STLParser
+
 class STLAbstractSyntaxTable:
 
     def __init__(self, formula):
@@ -36,6 +38,9 @@ class STLAbstractSyntaxTable:
     def getFormulasKeys (self):
         return self._sub_formulas.keys()
 
+    def getFormulaKeyValuePairs(self):
+        return self._sub_formulas.items()
+
     def getFormula (self, key):
         return self._sub_formulas[key]
 
@@ -51,7 +56,6 @@ class STLAbstractSyntaxTable:
     def containsVariable(self, variable):
         return variable in self._variables
 
-
     def getVariableType (self, variable):
         return self._variables[variable]
 
@@ -61,14 +65,8 @@ class STLAbstractSyntaxTable:
     def addBinaryVariable(self, variable):
         self._variables[variable] = 'binary'
 
-    def addRealConstraint(self, left, operator, right, prop):
-        self._real_constraints[left] = {operator: {right: prop}}
-
     def addBinaryConstraint(self, binary_var, prop):
         self._binary_constraints[binary_var] = prop
-
-    def getSubFormulaKeyFromRealConstraints (self, left, operator, right):
-        return self._real_constraints[left][operator][right]
 
     def getSubFormulaKeyFromBinaryConstraints (self, binary_var):
         return self._binary_constraints[binary_var]
@@ -219,28 +217,22 @@ class STLAbstractSyntaxTable:
             if len(node) == 1:
                 # Single element (either a terminal or a unary expression)
                 if isinstance(node[0], str) and len(node[0]) == 1:
-
                     return self._visit_binary_variable(node[0])
                 return self._visit(node[0])
-            elif len(node) == 3 and isinstance(node[0], str) and isinstance(node[1], str) and isinstance(node[2], str):
-                if node[1] in {'<', '<=', '>', '>=', '==', '!='}:
-                    return self._visit_binary_relational(node[1], node[0], node[2])
+            elif len(node) == 3 and isinstance(node[1], str) and node[1] in {'<', '<=', '>', '>=', '==', '!='}:
+                return self._visit_binary_relational(node[1], node[0], node[2])
             elif not isinstance(node[0], list):
-                if node[0] in {'!'}:
+                if node[0] == '!':
                     return self._visit_unary_logical(node[0], node[1])
-                elif node[0] in {'('} and node[len(node) - 1] in {')'}:
-                    return self._visit_parenthesis(node[0], node[len(node) - 1], node[1])
                 elif node[0] in {'G', 'F'}:  # Temporal operators with a single argument
-
-                    if (int(node[2]) > int(node[4])):
+                    if (int(node[1]) > int(node[2])):
                         raise SyntaxError("The lower bound of the time interval is greater than the upper bound")
-                    return self._visit_unary_temporal_operator(node[0], node[2], node[4], node[6])
+                    return self._visit_unary_temporal_operator(node[0], node[1], node[2], node[3])
             elif isinstance(node[1], str):
-                # print(node[0])
-                if node[1] in {'U'}:  # Temporal operators with two argument
-                    if (int(node[3]) > int(node[5])):
+                if node[1] in {'U'}:  # Temporal operators with two arguments
+                    if (int(node[2]) > int(node[3])):
                         raise SyntaxError("The lower bound of the time interval is greater than the upper bound")
-                    return self._visit_binary_temporal_operator(node[1], node[3], node[5], node[0], node[7])
+                    return self._visit_binary_temporal_operator(node[1], node[2], node[3], node[0], node[4])
                 elif node[1] in {'&&', '||', '->', '<->'}:  # Binary logical operators
                     return self._visit_binary_logical(node[1], node[0], node[2:])
         elif isinstance(node, str):
@@ -286,36 +278,32 @@ class STLAbstractSyntaxTable:
     def _visit_binary_relational(self, operator, left, right):
         # Visit both sides of the relational expression
         # print(f"Visiting Relational Operator: {operator}")
-        prop = ""
+        lhs = self._visit_real_expr(left)
+        rhs = self._visit_real_expr(right)
+        if (operator, lhs, rhs) in self._real_constraints:
+            return self._real_constraints[(operator, lhs, rhs)]
 
-        if self.containsVariable(left):
-            if self.getVariableType(left) != 'binary':
-                pass
-            else:
-                raise SyntaxError(f"Variable '{left}' cannot be real and binary")
+        prop = self.addSubFormula([operator, lhs, rhs])
+        self._real_constraints[(operator, lhs, rhs)] = prop
 
-            # print(self._real_constraints[left].keys())
-
-            if operator in self.getRealConstraintsList().keys():
-                # print(f"'{operator}' is in {self.getRealConstraintsList().keys()}")
-                if right in self.getRealConstraintsList()[left][operator].keys():
-                    prop = self.getSubFormulaKeyFromRealConstraints(left, operator, right)
-                else:
-                    prop = self.addSubFormula([left, operator, right])
-                    self.addRealConstraint(left, operator, right, prop)
-            else:
-                # print(f"'{operator}' is not in {self._real_constraints[left].keys()}")
-                prop = self.addSubFormula([left, operator, right])
-                self.addRealConstraint(left, operator, right, prop)
-        else:
-            #print(f"Key '{left}' is not in the dictionary.")
-            self.addRealVariable(left)
-            #print(f"Key '{left}' added in the dictionary.")
-            prop = self.addSubFormula([self._visit(left), operator, self._visit(right)])
-            #print(f"prop = {prop}")
-            #print(f"left = {left}, operator = {operator}, right = {right},")
-            self.addRealConstraint(left, operator, right, prop)
         return prop, '1'
+
+    def _visit_real_expr(self, expr):
+        if isinstance(expr, str):
+            if STLParser.is_float(expr):
+                return expr
+            else:
+                # expr is a real variable
+                if self.containsVariable(expr) and self.getVariableType(expr) != 'real':
+                    raise ValueError(f"Variable '{left}' cannot be real and binary")
+                self.addRealVariable(expr)
+                return expr
+        else:
+            assert isinstance(expr, list)
+            if len(expr) == 1:
+                return self._visit_real_expr(expr[0])
+            assert len(expr) == 3
+            return (expr[1], self._visit_real_expr(expr[0]), self._visit_real_expr(expr[2]))
 
     def _visit_binary_variable(self, binary_var):
         # Simply return the identifier, in more complex cases you might want to look up values

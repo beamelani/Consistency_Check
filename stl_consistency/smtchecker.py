@@ -20,11 +20,26 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from stl_consistency.parser import STLParser
 from stl_consistency.abstract_syntax_table import STLAbstractSyntaxTable
 
 from z3 import *
 
 class SMTSTLConsistencyChecker:
+
+    relational_op_functions = {
+        '<': lambda x, y: x < y,
+        '<=': lambda x, y: x <= y,
+        '>': lambda x, y: x > y,
+        '>=': lambda x, y: x >= y,
+        '==': lambda x, y: x == y,
+        '!=': lambda x, y: x != y
+    }
+
+    arithmetic_op_functions = {
+        '+': lambda x, y: x + y,
+        '-': lambda x, y: x - y
+    }
 
     def __init__(self):
         pass
@@ -53,6 +68,15 @@ class SMTSTLConsistencyChecker:
                     smt_variables[prop] = Bool(prop)
             print("")
 
+    def _encode_real_expr(self, expr, encoded_time):
+        if isinstance(expr, str):
+            if STLParser.is_float(expr):
+                return float(expr)
+            return self.smt_variables[f"{expr}_t{encoded_time}"]
+        assert isinstance(expr, tuple) and len(expr) == 3
+        op = SMTSTLConsistencyChecker.arithmetic_op_functions[expr[0]]
+        return op(self._encode_real_expr(expr[1], encoded_time), self._encode_real_expr(expr[2], encoded_time))
+
     def _filter_witness(self, model):
         filter_model1 = []
         filter_model2 = {}
@@ -72,8 +96,9 @@ class SMTSTLConsistencyChecker:
 
     def solve(self, table, verbose):
 
-        # This hashtable will contains the variables for the SMT Solver
-        smt_variables = {}
+        # This hashtable will contain the variables for the SMT Solver
+        smt_variables = {} # TODO: remove this alias
+        self.smt_variables = smt_variables
 
         time_horizon = int(table.getTimeHorizon())
         root_formula = table.getRootFormula()
@@ -95,14 +120,15 @@ class SMTSTLConsistencyChecker:
         s = Solver()
         root_prop = f"{root_formula}_t{self._encode_time(0, time_horizon)}"
 
-        for key in table.getFormulasKeys():
-            # If the sub-formula to consider is the root formula then
-            # we compute only the for time t00
-            # we introduce another variable
-            time_limit = 1
-            if key != root_formula:
+        for key, formula in table.getFormulaKeyValuePairs():
+            # If the sub-formula to consider is the root formula then we compute only for time t00
+            if key == root_formula:
+                time_limit = 1
+            else:
                 time_limit = time_horizon
+
             for t in range(time_limit):
+                encoded_time = self._encode_time(t, time_horizon)
                 prop = f"{key}_t{self._encode_time(t, time_horizon)}"
 
                 if len(table.getFormula(key)) == 1:
@@ -119,102 +145,18 @@ class SMTSTLConsistencyChecker:
                         if verbose:
                             print(f"s.add({table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)})")
                         s.add(smt_variables[f"{table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)}"])
-                elif len(table.getFormula(key)) == 3 and table.getFormula(key)[1] in {'<', '<=', '>', '>=', '==','!='}:
+                elif len(table.getFormula(key)) == 3 and table.getFormula(key)[0] in {'<', '<=', '>', '>=', '==','!='}:
                     if verbose:
                         print(f"{prop} = Bool('{prop}')")
                     smt_variables[prop] = Bool(prop)
-                    if table.getFormula(key)[1] == '<':
-                        if (root_prop != prop):
-                            s.add(smt_variables[prop] == (smt_variables[
-                                                              f"{table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)}"] < float(
-                                table.getFormula(key)[2])))
-                            if verbose:
-                                print(
-                                    f"s.add({smt_variables[prop]} == ({table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)} < {table.getFormula(key)[2]}))")
-                        else:
-                            s.add((smt_variables[
-                                       f"{table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)}"] < float(
-                                table.getFormula(key)[2])))
-                            if verbose:
-                                print(
-                                    f"s.add({table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)} < {table.getFormula(key)[2]})")
-                    elif table.getFormula(key)[1] == '<=':
-                        if (root_prop != prop):
-                            s.add(smt_variables[prop] == (smt_variables[
-                                                              f"{table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)}"] <= float(
-                                table.getFormula(key)[2])))
-                            if verbose:
-                                print(
-                                    f"s.add({smt_variables[prop]} == ({table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)} <= {table.getFormula(key)[2]}))")
-                        else:
-                            s.add((smt_variables[
-                                       f"{table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)}"] <= float(
-                                table.getFormula(key)[2])))
-                            if verbose:
-                                print(
-                                    f"s.add({table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)} <= {table.getFormula(key)[2]})")
-                    elif table.getFormula(key)[1] == '>':
-                        if (root_prop != prop):
-                            s.add(smt_variables[prop] == (smt_variables[
-                                                              f"{table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)}"] > float(
-                                table.getFormula(key)[2])))
-                            if verbose:
-                                print(
-                                    f"s.add({smt_variables[prop]} == ({table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)} > {table.getFormula(key)[2]}))")
-                        else:
-                            s.add((smt_variables[
-                                       f"{table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)}"] > float(
-                                table.getFormula(key)[2])))
-                            if verbose:
-                                print(
-                                    f"s.add(({table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)} > {table.getFormula(key)[2]}))")
-                    elif table.getFormula(key)[1] == '>=':
-                        if (root_prop != prop):
-                            s.add(smt_variables[prop] == (smt_variables[
-                                                              f"{table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)}"] >= float(
-                                table.getFormula(key)[2])))
-                            if verbose:
-                                print(
-                                    f"s.add({smt_variables[prop]} == ({table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)} >= {table.getFormula(key)[2]}))")
-                        else:
-                            s.add((smt_variables[
-                                       f"{table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)}"] >= float(
-                                table.getFormula(key)[2])))
-                            if verbose:
-                                print(
-                                    f"s.add(({table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)} >= {table.getFormula(key)[2]}))")
-                    elif table.getFormula(key)[1] == '==':
-                        if (root_prop != prop):
-                            s.add(smt_variables[prop] == (smt_variables[
-                                                              f"{table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)}"] == float(
-                                table.getFormula(key)[2])))
-                            if verbose:
-                                print(
-                                    f"s.add({smt_variables[prop]} == ({table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)} == {table.getFormula(key)[2]}))")
-                        else:
-                            s.add((smt_variables[
-                                       f"{table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)}"] == float(
-                                table.getFormula(key)[2])))
-                            if verbose:
-                                print(
-                                    f"s.add(({table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)} == {table.getFormula(key)[2]}))")
-                    elif table.getFormula(key)[1] == '!=':
-                        if (root_prop != prop):
-                            s.add(smt_variables[prop] == (smt_variables[
-                                                              f"{table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)}"] != float(
-                                table.getFormula(key)[2])))
-                            if verbose:
-                                print(
-                                    f"s.add({smt_variables[prop]} == ({table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)} != {table.getFormula(key)[2]}))")
-                        else:
-                            s.add((smt_variables[
-                                       f"{table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)}"] != float(
-                                table.getFormula(key)[2])))
-                            if verbose:
-                                print(
-                                    f"s.add(({table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)} != {table.getFormula(key)[2]}))")
-                elif len(table.getFormula(key)) == 4 and table.getFormula(key)[0] in {'G','F'}:  # Ezio in the case of nested operation it is necessary to do all the t
+                    op = SMTSTLConsistencyChecker.relational_op_functions[formula[0]]
+                    lhs = self._encode_real_expr(formula[1], encoded_time)
+                    rhs = self._encode_real_expr(formula[2], encoded_time)
+                    s.add(smt_variables[prop] == op(lhs, rhs))
 
+                    if verbose:
+                        print(f"s.add({smt_variables[prop]} == ({formula[1]} {formula[0]} {formula[2]}))")
+                elif len(table.getFormula(key)) == 4 and table.getFormula(key)[0] in {'G','F'}:  # in the case of nested operation it is necessary to do all the t
                     int_a = int(table.getFormula(key)[1])
                     int_b = int(table.getFormula(key)[2])
                     if t + int_b < time_horizon:
