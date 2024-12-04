@@ -39,7 +39,7 @@ class TestSMTChecker(unittest.TestCase):
         self.make_test("G[2,5] (x > 5 || x < 0)", True)
 
     def test_globally_add(self):
-        self.make_test("G[2,5] (x + y > 5 || x - y < 0)", True)
+        self.make_test("G[2,5] (x + y > 5 && x - y < 0)", True)
         
 
 if __name__ == '__main__':

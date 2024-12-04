@@ -50,7 +50,7 @@ class SMTSTLConsistencyChecker:
         # Add 0 to complete the string
         return t_str.zfill(len(str(time_horizon)))
 
-    def _encode_variables(self, table, time_horizon, smt_variables, verbose):
+    def _encode_variables(self, table, time_horizon, verbose):
         if verbose:
             print("")
             print("# Encode the Real/Binary variables ")
@@ -61,11 +61,11 @@ class SMTSTLConsistencyChecker:
                 if table.getVariableType(key) == 'real':
                     if verbose:
                         print(f"{prop} = Real('{prop}')")
-                    smt_variables[prop] = Real(prop)
+                    self.smt_variables[prop] = Real(prop)
                 elif table.getVariableType(key) == 'binary':
                     if verbose:
                         print(f"{prop} = Bool('{prop}')")
-                    smt_variables[prop] = Bool(prop)
+                    self.smt_variables[prop] = Bool(prop)
             print("")
 
     def _encode_real_expr(self, expr, encoded_time):
@@ -97,8 +97,7 @@ class SMTSTLConsistencyChecker:
     def solve(self, table, verbose):
 
         # This hashtable will contain the variables for the SMT Solver
-        smt_variables = {} # TODO: remove this alias
-        self.smt_variables = smt_variables
+        self.smt_variables = {}
 
         time_horizon = int(table.getTimeHorizon())
         root_formula = table.getRootFormula()
@@ -110,7 +109,7 @@ class SMTSTLConsistencyChecker:
             print("from z3 import *")
             print("")
 
-        self._encode_variables(table, time_horizon, smt_variables, verbose)
+        self._encode_variables(table, time_horizon, verbose)
 
         if verbose:
             print("")
@@ -119,9 +118,13 @@ class SMTSTLConsistencyChecker:
 
         s = Solver()
         root_prop = f"{root_formula}_t{self._encode_time(0, time_horizon)}"
+        if verbose:
+            print(f"{root_prop} = Bool('{root_prop}')")
+        self.smt_variables[root_prop] = Bool(root_prop)
+        s.add(self.smt_variables[root_prop])
 
         for key, formula in table.getFormulaKeyValuePairs():
-            # If the sub-formula to consider is the root formula then we compute only for time t00
+            # If the sub-formula to consider is the root formula then we compute only for time t0
             if key == root_formula:
                 time_limit = 1
             else:
@@ -129,131 +132,88 @@ class SMTSTLConsistencyChecker:
 
             for t in range(time_limit):
                 encoded_time = self._encode_time(t, time_horizon)
-                prop = f"{key}_t{self._encode_time(t, time_horizon)}"
+                prop = f"{key}_t{encoded_time}"
 
-                if len(table.getFormula(key)) == 1:
+                if len(formula) == 1:
                     if verbose:
                         print(f"{prop} = Bool('{prop}')")
-                    smt_variables[prop] = Bool(prop)
-                    if (root_prop != prop):
-                        if verbose:
-                            print(
-                                f"s.add({prop} == {table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)})")
-                        s.add(smt_variables[prop] == smt_variables[
-                            f"{table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)}"])
-                    else:
-                        if verbose:
-                            print(f"s.add({table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)})")
-                        s.add(smt_variables[f"{table.getFormula(key)[0]}_t{self._encode_time(t, time_horizon)}"])
-                elif len(table.getFormula(key)) == 3 and table.getFormula(key)[0] in {'<', '<=', '>', '>=', '==','!='}:
+                        print(f"s.add({prop} == {formula[0]}_t{encoded_time})")
+                    self.smt_variables[prop] = Bool(prop)  
+                    s.add(self.smt_variables[prop] == self.smt_variables[f"{formula[0]}_t{encoded_time}"])
+                elif len(formula) == 3 and formula[0] in {'<', '<=', '>', '>=', '==','!='}:
                     if verbose:
                         print(f"{prop} = Bool('{prop}')")
-                    smt_variables[prop] = Bool(prop)
+                    self.smt_variables[prop] = Bool(prop)
                     op = SMTSTLConsistencyChecker.relational_op_functions[formula[0]]
                     lhs = self._encode_real_expr(formula[1], encoded_time)
                     rhs = self._encode_real_expr(formula[2], encoded_time)
-                    s.add(smt_variables[prop] == op(lhs, rhs))
+                    s.add(self.smt_variables[prop] == op(lhs, rhs))
 
                     if verbose:
-                        print(f"s.add({smt_variables[prop]} == ({formula[1]} {formula[0]} {formula[2]}))")
-                elif len(table.getFormula(key)) == 4 and table.getFormula(key)[0] in {'G','F'}:  # in the case of nested operation it is necessary to do all the t
-                    int_a = int(table.getFormula(key)[1])
-                    int_b = int(table.getFormula(key)[2])
+                        print(f"s.add({self.smt_variables[prop]} == ({formula[1]} {formula[0]} {formula[2]}))")
+
+                elif len(formula) == 4 and formula[0] in {'G','F'}:  # in the case of nested operation it is necessary to do all the t
+                    int_a = int(formula[1])
+                    int_b = int(formula[2])
                     if t + int_b < time_horizon:
 
-                        prop1 = table.getFormula(key)[3]
+                        prop1 = formula[3]
                         flag = 1
                         for i in range(int_a, int_b + 1):
-                            if not f"{prop1}_t{self._encode_time(t + i, time_horizon)}" in smt_variables:
+                            if not f"{prop1}_t{self._encode_time(t + i, time_horizon)}" in self.smt_variables:
                                 flag = 0
                                 break
                         if flag:
                             if verbose:
                                 print(f"{prop} = Bool('{prop}')")
-                            smt_variables[prop] = Bool(prop)
+                            self.smt_variables[prop] = Bool(prop)
 
-                            prop1_list = [smt_variables[f"{prop1}_t{self._encode_time(t + i, time_horizon)}"] for i in
+                            prop1_list = [self.smt_variables[f"{prop1}_t{self._encode_time(t + i, time_horizon)}"] for i in
                                           range(int_a, int_b + 1)]
-                            if table.getFormula(key)[0] == 'G':
-                                if (root_prop != prop):
-                                    s.add(smt_variables[prop] == And(prop1_list))
-                                    if verbose:
-                                        print(f"s.add({prop} == And({prop1_list}))")
-                                else:
-                                    s.add(And(prop1_list))
-                                    if verbose:
-                                        print(f"s.add(And({prop1_list}))")
-                            elif table.getFormula(key)[0] == 'F':
-                                if (root_prop != prop):
-                                    s.add(smt_variables[prop] == Or(prop1_list))
-                                    if verbose:
-                                        print(f"s.add({prop} == Or({prop1_list}))")
-                                else:
-                                    s.add(Or(prop1_list))
-                                    if verbose:
-                                        print(f"s.add(Or({prop1_list}))")
-
-                elif len(table.getFormula(key)) == 3 and table.getFormula(key)[0] in {'&&', '||', '->', '<->'}:
-                    prop1 = f"{table.getFormula(key)[1]}_t{self._encode_time(t, time_horizon)}"
-                    prop2 = f"{table.getFormula(key)[2]}_t{self._encode_time(t, time_horizon)}"
-                    if prop1 in smt_variables.keys() and prop2 in smt_variables.keys():
+                            if formula[0] == 'G':
+                                s.add(self.smt_variables[prop] == And(prop1_list))
+                                if verbose:
+                                    print(f"s.add({prop} == And({prop1_list}))")
+                            elif formula[0] == 'F':
+                                s.add(self.smt_variables[prop] == Or(prop1_list))
+                                if verbose:
+                                    print(f"s.add({prop} == Or({prop1_list}))")
+                elif len(formula) == 3 and formula[0] in {'&&', '||', '->', '<->'}:
+                    prop1 = f"{formula[1]}_t{encoded_time}"
+                    prop2 = f"{formula[2]}_t{encoded_time}"
+                    if prop1 in self.smt_variables.keys() and prop2 in self.smt_variables.keys():
                         if verbose:
                             print(f"{prop} = Bool('{prop}')")
-                        smt_variables[prop] = Bool(prop)
-                        if table.getFormula(key)[0] == '&&':
-                            if (root_prop != prop):
-                                s.add(smt_variables[prop] == And(smt_variables[prop1], smt_variables[prop2]))
-                                if verbose:
-                                    print(f"s.add({prop} == And({prop1},{prop2}))")
-                            else:
-                                s.add(And(smt_variables[prop1], smt_variables[prop2]))
-                                if verbose:
-                                    print(f"s.add(And({prop1},{prop2}))")
-                        elif table.getFormula(key)[0] == '||':
-                            if (root_prop != prop):
-                                s.add(smt_variables[prop] == Or(smt_variables[prop1], smt_variables[prop2]))
-                                if verbose:
-                                    print(f"s.add({prop} == Or({prop1},{prop2}))")
-                            else:
-                                s.add(Or(smt_variables[prop1], smt_variables[prop2]))
-                                if verbose:
-                                    print(f"s.add(Or({prop1},{prop2}))")
-                        elif table.getFormula(key)[0] == '->':
-                            if (root_prop != prop):
-                                s.add(smt_variables[prop] == Implies(smt_variables[prop1], smt_variables[prop2]))
-                                if verbose:
-                                    print(f"s.add({prop} == Implies({prop1},{prop2}))")
-                            else:
-                                s.add(Implies(smt_variables[prop1], smt_variables[prop2]))
-                                if verbose:
-                                    print(f"s.add(Implies({prop1},{prop2}))")
-                        elif table.getFormula(key)[0] == '<->':
-                            if (root_prop != prop):
-                                s.add(smt_variables[prop] == (smt_variables[prop1] == smt_variables[prop2]))
-                                if verbose:
-                                    print(f"s.add({prop} == ({prop1} == {prop2}))")
-                            else:
-                                s.add((smt_variables[prop1] == smt_variables[prop2]))
-                                if verbose:
-                                    print(f"s.add(({prop1} == {prop2}))")
-                elif len(table.getFormula(key)) == 2 and table.getFormula(key)[0] in {'!'}:
-                    prop1 = f"{table.getFormula(key)[1]}_t{self._encode_time(t, time_horizon)}"
-                    if prop1 in smt_variables.keys():
+                        self.smt_variables[prop] = Bool(prop)
+                        if formula[0] == '&&':
+                            s.add(self.smt_variables[prop] == And(self.smt_variables[prop1], self.smt_variables[prop2]))
+                            if verbose:
+                                print(f"s.add({prop} == And({prop1},{prop2}))")
+                        elif formula[0] == '||':
+                            s.add(self.smt_variables[prop] == Or(self.smt_variables[prop1], self.smt_variables[prop2]))
+                            if verbose:
+                                print(f"s.add({prop} == Or({prop1},{prop2}))")
+                        elif formula[0] == '->':
+                            s.add(self.smt_variables[prop] == Implies(self.smt_variables[prop1], self.smt_variables[prop2]))
+                            if verbose:
+                                print(f"s.add({prop} == Implies({prop1},{prop2}))")
+                        elif formula[0] == '<->':
+                            s.add(self.smt_variables[prop] == (self.smt_variables[prop1] == self.smt_variables[prop2]))
+                            if verbose:
+                                print(f"s.add({prop} == ({prop1} == {prop2}))")
+                elif len(formula) == 2 and formula[0] in {'!'}:
+                    prop1 = f"{formula[1]}_t{encoded_time}"
+                    if prop1 in self.smt_variables.keys():
                         if verbose:
                             print(f"{prop} = Bool('{prop}')")
-                        smt_variables[prop] = Bool(prop)
-                        if table.getFormula(key)[0] == '!':
-                            if (root_prop != prop):
-                                s.add(smt_variables[prop] == Not(smt_variables[prop1]))
-                                if verbose:
-                                    print(f"s.add({prop} == Not({prop1}))")
-                            else:
-                                s.add(Not(smt_variables[prop1]))
-                                if verbose:
-                                    print(f"s.add(Not({prop1}))")
-                elif len(table.getFormula(key)) == 5 and table.getFormula(key)[0] in {'U'}:
-                    int_a = int(table.getFormula(key)[1])
-                    int_b = int(table.getFormula(key)[2])
+                        self.smt_variables[prop] = Bool(prop)
+                        if formula[0] == '!':
+                            s.add(self.smt_variables[prop] == Not(self.smt_variables[prop1]))
+                            if verbose:
+                                print(f"s.add({prop} == Not({prop1}))")
+                elif len(formula) == 5 and formula[0] in {'U'}:
+                    int_a = int(formula[1])
+                    int_b = int(formula[2])
                     # phi1 U_[a,b] phi2 = G [0,a] phi1 && F [a,b] phi2 && F [a,a] (phi1 U phi2)
                     # A   = G [0,a] phi1
                     # B   = F [a,b] phi2
@@ -266,8 +226,8 @@ class SMTSTLConsistencyChecker:
                     # C_t6 = phi2_t6 or (phi1_t6 and C_t7)
                     # C_t5 = phi2_t5 or (phi1_t5 and C_t6)
 
-                    prop1 = table.getFormula(key)[3]
-                    prop2 = table.getFormula(key)[4]
+                    prop1 = formula[3]
+                    prop2 = formula[4]
 
                     if t + int_b < time_horizon:
 
@@ -275,36 +235,36 @@ class SMTSTLConsistencyChecker:
                         if verbose:
                             print("")
                             print(f"{prop}_A = Bool('{prop}_A')")
-                        smt_variables[f"{prop}_A"] = Bool(f"{prop}_A")
-                        prop_a_list = [smt_variables[f"{prop1}_t{self._encode_time(t + i, time_horizon)}"] for i in
+                        self.smt_variables[f"{prop}_A"] = Bool(f"{prop}_A")
+                        prop_a_list = [self.smt_variables[f"{prop1}_t{self._encode_time(t + i, time_horizon)}"] for i in
                                        range(0, int_a + 1)]
-                        s.add(smt_variables[f"{prop}_A"] == And(prop_a_list))
+                        s.add(self.smt_variables[f"{prop}_A"] == And(prop_a_list))
                         if verbose:
                             print(f"s.add({prop}_A == And({prop_a_list}))")
 
-                        smt_variables[f"{prop}_B"] = Bool(f"{prop}_B")
+                        self.smt_variables[f"{prop}_B"] = Bool(f"{prop}_B")
                         if verbose:
                             print("")
                             print(f"{prop}_B = Bool('{prop}_B')")
-                        prop_b_list = [smt_variables[f"{prop2}_t{self._encode_time(t + i, time_horizon)}"] for i in
+                        prop_b_list = [self.smt_variables[f"{prop2}_t{self._encode_time(t + i, time_horizon)}"] for i in
                                        range(int_a, int_b + 1)]
-                        s.add(smt_variables[f"{prop}_B"] == Or(prop_b_list))
+                        s.add(self.smt_variables[f"{prop}_B"] == Or(prop_b_list))
                         if verbose:
                             print(f"s.add({prop}_B == Or({prop_b_list}))")
                             print("")
-                        if not f"{key}_t{self._encode_time(t + int_a, time_horizon)}_C" in smt_variables.keys():
+                        if not f"{key}_t{self._encode_time(t + int_a, time_horizon)}_C" in self.smt_variables.keys():
                             if verbose:
                                 print(
-                                    f"The variables {key}_t{self._encode_time(t + int_a, time_horizon)}_C is not in smt_variables")
+                                    f"The variables {key}_t{self._encode_time(t + int_a, time_horizon)}_C is not in self.smt_variables")
 
-                            if not f"{key}_t{self._encode_time(time_horizon, time_horizon)}_C" in smt_variables.keys():
+                            if not f"{key}_t{self._encode_time(time_horizon, time_horizon)}_C" in self.smt_variables.keys():
                                 if verbose:
                                     print(
                                         f"{key}_t{self._encode_time(time_horizon - 1, time_horizon)}_C = Bool('{key}_t{self._encode_time(time_horizon - 1, time_horizon)}_C')")
-                                smt_variables[f"{key}_t{self._encode_time(time_horizon - 1, time_horizon)}_C"] = Bool(
+                                self.smt_variables[f"{key}_t{self._encode_time(time_horizon - 1, time_horizon)}_C"] = Bool(
                                     f"{key}_t{self._encode_time(time_horizon - 1, time_horizon)}_C")
-                                s.add(smt_variables[f"{key}_t{self._encode_time(time_horizon - 1, time_horizon)}_C"] ==
-                                      smt_variables[f"{prop2}_t{self._encode_time(time_horizon - 1, time_horizon)}"])
+                                s.add(self.smt_variables[f"{key}_t{self._encode_time(time_horizon - 1, time_horizon)}_C"] ==
+                                      self.smt_variables[f"{prop2}_t{self._encode_time(time_horizon - 1, time_horizon)}"])
                                 if verbose:
                                     print(
                                         f"s.add({key}_t{self._encode_time(time_horizon - 1, time_horizon)}_C == {prop2}_t{self._encode_time(time_horizon - 1, time_horizon)})")
@@ -313,43 +273,35 @@ class SMTSTLConsistencyChecker:
 
                                 k = time_horizon - i - 2 + int_a
                                 # print(f"i = {i}, k = {k}")
-                                if not f"{key}_t{self._encode_time(k, time_horizon)}_C" in smt_variables.keys():
+                                if not f"{key}_t{self._encode_time(k, time_horizon)}_C" in self.smt_variables.keys():
                                     if verbose:
                                         print(
                                             f"{key}_t{self._encode_time(k, time_horizon)}_C = Bool('{key}_t{self._encode_time(k, time_horizon)}_C')")
-                                    smt_variables[f"{key}_t{self._encode_time(k, time_horizon)}_C"] = Bool(
+                                    self.smt_variables[f"{key}_t{self._encode_time(k, time_horizon)}_C"] = Bool(
                                         f"{key}_t{self._encode_time(k, time_horizon)}_C")
                                     if verbose:
                                         print(
                                             f"s.add({key}_t{self._encode_time(k, time_horizon)}_C == Or({prop2}_t{self._encode_time(k, time_horizon)},And({prop1}_t{self._encode_time(k + 1, time_horizon)},{key}_t{self._encode_time(k + 1, time_horizon)}_C))")
-                                    s.add(smt_variables[f"{key}_t{self._encode_time(k, time_horizon)}_C"] == Or(
-                                        smt_variables[f"{prop2}_t{self._encode_time(k, time_horizon)}"],
-                                        And(smt_variables[f"{prop1}_t{self._encode_time(k, time_horizon)}"],
-                                            smt_variables[f"{key}_t{self._encode_time(k + 1, time_horizon)}_C"])))
-                        if verbose:
-                            print("")
-                        smt_variables[f"{prop}"] = Bool(f"{prop}")
-                        if verbose:
-                            print(f"{prop} = Bool('{prop}')")
+                                    s.add(self.smt_variables[f"{key}_t{self._encode_time(k, time_horizon)}_C"] == Or(
+                                        self.smt_variables[f"{prop2}_t{self._encode_time(k, time_horizon)}"],
+                                        And(self.smt_variables[f"{prop1}_t{self._encode_time(k, time_horizon)}"],
+                                            self.smt_variables[f"{key}_t{self._encode_time(k + 1, time_horizon)}_C"])))
 
-                        if (root_prop != prop):
-                            s.add(
-                                smt_variables[f"{prop}"] == And(smt_variables[f"{prop}_A"], smt_variables[f"{prop}_B"],
-                                                                smt_variables[
-                                                                    f"{key}_t{self._encode_time(int_a, time_horizon)}_C"]))
-                            if verbose:
-                                print(
-                                    f"s.add({prop} == And({prop}_A,{prop}_B,{key}_t{self._encode_time(int_a, time_horizon)}_C))")
-                        else:
-                            s.add(And(smt_variables[f"{prop}_A"], smt_variables[f"{prop}_B"],
-                                      smt_variables[f"{key}_t{self._encode_time(int_a, time_horizon)}_C"]))
-                            if verbose:
-                                print(
-                                    f"s.add(And({prop}_A,{prop}_B,{key}_t{self._encode_time(int_a, time_horizon)}_C))")
+                        self.smt_variables[f"{prop}"] = Bool(f"{prop}")
+                        if verbose:
+                            print(f"\n{prop} = Bool('{prop}')")
+
+                        s.add(
+                            self.smt_variables[f"{prop}"] == And(self.smt_variables[f"{prop}_A"], self.smt_variables[f"{prop}_B"],
+                                                            self.smt_variables[
+                                                                f"{key}_t{self._encode_time(int_a, time_horizon)}_C"]))
+                        if verbose:
+                            print(
+                                f"s.add({prop} == And({prop}_A,{prop}_B,{key}_t{self._encode_time(int_a, time_horizon)}_C))")
         if verbose:
             print("")
             print("================================")
-            print(f"Num of variables in SMT solver = {len(smt_variables.keys())}")
+            print(f"Num of variables in SMT solver = {len(self.smt_variables.keys())}")
             print("")
             print("Solver statistics")
             print(s.statistics())
