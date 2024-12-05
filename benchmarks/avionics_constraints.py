@@ -86,6 +86,7 @@ max_depth = 100000
 
 from itertools import combinations
 
+
 def test_combinations_with_tableau(formulas, max_depth):
     """
     Testa tutte le combinazioni a due a due di `formulas` usando `make_tableau`.
@@ -102,7 +103,6 @@ def test_combinations_with_tableau(formulas, max_depth):
     for formula_pair in combinations(formulas, 2):  # Genera tutte le combinazioni a due a due
         combined_formula = make_and(list(formula_pair))
         tableau, _ = make_tableau(Node(*combined_formula), max_depth, 'sat')
-
         #if not satisfiable:  # Se la formula non è soddisfacibile, interrompi
             #print(f"Non soddisfacibile trovato per combinazione: {formula_pair}")
             #return formula_pair, tableau
@@ -110,6 +110,7 @@ def test_combinations_with_tableau(formulas, max_depth):
     #print("Tutte le combinazioni sono soddisfacibili.")
     #return None
 
-
+start_t = time.perf_counter()
 result = test_combinations_with_tableau(requirements, max_depth)
-
+elapsed = time.perf_counter() - start_t
+print('Elapsed time:', elapsed)
