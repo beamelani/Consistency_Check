@@ -134,7 +134,7 @@ class STLParser:
         '''
         assert isinstance(formula, list)
         if len(formula) == 1 and formula[0][0:2] == 'R_':
-            return self.parse_formula_as_stl_list(formula[0])[0]
+            return self.parse_formula_as_stl_list(formula[0])
         return [
             self.parse_relational_exprs(el) if isinstance(el, list) else el
             for el in formula
