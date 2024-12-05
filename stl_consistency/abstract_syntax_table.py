@@ -20,6 +20,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import collections
+
 from stl_consistency.parser import STLParser
 
 class STLAbstractSyntaxTable:
@@ -28,20 +30,17 @@ class STLAbstractSyntaxTable:
         self._variables = {}  # Protected variable
         self._real_constraints = {}  # Protected variable
         self._binary_constraints = {}  # Protected variable
-        self._sub_formulas = {}  # Protected variable
+        self._sub_formulas = collections.OrderedDict()  # Protected variable
         self._prop_count = 0  # Protected variable
         self._root_formula, self._time_horizon = self._visit(formula)
 
     def setRootFormula(self, root_formula):
         self._root_formula = root_formula
 
-    def getFormulasKeys (self):
-        return self._sub_formulas.keys()
-
     def getFormulaKeyValuePairs(self):
         return self._sub_formulas.items()
 
-    def getFormula (self, key):
+    def getFormula(self, key):
         return self._sub_formulas[key]
 
     def getRootFormula(self):
@@ -216,7 +215,7 @@ class STLAbstractSyntaxTable:
 
             if len(node) == 1:
                 # Single element (either a terminal or a unary expression)
-                if isinstance(node[0], str) and len(node[0]) == 1:
+                if isinstance(node[0], str):
                     return self._visit_binary_variable(node[0])
                 return self._visit(node[0])
             elif len(node) == 3 and isinstance(node[1], str) and node[1] in {'<', '<=', '>', '>=', '==', '!='}:
@@ -236,12 +235,7 @@ class STLAbstractSyntaxTable:
                 elif node[1] in {'&&', '||', '->', '<->'}:  # Binary logical operators
                     return self._visit_binary_logical(node[1], node[0], node[2:])
         elif isinstance(node, str):
-            return self._visit_identifier(node)
-
-    def _visit_parenthesis(self, openPar, closePar, expr):
-        # Visit the expression within the temporal operator
-        # print(f"Visiting parenthesis: {openPar}{closePar}")
-        return self._visit(expr)
+            return self._visit_binary_variable(node)
 
     def _visit_unary_temporal_operator(self, operator, time_interval_low, time_interval_high, expr):
         # Visit the expression within the temporal operator
@@ -318,15 +312,10 @@ class STLAbstractSyntaxTable:
             # print(f"Key '{binary_var}' is not in the dictionary.")
             self.addBinaryVariable(binary_var)
             # print(f"Key '{binary_var}' added in the dictionary.")
-            prop = self.addSubFormula(binary_var)
+            prop = self.addSubFormula([binary_var])
             self.addBinaryConstraint(binary_var, prop)
 
         return prop, '1'
-
-    def _visit_identifier(self, identifier):
-        # Simply return the identifier, in more complex cases you might want to look up values
-        # print(f"Visiting Identifier: {identifier}")
-        return identifier
 
     def print(self):
         # Print the list of the subformulas
