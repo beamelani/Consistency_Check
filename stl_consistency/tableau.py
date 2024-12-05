@@ -936,7 +936,8 @@ def smt_check(node):
     new_node = modify_node(new_node)  # tolgo B_ e R_ che non servono più
     for i in range(len(new_node)):
         if new_node[i] == '!':
-            new_node[i + 1] = 'Not(' + new_node[i + 1][0] + ')'
+            #new_node[i + 1] = 'Not(' + new_node[i + 1][0] + ')' #sbagliato, se la var è active new_node[i + 1][0] tira fuori solo la a
+            new_node[i + 1] = 'Not(' + new_node[i + 1] + ')'
         else:
             esp_z3 = new_node[i]
             for var in variabili_z3:  # inserire la variabile nel vincolo
@@ -1115,6 +1116,7 @@ def build_decomposition_tree(root, max_depth, mode = 'complete'):
                     G.add_edge(node_label, child_label)
                     res = add_children(child, depth + 1, current_time, mode)
                     if res and mode in {'sat', 'strong_sat'}:
+                        print("The requirement set is consistent")
                         return True
         return False
 
@@ -1141,7 +1143,6 @@ def make_tableau(formula, max_depth, mode='complete'):
     set_initial_time(formula)
 
     # formula = normalize_bounds(formula)
-
     return build_decomposition_tree(formula, max_depth, mode)
 
 '''
