@@ -21,7 +21,7 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 # formula = [['&&', ['G', '0.0', '9.0', ['B_p']], ['F', '4.0', '7.0', ['B_q']]]] #ok
 # formula = [['&&', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['!', ['B_p']]]]] #ok
 # formula = [['G', '0', '2', ['&&', ['p'], ['q']]]] #come gestirlo? vedi sotto
-# formula = [['G', '0', '2', ['And(B_p, B_q)']]]
+formula = ['G', '0', '2', ['B_q']]
 # formula = [['F', '0', '5', ['B_q']]]
 # formula = [['||', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['B_q']]]] #ok
 # formula = [['&&', ['F', '0', '2', ['B_p']], ['F', '1', '3', ['B_q']]]] #ok
@@ -51,8 +51,8 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 # formula = [['&&', ['G', '0', '7', ['F', '1', '3', ['B_p']]], ['G', '2', '9', ['B_y']]]]
 # formula = [['G', '0', '7', ['F', '1', '3', ['B_p']]]]
 
-formula = ['&&', ['G', '0', '9', ['R_x>5']], ['F', '4', '7', ['R_x<4']]]
-#formula = ['&&', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['!', ['B_p']]]]
+#formula = ['&&', ['G', '0', '9', ['R_x>5']], ['F', '4', '7', ['R_x<4']]]
+#formula = ['&&', ['G', '0', '6', ['B_p']], ['F', '4', '7', ['B_p']]]
 #formula = ['||', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['B_q']], ['G', '1', '6', ['B_z']]]
 #formula = ['F', '4', '7', ['B_q']]
 #formula = [',', ['G', '1', '9', ['F', '2', '5', ['B_q']]], ['G', '0', '10', ['B_p']]]
@@ -89,6 +89,8 @@ formula = ['&&', ['G', '0', '9', ['R_x>5']], ['F', '4', '7', ['R_x<4']]]
 #formula = ['||', ['G', '0', '10', ['B_p']], ['F', '0', '5', ['B_q']]]
 #formula = ['||', ['F', '0', '5', ['B_q']], ['G', '0', '10', ['B_p']]]
 #formula = ['&&', ['->', ['B_p'], ['!', ['B_q']]], ['->', ['B_c'], ['!', ['B_z']]], ['->', ['B_o'], ['B_l']]]
+#formula = ['&&',['G', '0', '10', ['||', ['&&', ['B_active'], ['!', ['B_inactive']], ['!', ['B_armed']]], ['&&', ['B_inactive'], ['!', ['B_active']], ['!', ['B_armed']]], ['&&', ['B_armed'], ['!', ['B_inactive']], ['!', ['B_active']]]]],
+    #['G', '0', '10', ['->', ['&&', ['B_inactive'], ['R_n_s == 1'],  ['R_X_c-R_X_b <= 5'], ['R_X_c-R_X_b>= -5'], ['G', '0', '5', ['R_airspeed>= R_Vmin']], ['!', ['B_X_over']], ['B_X_Activation_Request']], ['F', '0', '2', ['&&', ['!', ['B_inactive']], ['B_active']]]]]]
 
 # TODO: to be removed after making intermediate representation uniform
 #parser = STLParser()
@@ -98,7 +100,7 @@ formula = ['&&', ['G', '0', '9', ['R_x>5']], ['F', '4', '7', ['R_x<4']]]
 # Comment this out to avoid smt check
 #smt_check_consistency(parsed_formula, True)
 
-max_depth = 100
+max_depth = 100000
 '''
 mode: default value is 'complete' (the entire tree is built until depth is equal to max_depth)
 other values:
@@ -106,6 +108,6 @@ sat = when a branch that satisfies the formula is found (with classical sat defi
 strong_sat = the input that are vacuously satisfied are not explored (when the antecedent of an implication is false)
 the construction of the tree is stopped when a branch that satisfies the formula is found (with the strong def of satisfiability)
 '''
-tableau = make_tableau(Node(*formula), max_depth, 'sat')
+tableau, res = make_tableau(Node(*formula), max_depth, 'complete')
 
-#plot_tree(tableau)
+plot_tree(tableau)

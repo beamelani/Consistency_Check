@@ -747,6 +747,8 @@ def decompose_imply_new(node, formula, index):
     MODIFICA: voglio che si comporti così solo in strong_sat, altrimenti voglio che non abbia rami rejected perché antecedente è falso
     '''
     if index >= 0:
+        if formula.implications is None: #non so perché a volte sia None, in attesa di trovare il problema uso questa soluzione
+            formula = count_implications(formula)
         node_2 = Node(*[',', node[1], node[2]])
         new_node1 = copy.deepcopy(formula)
         new_node2 = copy.deepcopy(formula)
@@ -1051,7 +1053,7 @@ def add_G_for_U(node, single, derived):
 
 def count_implications(formula):
     counter = 1
-    if formula.operator == '&&':
+    if formula.operator in {'&&', ','}:
         # Conta quante implicazioni ('->') ci sono tra gli operandi
         implication_count = sum(1 for operand in formula.operands if operand.operator == '->')
         # Aggiungi l'attributo 'implications' al nodo e assegna il conteggio
@@ -1094,6 +1096,8 @@ def build_decomposition_tree(root, max_depth, mode = 'complete'):
                         return True
                     else:
                         return False
+                else: #complete
+                    return None
             else:
                 for child in children:
                     if not isinstance(child, str):
@@ -1116,11 +1120,15 @@ def build_decomposition_tree(root, max_depth, mode = 'complete'):
                     G.add_edge(node_label, child_label)
                     res = add_children(child, depth + 1, current_time, mode)
                     if res and mode in {'sat', 'strong_sat'}:
-                        print("The requirement set is consistent")
+                        #print("The requirement set is consistent")
                         return True
         return False
 
     res = add_children(root, 0, time, mode)
+    if res and mode in {'sat', 'strong_sat'}:
+        print("The requirement set is consistent")
+    elif not res and mode in {'sat', 'strong_sat'}:
+        print("The requirement set is not consistent")
     return G, res
 
 
@@ -1141,9 +1149,10 @@ def make_tableau(formula, max_depth, mode='complete'):
     formula = count_implications(formula)
     number_of_implications = formula.implications
     set_initial_time(formula)
-
     # formula = normalize_bounds(formula)
-    return build_decomposition_tree(formula, max_depth, mode)
+    tree, res = build_decomposition_tree(formula, max_depth, mode)
+    #return build_decomposition_tree(formula, max_depth, mode)
+    return tree, res
 
 '''
 CASI NON PROBLEMATICI:
