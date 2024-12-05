@@ -1121,7 +1121,6 @@ def make_tableau(formula, max_depth, mode='complete'):
     set_initial_time(formula)
 
     # formula = normalize_bounds(formula)
-
     return build_decomposition_tree(formula, max_depth, mode)
 
 '''

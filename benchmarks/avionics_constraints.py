@@ -29,11 +29,11 @@ requirements = [
     ['G', '0', T, ['->', ['B_armed'], ['F', '0', '5', ['R_LMA_cr == 1']]]],
     ['G', '0', T, ['->', ['B_active'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]],
     ['G', '0', T, ['->', ['B_inactive'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]],
-    ['G', '0', T, ['->', ['B_X_over'] , ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]],
-    ['G', '0', T, ['->', ['&&', ['B_X_over'], ['B_active'] ] , ['F', '0', '5', ['B_LME_cr']]]],
-    ['G', '0', T, ['->', ['B_active'] , ['F', '0', '1', ['R_Y_pushbutton == 1']]]],
-    ['G', '0', T, ['->', ['B_armed'] , ['F', '0', '1', ['R_Y_pushbutton == 2']]]],
-    ['G', '0', T, ['->', ['R_airspeed < Vmin'], ['F', '0', '5', ['B_LS_amr']]]],
+    ['G', '0', T, ['->', ['B_X_over'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]],
+    ['G', '0', T, ['->', ['&&', ['B_X_over'], ['B_active']], ['F', '0', '5', ['B_LME_cr']]]],
+    ['G', '0', T, ['->', ['B_active'], ['F', '0', '1', ['R_Y_pushbutton == 1']]]],
+    ['G', '0', T, ['->', ['B_armed'], ['F', '0', '1', ['R_Y_pushbutton == 2']]]],
+    ['G', '0', T, ['->', ['R_airspeed < R_Vmin'], ['F', '0', '5', ['B_LS_amr']]]],
 ]
 
 parameter_ranges = [
@@ -58,9 +58,9 @@ def make_and(formulas):
 
 # formula = requirements[18]
 # requirements[0:2] takes requirements from 0 to 1
-formula = make_and(requirements[0:10])
+#formula = make_and(requirements[19:21])
 #formula = make_and(parameter_ranges[0:12]) #ok
-print(formula)
+#print(formula)
 
 # TODO: to be removed after making intermediate representation uniform
 # parser = STLParser()
@@ -75,7 +75,43 @@ print(formula)
 # print('Elapsed time:', elapsed)
 
 
-max_depth = 10000
-tableau, _ = make_tableau(Node(*formula), max_depth, 'sat')
+max_depth = 100000
+#start_t = time.perf_counter()
+#tableau, _ = make_tableau(Node(*formula), max_depth, 'sat')
+#elapsed = time.perf_counter() - start_t
+#print('Elapsed time:', elapsed)
 
 #plot_tree(tableau)
+
+
+
+
+from itertools import combinations
+
+def test_combinations_with_tableau(formulas, max_depth):
+    """
+    Testa tutte le combinazioni a due a due di `formulas` usando `make_tableau`.
+    Interrompe il ciclo se una combinazione non è soddisfacibile.
+
+    Args:
+        formulas (list): Una lista di formule.
+        max_depth (int): La profondità massima del tableau.
+
+    Returns:
+        tuple: La combinazione che non è soddisfacibile (se trovata) e il relativo tableau.
+               Se tutte le combinazioni sono soddisfacibili, restituisce None.
+    """
+    for formula_pair in combinations(formulas, 2):  # Genera tutte le combinazioni a due a due
+        combined_formula = make_and(list(formula_pair))
+        tableau, _ = make_tableau(Node(*combined_formula), max_depth, 'sat')
+
+        #if not satisfiable:  # Se la formula non è soddisfacibile, interrompi
+            #print(f"Non soddisfacibile trovato per combinazione: {formula_pair}")
+            #return formula_pair, tableau
+
+    #print("Tutte le combinazioni sono soddisfacibili.")
+    #return None
+
+
+result = test_combinations_with_tableau(requirements, max_depth)
+

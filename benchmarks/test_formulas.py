@@ -51,7 +51,7 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 # formula = [['&&', ['G', '0', '7', ['F', '1', '3', ['B_p']]], ['G', '2', '9', ['B_y']]]]
 # formula = [['G', '0', '7', ['F', '1', '3', ['B_p']]]]
 
-#formula = ['&&', ['G', '0', '9', ['R_x>5']], ['F', '4', '7', ['R_x<4']]]
+formula = ['&&', ['G', '0', '9', ['R_x>5']], ['F', '4', '7', ['R_x<4']]]
 #formula = ['&&', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['!', ['B_p']]]]
 #formula = ['||', ['G', '0', '9', ['B_p']], ['F', '4', '7', ['B_q']], ['G', '1', '6', ['B_z']]]
 #formula = ['F', '4', '7', ['B_q']]
@@ -88,7 +88,7 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = ['||', ['F', '0', '5', ['&&', ['B_q'], ['!', ['B_q']]]], ['G', '0', '10', ['B_p']]]
 #formula = ['||', ['G', '0', '10', ['B_p']], ['F', '0', '5', ['B_q']]]
 #formula = ['||', ['F', '0', '5', ['B_q']], ['G', '0', '10', ['B_p']]]
-formula = ['&&', ['->', ['B_p'], ['!', ['B_q']]], ['->', ['B_c'], ['!', ['B_z']]], ['->', ['B_o'], ['B_l']]]
+#formula = ['&&', ['->', ['B_p'], ['!', ['B_q']]], ['->', ['B_c'], ['!', ['B_z']]], ['->', ['B_o'], ['B_l']]]
 
 # TODO: to be removed after making intermediate representation uniform
 #parser = STLParser()
@@ -98,7 +98,7 @@ formula = ['&&', ['->', ['B_p'], ['!', ['B_q']]], ['->', ['B_c'], ['!', ['B_z']]
 # Comment this out to avoid smt check
 #smt_check_consistency(parsed_formula, True)
 
-max_depth = 5
+max_depth = 100
 '''
 mode: default value is 'complete' (the entire tree is built until depth is equal to max_depth)
 other values:
@@ -106,6 +106,6 @@ sat = when a branch that satisfies the formula is found (with classical sat defi
 strong_sat = the input that are vacuously satisfied are not explored (when the antecedent of an implication is false)
 the construction of the tree is stopped when a branch that satisfies the formula is found (with the strong def of satisfiability)
 '''
-tableau = make_tableau(Node(*formula), max_depth, 'strong_sat')
+tableau = make_tableau(Node(*formula), max_depth, 'sat')
 
-plot_tree(tableau)
+#plot_tree(tableau)
