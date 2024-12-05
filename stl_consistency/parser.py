@@ -1,6 +1,28 @@
+# MIT License
+#
+# Copyright (c) 2024 Ezio Bartocci, Michele Chiari, Beatrice Melani
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+ 
 from pyparsing import (
-    Optional, Combine, Literal, Word, alphas, nums, alphanums, Group, Forward, infix_notation,
-    opAssoc, one_of
+    Optional, Combine, Literal, Suppress, Word, alphas, nums, alphanums, Group,
+    Forward, infix_notation, opAssoc, one_of
     )
 from stl_consistency.node import Node
 
@@ -35,7 +57,7 @@ class STLParser:
         unary_logical_op = Literal('!')
         binary_logical_op = one_of("&& || -> <->")
 
-        interval = Literal('[') + integer_number + Literal(',') + integer_number + Literal(']')
+        interval = Suppress('[') + integer_number + Suppress(',') + integer_number + Suppress(']')
 
         # Temporal operators
         unary_temporal_op = one_of("G F")
@@ -46,9 +68,6 @@ class STLParser:
 
         # Define expressions
         expr = Forward()
-
-        # Parentheses for grouping
-        parens = Group(Literal("(") + expr + Literal(")"))
 
         # Building the expressions
         binary_relation = Group(arith_expr + relational_op + arith_expr)
@@ -86,12 +105,9 @@ class STLParser:
 
     def list_to_stl_list(formula):
         if isinstance(formula, list):
-            if len(formula) == 3 and formula[0] == '(' and formula[2] == ')':
-                return STLParser.list_to_stl_list(formula[1])
-
             op = next(filter(STLParser.is_stl_operator, formula), None)
             if op is not None:
-                stl_list = [STLParser.list_to_stl_list(el) for el in formula if not STLParser.is_stl_operator(el) and all(map(lambda x: el != x, ['[', ']', ',']))]
+                stl_list = [STLParser.list_to_stl_list(el) for el in formula if not STLParser.is_stl_operator(el)]
                 if op == 'U': # We must bring forward intervals of infix operators
                     prefix = [op] + stl_list[1:3]
                     del stl_list[1:3]
@@ -106,3 +122,7 @@ class STLParser:
         else:
             assert isinstance(formula, str) and formula.isdigit()
             return formula
+
+    def is_float(string):
+        first = string[0]
+        return first.isdigit() or first in {'+', '-'}
