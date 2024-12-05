@@ -171,25 +171,24 @@ class STLAbstractSyntaxTable:
     def _visit_unary_temporal_operator(self, operator, time_interval_low, time_interval_high, expr):
         # Visit the expression within the temporal operator
         #print(f"Visiting Unary Temporal Operator: {operator}" + " with time Interval [" + time_interval_low + "," + time_interval_high + "]")
-        ret = self._visit(expr)
-        prop = self.addSubFormula([operator, time_interval_low, time_interval_high, ret[0]])
-        # TODO: make horizon not stringly typed
-        return prop, str(int(time_interval_high) + int(ret[1]))
+        prop_op, h_op = self._visit(expr)
+        prop = self.addSubFormula([operator, time_interval_low, time_interval_high, prop_op])
+        return prop, int(time_interval_high) + h_op
 
     def _visit_binary_temporal_operator(self, operator, time_interval_low, time_interval_high, left, right):
         # Visit the expression within the temporal operator
         # print(f"Visiting Binary Temporal Operator: {operator}" + " with time Interval [" + time_interval_low + "," + time_interval_high + "]")
-        ret_left = self._visit(left)
-        ret_right = self._visit(right)
+        prop_left, h_left = self._visit(left)
+        prop_right, h_right = self._visit(right)
 
-        prop = self.addSubFormula([operator, time_interval_low, time_interval_high, ret_left[0], ret_right[0]])
-        return prop, str(int(time_interval_high) + max(int(ret_left[1]), int(ret_right[1])))
+        prop = self.addSubFormula([operator, time_interval_low, time_interval_high, prop_left, prop_right])
+        return prop, int(time_interval_high) + max(h_left, h_right)
 
     def _visit_unary_logical(self, operator, expr):
         # Visit both sides of the logical expression
         # print(f"Visiting Unary Logical Operator: {operator}")
-        ret = self._visit(expr)
-        return self.addSubFormula([operator, ret[0]]), ret[1]
+        prop_op, h_op = self._visit(expr)
+        return self.addSubFormula([operator, prop_op]), h_op
 
     def _visit_binary_logical(self, operator, left, right):
         # Visit both sides of the logical expression
@@ -202,7 +201,7 @@ class STLAbstractSyntaxTable:
 
         if operator in {'&&', '||', '->', '<->'}:
             prop = self.addSubFormula([operator, prop_left, prop_right])
-        return prop, str(max(int(h_left), int(h_right)))
+        return prop, max(h_left, h_right)
 
     def _visit_binary_relational(self, operator, left, right):
         # Visit both sides of the relational expression
@@ -215,7 +214,7 @@ class STLAbstractSyntaxTable:
         prop = self.addSubFormula([operator, lhs, rhs])
         self._real_constraints[(operator, lhs, rhs)] = prop
 
-        return prop, '1'
+        return prop, 1
 
     def _visit_real_expr(self, expr):
         if isinstance(expr, str):
@@ -250,7 +249,7 @@ class STLAbstractSyntaxTable:
             prop = self.addSubFormula([binary_var])
             self.addBinaryConstraint(binary_var, prop)
 
-        return prop, '1'
+        return prop, 1
 
     def print(self):
         # Print the list of the subformulas

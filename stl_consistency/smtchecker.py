@@ -97,7 +97,7 @@ class SMTSTLConsistencyChecker:
         # This hashtable will contain the variables for the SMT Solver
         self.smt_variables = {}
 
-        time_horizon = int(table.getTimeHorizon())
+        time_horizon = table.getTimeHorizon()
         root_formula = table.getRootFormula()
 
         if verbose:
