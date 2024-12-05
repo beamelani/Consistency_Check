@@ -56,30 +56,30 @@ def make_and(formulas):
     else:
         return ['&&', formulas[0], make_and(formulas[1:])]
 
-# formula = requirements[1]
+#formula = requirements[0]
 # requirements[0:2] takes requirements from 0 to 1
 # formula = make_and(parameter_ranges[0:12])
-formula = make_and(requirements)
+formula = make_and(requirements + parameter_ranges)
 #print(formula)
 
-parser = STLParser()
-print(formula_to_string(formula))
-parsed_formula = parser.parse_relational_exprs(formula)
-# print(parsed_formula)
+# parser = STLParser()
+# print(formula_to_string(formula))
+# parsed_formula = parser.parse_relational_exprs(formula)
+# # print(parsed_formula)
 
-start_t = time.perf_counter()
+# start_t = time.perf_counter()
 
-smt_check_consistency(parsed_formula, False)
+# smt_check_consistency(parsed_formula, False)
 
-elapsed = time.perf_counter() - start_t
-print('Elapsed time:', elapsed)
+# elapsed = time.perf_counter() - start_t
+# print('Elapsed time:', elapsed)
 
 
 max_depth = 100000
-#start_t = time.perf_counter()
-#tableau, _ = make_tableau(Node(*formula), max_depth, 'sat')
-#elapsed = time.perf_counter() - start_t
-#print('Elapsed time:', elapsed)
+# start_t = time.perf_counter()
+# tableau, _ = make_tableau(Node(*formula), max_depth, 'sat')
+# elapsed = time.perf_counter() - start_t
+# print('Elapsed time:', elapsed)
 
 #plot_tree(tableau)
 
