@@ -216,22 +216,22 @@ class STLAbstractSyntaxTable:
                 if isinstance(node[0], str):
                     return self._visit_binary_variable(node[0])
                 return self._visit(node[0])
-            elif len(node) == 3 and isinstance(node[1], str) and node[1] in {'<', '<=', '>', '>=', '==', '!='}:
-                return self._visit_binary_relational(node[1], node[0], node[2])
-            elif not isinstance(node[0], list):
-                if node[0] == '!':
-                    return self._visit_unary_logical(node[0], node[1])
-                elif node[0] in {'G', 'F'}:  # Temporal operators with a single argument
-                    if (int(node[1]) > int(node[2])):
-                        raise SyntaxError("The lower bound of the time interval is greater than the upper bound")
-                    return self._visit_unary_temporal_operator(node[0], node[1], node[2], node[3])
-            elif isinstance(node[1], str):
-                if node[1] in {'U'}:  # Temporal operators with two arguments
-                    if (int(node[2]) > int(node[3])):
-                        raise SyntaxError("The lower bound of the time interval is greater than the upper bound")
-                    return self._visit_binary_temporal_operator(node[1], node[2], node[3], node[0], node[4])
-                elif node[1] in {'&&', '||', '->', '<->'}:  # Binary logical operators
-                    return self._visit_binary_logical(node[1], node[0], node[2:])
+            assert isinstance(node[0], str)
+            if node[0] in {'<', '<=', '>', '>=', '==', '!='}:
+                assert len(node) == 3
+                return self._visit_binary_relational(*node)
+            elif node[0] == '!':
+                return self._visit_unary_logical(node[0], node[1])
+            elif node[0] in {'G', 'F'}:  # Temporal operators with a single argument
+                if (int(node[1]) > int(node[2])):
+                    raise SyntaxError("The lower bound of the time interval is greater than the upper bound")
+                return self._visit_unary_temporal_operator(node[0], node[1], node[2], node[3])
+            elif node[0] in {'U'}:  # Temporal operators with two arguments
+                if (int(node[1]) > int(node[2])):
+                    raise SyntaxError("The lower bound of the time interval is greater than the upper bound")
+                return self._visit_binary_temporal_operator(*node)
+            assert node[0] in {'&&', '||', '->', '<->'}  # Binary logical operators
+            return self._visit_binary_logical(node[0], node[1], node[2:])
         elif isinstance(node, str):
             return self._visit_binary_variable(node)
 
@@ -261,12 +261,15 @@ class STLAbstractSyntaxTable:
     def _visit_binary_logical(self, operator, left, right):
         # Visit both sides of the logical expression
         # print(f"Visiting Logical Operator: {operator}, {left}, {right}")
-        ret_left = self._visit(left)
-        ret_right = self._visit(right)
+        prop_left, h_left = self._visit(left)
+        if len(right) == 1:
+            prop_right, h_right = self._visit(right[0])
+        else:
+            prop_right, h_right = self._visit([operator] + right)
 
         if operator in {'&&', '||', '->', '<->'}:
-            prop = self.addSubFormula([operator, ret_left[0], ret_right[0]])
-        return prop, str(max(int(ret_left[1]), int(ret_right[1])))
+            prop = self.addSubFormula([operator, prop_left, prop_right])
+        return prop, str(max(int(h_left), int(h_right)))
 
     def _visit_binary_relational(self, operator, left, right):
         # Visit both sides of the relational expression
@@ -296,7 +299,7 @@ class STLAbstractSyntaxTable:
             if len(expr) == 1:
                 return self._visit_real_expr(expr[0])
             assert len(expr) == 3
-            return (expr[1], self._visit_real_expr(expr[0]), self._visit_real_expr(expr[2]))
+            return (expr[0], self._visit_real_expr(expr[1]), self._visit_real_expr(expr[2]))
 
     def _visit_binary_variable(self, binary_var):
         # Simply return the identifier, in more complex cases you might want to look up values

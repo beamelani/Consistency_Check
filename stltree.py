@@ -50,7 +50,7 @@ def main():
         if args.strong_sat:
             print('Strong sat mode not implemented yet for SMT. Falling back to sat.')
 
-        parsed_formula = parser.parse_formula_as_list(formula)
+        parsed_formula = parser.parse_formula_as_stl_list(formula)
         smt_check_consistency(parsed_formula, args.verbose)
     elif args.plot > 0:
         parsed_formula = parser.parse_formula_as_node(formula)

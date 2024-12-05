@@ -12,7 +12,7 @@ from stl_consistency.tableau import make_tableau, plot_tree
 
 # Benchmark: (avionics requirements)
 # 1) stabilire un time horizon (T)
-T = str(10)
+T = str(5)
 requirements = [
     ['G', '0', T, ['||', ['&&', ['B_active'], ['!', ['B_inactive']], ['!', ['B_armed']]], ['&&', ['B_inactive'], ['!', ['B_active']], ['!', ['B_armed']]], ['&&', ['B_armed'], ['!', ['B_inactive']], ['!', ['B_active']]]]],
     ['G', '0', T, ['->', ['&&', ['B_inactive'], ['R_n_s == 1'],  ['R_X_c-R_X_b <= 5'], ['R_X_c-R_X_b>= -5'], ['G', '0', '5', ['R_airspeed>= R_Vmin']], ['!', ['B_X_over']], ['B_X_Activation_Request']], ['F', '0', '2', ['&&', ['!', ['B_inactive']], ['B_active']]]]],
@@ -56,23 +56,22 @@ def make_and(formulas):
     else:
         return ['&&', formulas[0], make_and(formulas[1:])]
 
-# formula = requirements[18]
+#formula = requirements[2]
 # requirements[0:2] takes requirements from 0 to 1
-#formula = make_and(requirements[19:21])
-#formula = make_and(parameter_ranges[0:12]) #ok
-#print(formula)
+formula = make_and(requirements[0:2])
+print(formula)
 
 # TODO: to be removed after making intermediate representation uniform
-# parser = STLParser()
-# print(formula_to_string(formula))
-# parsed_formula = parser.parse_formula_as_list(formula_to_string(formula))
+parser = STLParser()
+print(formula_to_string(formula))
+parsed_formula = parser.parse_formula_as_list(formula_to_string(formula))
 
-# start_t = time.perf_counter()
+start_t = time.perf_counter()
 
-# smt_check_consistency(parsed_formula, True)
+smt_check_consistency(parsed_formula, True)
 
-# elapsed = time.perf_counter() - start_t
-# print('Elapsed time:', elapsed)
+elapsed = time.perf_counter() - start_t
+print('Elapsed time:', elapsed)
 
 
 max_depth = 100000
