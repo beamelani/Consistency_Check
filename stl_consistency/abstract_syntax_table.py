@@ -46,16 +46,16 @@ class STLAbstractSyntaxTable:
     def getRootFormula(self):
         return self._root_formula
 
-    def setTimeHorizon (self, time_horizon):
+    def setTimeHorizon(self, time_horizon):
         self._time_horizon = time_horizon
 
-    def getTimeHorizon (self):
+    def getTimeHorizon(self):
         return self._time_horizon
 
     def containsVariable(self, variable):
         return variable in self._variables
 
-    def getVariableType (self, variable):
+    def getVariableType(self, variable):
         return self._variables[variable]
 
     def addRealVariable(self, variable):
@@ -135,78 +135,11 @@ class STLAbstractSyntaxTable:
                 return "Until"
         return "Not defined"
 
-    def genExpSubFormula(self, key_root):
-        match self._checkFormulaType(self._sub_formulas[key_root]):
-            case "Literal":
-                return f"{self._sub_formulas[key_root][0]}"
-            case "Not":
-                return f"! ({self.genExpSubFormula(self._sub_formulas[key_root][1])})"
-            case "True":
-                return f"True"
-            case "False":
-                return f"False"
-            case "RConstraint":
-                return f"({self._sub_formulas[key_root][0]} {self._sub_formulas[key_root][1]} {self._sub_formulas[key_root][2]})"
-            case "And":
-                return f"({self.genExpSubFormula(self._sub_formulas[key_root][1])} && {self.genExpSubFormula(self._sub_formulas[key_root][2])})"
-            case "Or":
-                return f"({self.genExpSubFormula(self._sub_formulas[key_root][1])} || {self.genExpSubFormula(self._sub_formulas[key_root][2])})"
-            case "Implies":
-                return f"({self.genExpSubFormula(self._sub_formulas[key_root][1])} -> {self.genExpSubFormula(self._sub_formulas[key_root][2])})"
-            case "Equivalence":
-                return f"({self.genExpSubFormula(self._sub_formulas[key_root][1])} <-> {self.genExpSubFormula(self._sub_formulas[key_root][2])})"
-            case "Always":
-                return f"G [{self._sub_formulas[key_root][1]},{self._sub_formulas[key_root][2]}] ({self.genExpSubFormula(self._sub_formulas[key_root][3])})"
-            case "Eventually":
-                return f"F [{self._sub_formulas[key_root][1]},{self._sub_formulas[key_root][2]}] ({self.genExpSubFormula(self._sub_formulas[key_root][3])})"
-            case "Until":
-                return f"({self.genExpSubFormula(self._sub_formulas[key_root][3])}) U [{self._sub_formulas[key_root][1]},{self._sub_formulas[key_root][2]}] ({self.genExpSubFormula(self._sub_formulas[key_root][4])})"
-
     def _findFormulaKey(self, sub_formula):
         for key in self._sub_formulas.keys():
             if self._sub_formulas[key] == sub_formula:
                 return key
         return None
-
-    def _cmpForTypeByKey(self, key, type):
-        if self._checkFormulaType(self._sub_formulas[key]) == type:
-            return True
-        return False
-
-    def _reachSubFormula(self, root, key):
-        if self._cmpForTypeByKey(root, "Literal"):
-            return False
-        elif self._cmpForTypeByKey(root, "True"):
-            return False
-        elif self._cmpForTypeByKey(root, "False"):
-            return False
-        elif self._cmpForTypeByKey(root, "RConstraint"):
-            return False
-        elif self._cmpForTypeByKey(root, "Not"):
-            if self._sub_formulas[root][1] == key:
-                return True
-            else:
-                return self._reachSubFormula(self._sub_formulas[root][1], key)
-        elif self._cmpForTypeByKey(root, "And") or self._cmpForTypeByKey(root, "Or") or self._cmpForTypeByKey(root,
-                                                                                                              "Implies") or self._cmpForTypeByKey(
-            root, "Equivalence"):
-            if self._sub_formulas[root][1] == key or self._sub_formulas[root][2] == key:
-                return True
-            else:
-                return self._reachSubFormula(self._sub_formulas[root][1], key) or self._reachSubFormula(
-                    self._sub_formulas[root][2], key)
-        elif self._cmpForTypeByKey(root, "Always") or self._cmpForTypeByKey(root, "Eventually"):
-            if self._sub_formulas[root][3] == key:
-                return True
-            else:
-                return self._reachSubFormula(self._sub_formulas[root][1], key)
-        elif self._cmpForTypeByKey(root, "Until"):
-            if self._sub_formulas[root][3] == key or self._sub_formulas[root][4] == key:
-                return True
-            else:
-                return self._reachSubFormula(self._sub_formulas[root][3], key) or self._reachSubFormula(
-                    self._sub_formulas[root][4], key)
-
 
     def _visit(self, node):
         # Determine the type of the node and call the appropriate visit method
