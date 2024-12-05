@@ -210,9 +210,7 @@ class STLAbstractSyntaxTable:
 
     def _visit(self, node):
         # Determine the type of the node and call the appropriate visit method
-
         if isinstance(node, list):
-
             if len(node) == 1:
                 # Single element (either a terminal or a unary expression)
                 if isinstance(node[0], str):
@@ -242,6 +240,7 @@ class STLAbstractSyntaxTable:
         #print(f"Visiting Unary Temporal Operator: {operator}" + " with time Interval [" + time_interval_low + "," + time_interval_high + "]")
         ret = self._visit(expr)
         prop = self.addSubFormula([operator, time_interval_low, time_interval_high, ret[0]])
+        # TODO: make horizon not stringly typed
         return prop, str(int(time_interval_high) + int(ret[1]))
 
     def _visit_binary_temporal_operator(self, operator, time_interval_low, time_interval_high, left, right):
@@ -275,7 +274,7 @@ class STLAbstractSyntaxTable:
         lhs = self._visit_real_expr(left)
         rhs = self._visit_real_expr(right)
         if (operator, lhs, rhs) in self._real_constraints:
-            return self._real_constraints[(operator, lhs, rhs)]
+            return self._real_constraints[(operator, lhs, rhs)], '1'
 
         prop = self.addSubFormula([operator, lhs, rhs])
         self._real_constraints[(operator, lhs, rhs)] = prop
