@@ -100,7 +100,7 @@ formula = ['G', '0', '2', ['B_q']]
 # Comment this out to avoid smt check
 #smt_check_consistency(parsed_formula, True)
 
-max_depth = 100000
+max_depth = 10000
 '''
 mode: default value is 'complete' (the entire tree is built until depth is equal to max_depth)
 other values:

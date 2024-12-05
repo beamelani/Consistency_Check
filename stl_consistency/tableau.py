@@ -1110,6 +1110,7 @@ def build_decomposition_tree(root, max_depth, mode = 'complete'):
                     child_label = " ".join([child, str(counter)])
                     G.add_node(child_label)
                     G.add_edge(node_label, child_label)
+                    return False
                 else:
                     counter += 1
                     # Compute child time for the label (for debugging)
@@ -1122,7 +1123,7 @@ def build_decomposition_tree(root, max_depth, mode = 'complete'):
                     if res and mode in {'sat', 'strong_sat'}:
                         #print("The requirement set is consistent")
                         return True
-        return False
+        return None
 
     res = add_children(root, 0, time, mode)
     if res and mode in {'sat', 'strong_sat'}:
