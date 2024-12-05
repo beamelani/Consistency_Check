@@ -66,7 +66,6 @@ class SMTSTLConsistencyChecker:
                     if verbose:
                         print(f"{prop} = Bool('{prop}')")
                     self.smt_variables[prop] = Bool(prop)
-            print("")
 
     def _encode_real_expr(self, expr, encoded_time):
         if isinstance(expr, str):
@@ -95,11 +94,10 @@ class SMTSTLConsistencyChecker:
         return sorted_model
 
     def solve(self, table, verbose):
-
         # This hashtable will contain the variables for the SMT Solver
         self.smt_variables = {}
 
-        time_horizon = int(table.getTimeHorizon())
+        time_horizon = table.getTimeHorizon()
         root_formula = table.getRootFormula()
 
         if verbose:
@@ -181,7 +179,6 @@ class SMTSTLConsistencyChecker:
                 elif len(formula) == 3 and formula[0] in {'&&', '||', '->', '<->'}:
                     prop1 = f"{formula[1]}_t{encoded_time}"
                     prop2 = f"{formula[2]}_t{encoded_time}"
-                    # TODO: remove these bogus ifs
                     if prop1 in self.smt_variables.keys() and prop2 in self.smt_variables.keys():
                         if verbose:
                             print(f"{prop} = Bool('{prop}')")

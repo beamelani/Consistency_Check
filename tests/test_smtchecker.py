@@ -29,17 +29,24 @@ class TestSMTChecker(unittest.TestCase):
 
     def make_test(self, formula, result):
         parser = STLParser()
-        parsed_formula = parser.parse_formula_as_list(formula)
-        self.assertEqual(smt_check_consistency(parsed_formula, False), result)
+        parsed_formula = parser.parse_formula_as_stl_list(formula)
+        # print(parsed_formula)
+        self.assertEqual(smt_check_consistency(parsed_formula, True), result)
 
     def test_and(self):
         self.make_test("a && b", True)
+
+    def test_bool(self):
+        self.make_test("a && b || c && d && e", True)
 
     def test_globally0(self):
         self.make_test("G[2,5] (x > 5 || x < 0)", True)
 
     def test_globally_add(self):
         self.make_test("G[2,5] (x + y > 5 && x - y < 0)", True)
+
+    def test_globally_add_many(self):
+        self.make_test("G[2,5] (x + y - z + x > 5 && x - y < 0)", True)
         
 
 if __name__ == '__main__':

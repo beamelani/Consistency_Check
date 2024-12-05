@@ -46,16 +46,12 @@ class STLParser:
         # Arithmetic expressions
         arith_expr = infix_notation(identifier | real_number,
             [
-                (one_of('+ -'), 2, opAssoc.RIGHT)
+                (one_of('+ -'), 2, opAssoc.LEFT)
             ]
         )
 
         # Define relational operators
         relational_op = one_of("< <= > >= == !=")
-
-        # Logical operators
-        unary_logical_op = Literal('!')
-        binary_logical_op = one_of("&& || -> <->")
 
         interval = Suppress('[') + integer_number + Suppress(',') + integer_number + Suppress(']')
 
@@ -74,12 +70,14 @@ class STLParser:
         binary_variable = Group(identifier)
 
         # Expression with all options
-        expr <<= infix_notation(binary_relation | binary_variable,
-                                [(unary_temporal_prefix, 1, opAssoc.RIGHT),
-                                (unary_logical_op, 1, opAssoc.RIGHT),
-                                (binary_temporal_prefix, 2, opAssoc.LEFT),
-                                (binary_logical_op, 2, opAssoc.LEFT)
-                                ])
+        expr <<= infix_notation(binary_relation | binary_variable, [
+            (unary_temporal_prefix, 1, opAssoc.RIGHT),
+            ('!', 1, opAssoc.RIGHT),
+            (binary_temporal_prefix, 2, opAssoc.LEFT),
+            ('&&', 2, opAssoc.LEFT),
+            ('||', 2, opAssoc.LEFT),
+            (one_of('-> <->'), 2, opAssoc.RIGHT)
+        ])
         self.parser = expr
 
     def parse_formula_as_list(self, formula):
@@ -98,8 +96,10 @@ class STLParser:
 
     def arith_expr_prefix(expr):
         if isinstance(expr, list):
-            assert len(expr) == 3 and isinstance(expr[1], str) and expr[1] in {'+', '-'}
-            return [expr[1], STLParser.arith_expr_prefix(expr[0]), STLParser.arith_expr_prefix(expr[2])]
+            if len(expr) == 1:
+                return STLParser.arith_expr_prefix(expr[0])
+            assert len(expr) >= 3 and isinstance(expr[-2], str) and expr[1] in {'+', '-'}
+            return [expr[-2], STLParser.arith_expr_prefix(expr[0:-2]), STLParser.arith_expr_prefix(expr[-1])]
         assert isinstance(expr, str)
         return expr
 
@@ -107,6 +107,7 @@ class STLParser:
         if isinstance(formula, list):
             op = next(filter(STLParser.is_stl_operator, formula), None)
             if op is not None:
+                # We assume all operators in a list are the same
                 stl_list = [STLParser.list_to_stl_list(el) for el in formula if not STLParser.is_stl_operator(el)]
                 if op == 'U': # We must bring forward intervals of infix operators
                     prefix = [op] + stl_list[1:3]
@@ -126,3 +127,15 @@ class STLParser:
     def is_float(string):
         first = string[0]
         return first.isdigit() or first in {'+', '-'}
+
+    def parse_relational_exprs(self, formula):
+        '''
+        Complete parsing of partially-parsed formulas in which relational constraints are unparsed strings
+        '''
+        assert isinstance(formula, list)
+        if len(formula) == 1 and formula[0][0:2] == 'R_':
+            return self.parse_formula_as_stl_list(formula[0])
+        return [
+            self.parse_relational_exprs(el) if isinstance(el, list) else el
+            for el in formula
+        ] 

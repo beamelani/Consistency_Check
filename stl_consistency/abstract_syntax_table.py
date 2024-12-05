@@ -46,16 +46,16 @@ class STLAbstractSyntaxTable:
     def getRootFormula(self):
         return self._root_formula
 
-    def setTimeHorizon (self, time_horizon):
+    def setTimeHorizon(self, time_horizon):
         self._time_horizon = time_horizon
 
-    def getTimeHorizon (self):
+    def getTimeHorizon(self):
         return self._time_horizon
 
     def containsVariable(self, variable):
         return variable in self._variables
 
-    def getVariableType (self, variable):
+    def getVariableType(self, variable):
         return self._variables[variable]
 
     def addRealVariable(self, variable):
@@ -135,78 +135,11 @@ class STLAbstractSyntaxTable:
                 return "Until"
         return "Not defined"
 
-    def genExpSubFormula(self, key_root):
-        match self._checkFormulaType(self._sub_formulas[key_root]):
-            case "Literal":
-                return f"{self._sub_formulas[key_root][0]}"
-            case "Not":
-                return f"! ({self.genExpSubFormula(self._sub_formulas[key_root][1])})"
-            case "True":
-                return f"True"
-            case "False":
-                return f"False"
-            case "RConstraint":
-                return f"({self._sub_formulas[key_root][0]} {self._sub_formulas[key_root][1]} {self._sub_formulas[key_root][2]})"
-            case "And":
-                return f"({self.genExpSubFormula(self._sub_formulas[key_root][1])} && {self.genExpSubFormula(self._sub_formulas[key_root][2])})"
-            case "Or":
-                return f"({self.genExpSubFormula(self._sub_formulas[key_root][1])} || {self.genExpSubFormula(self._sub_formulas[key_root][2])})"
-            case "Implies":
-                return f"({self.genExpSubFormula(self._sub_formulas[key_root][1])} -> {self.genExpSubFormula(self._sub_formulas[key_root][2])})"
-            case "Equivalence":
-                return f"({self.genExpSubFormula(self._sub_formulas[key_root][1])} <-> {self.genExpSubFormula(self._sub_formulas[key_root][2])})"
-            case "Always":
-                return f"G [{self._sub_formulas[key_root][1]},{self._sub_formulas[key_root][2]}] ({self.genExpSubFormula(self._sub_formulas[key_root][3])})"
-            case "Eventually":
-                return f"F [{self._sub_formulas[key_root][1]},{self._sub_formulas[key_root][2]}] ({self.genExpSubFormula(self._sub_formulas[key_root][3])})"
-            case "Until":
-                return f"({self.genExpSubFormula(self._sub_formulas[key_root][3])}) U [{self._sub_formulas[key_root][1]},{self._sub_formulas[key_root][2]}] ({self.genExpSubFormula(self._sub_formulas[key_root][4])})"
-
     def _findFormulaKey(self, sub_formula):
         for key in self._sub_formulas.keys():
             if self._sub_formulas[key] == sub_formula:
                 return key
         return None
-
-    def _cmpForTypeByKey(self, key, type):
-        if self._checkFormulaType(self._sub_formulas[key]) == type:
-            return True
-        return False
-
-    def _reachSubFormula(self, root, key):
-        if self._cmpForTypeByKey(root, "Literal"):
-            return False
-        elif self._cmpForTypeByKey(root, "True"):
-            return False
-        elif self._cmpForTypeByKey(root, "False"):
-            return False
-        elif self._cmpForTypeByKey(root, "RConstraint"):
-            return False
-        elif self._cmpForTypeByKey(root, "Not"):
-            if self._sub_formulas[root][1] == key:
-                return True
-            else:
-                return self._reachSubFormula(self._sub_formulas[root][1], key)
-        elif self._cmpForTypeByKey(root, "And") or self._cmpForTypeByKey(root, "Or") or self._cmpForTypeByKey(root,
-                                                                                                              "Implies") or self._cmpForTypeByKey(
-            root, "Equivalence"):
-            if self._sub_formulas[root][1] == key or self._sub_formulas[root][2] == key:
-                return True
-            else:
-                return self._reachSubFormula(self._sub_formulas[root][1], key) or self._reachSubFormula(
-                    self._sub_formulas[root][2], key)
-        elif self._cmpForTypeByKey(root, "Always") or self._cmpForTypeByKey(root, "Eventually"):
-            if self._sub_formulas[root][3] == key:
-                return True
-            else:
-                return self._reachSubFormula(self._sub_formulas[root][1], key)
-        elif self._cmpForTypeByKey(root, "Until"):
-            if self._sub_formulas[root][3] == key or self._sub_formulas[root][4] == key:
-                return True
-            else:
-                return self._reachSubFormula(self._sub_formulas[root][3], key) or self._reachSubFormula(
-                    self._sub_formulas[root][4], key)
-
 
     def _visit(self, node):
         # Determine the type of the node and call the appropriate visit method
@@ -216,57 +149,59 @@ class STLAbstractSyntaxTable:
                 if isinstance(node[0], str):
                     return self._visit_binary_variable(node[0])
                 return self._visit(node[0])
-            elif len(node) == 3 and isinstance(node[1], str) and node[1] in {'<', '<=', '>', '>=', '==', '!='}:
-                return self._visit_binary_relational(node[1], node[0], node[2])
-            elif not isinstance(node[0], list):
-                if node[0] == '!':
-                    return self._visit_unary_logical(node[0], node[1])
-                elif node[0] in {'G', 'F'}:  # Temporal operators with a single argument
-                    if (int(node[1]) > int(node[2])):
-                        raise SyntaxError("The lower bound of the time interval is greater than the upper bound")
-                    return self._visit_unary_temporal_operator(node[0], node[1], node[2], node[3])
-            elif isinstance(node[1], str):
-                if node[1] in {'U'}:  # Temporal operators with two arguments
-                    if (int(node[2]) > int(node[3])):
-                        raise SyntaxError("The lower bound of the time interval is greater than the upper bound")
-                    return self._visit_binary_temporal_operator(node[1], node[2], node[3], node[0], node[4])
-                elif node[1] in {'&&', '||', '->', '<->'}:  # Binary logical operators
-                    return self._visit_binary_logical(node[1], node[0], node[2:])
+            assert isinstance(node[0], str)
+            if node[0] in {'<', '<=', '>', '>=', '==', '!='}:
+                assert len(node) == 3
+                return self._visit_binary_relational(*node)
+            elif node[0] == '!':
+                return self._visit_unary_logical(node[0], node[1])
+            elif node[0] in {'G', 'F'}:  # Temporal operators with a single argument
+                if (int(node[1]) > int(node[2])):
+                    raise SyntaxError("The lower bound of the time interval is greater than the upper bound")
+                return self._visit_unary_temporal_operator(node[0], node[1], node[2], node[3])
+            elif node[0] in {'U'}:  # Temporal operators with two arguments
+                if (int(node[1]) > int(node[2])):
+                    raise SyntaxError("The lower bound of the time interval is greater than the upper bound")
+                return self._visit_binary_temporal_operator(*node)
+            assert node[0] in {'&&', '||', '->', '<->'}  # Binary logical operators
+            return self._visit_binary_logical(node[0], node[1], node[2:])
         elif isinstance(node, str):
             return self._visit_binary_variable(node)
 
     def _visit_unary_temporal_operator(self, operator, time_interval_low, time_interval_high, expr):
         # Visit the expression within the temporal operator
         #print(f"Visiting Unary Temporal Operator: {operator}" + " with time Interval [" + time_interval_low + "," + time_interval_high + "]")
-        ret = self._visit(expr)
-        prop = self.addSubFormula([operator, time_interval_low, time_interval_high, ret[0]])
-        # TODO: make horizon not stringly typed
-        return prop, str(int(time_interval_high) + int(ret[1]))
+        prop_op, h_op = self._visit(expr)
+        prop = self.addSubFormula([operator, time_interval_low, time_interval_high, prop_op])
+        return prop, int(time_interval_high) + h_op
 
     def _visit_binary_temporal_operator(self, operator, time_interval_low, time_interval_high, left, right):
         # Visit the expression within the temporal operator
         # print(f"Visiting Binary Temporal Operator: {operator}" + " with time Interval [" + time_interval_low + "," + time_interval_high + "]")
-        ret_left = self._visit(left)
-        ret_right = self._visit(right)
+        prop_left, h_left = self._visit(left)
+        prop_right, h_right = self._visit(right)
 
-        prop = self.addSubFormula([operator, time_interval_low, time_interval_high, ret_left[0], ret_right[0]])
-        return prop, str(int(time_interval_high) + max(int(ret_left[1]), int(ret_right[1])))
+        prop = self.addSubFormula([operator, time_interval_low, time_interval_high, prop_left, prop_right])
+        return prop, int(time_interval_high) + max(h_left, h_right)
 
     def _visit_unary_logical(self, operator, expr):
         # Visit both sides of the logical expression
         # print(f"Visiting Unary Logical Operator: {operator}")
-        ret = self._visit(expr)
-        return self.addSubFormula([operator, ret[0]]), ret[1]
+        prop_op, h_op = self._visit(expr)
+        return self.addSubFormula([operator, prop_op]), h_op
 
     def _visit_binary_logical(self, operator, left, right):
         # Visit both sides of the logical expression
         # print(f"Visiting Logical Operator: {operator}, {left}, {right}")
-        ret_left = self._visit(left)
-        ret_right = self._visit(right)
+        prop_left, h_left = self._visit(left)
+        if len(right) == 1:
+            prop_right, h_right = self._visit(right[0])
+        else:
+            prop_right, h_right = self._visit([operator] + right)
 
         if operator in {'&&', '||', '->', '<->'}:
-            prop = self.addSubFormula([operator, ret_left[0], ret_right[0]])
-        return prop, str(max(int(ret_left[1]), int(ret_right[1])))
+            prop = self.addSubFormula([operator, prop_left, prop_right])
+        return prop, max(h_left, h_right)
 
     def _visit_binary_relational(self, operator, left, right):
         # Visit both sides of the relational expression
@@ -274,12 +209,12 @@ class STLAbstractSyntaxTable:
         lhs = self._visit_real_expr(left)
         rhs = self._visit_real_expr(right)
         if (operator, lhs, rhs) in self._real_constraints:
-            return self._real_constraints[(operator, lhs, rhs)], '1'
+            return self._real_constraints[(operator, lhs, rhs)], 1
 
         prop = self.addSubFormula([operator, lhs, rhs])
         self._real_constraints[(operator, lhs, rhs)] = prop
 
-        return prop, '1'
+        return prop, 1
 
     def _visit_real_expr(self, expr):
         if isinstance(expr, str):
@@ -296,12 +231,11 @@ class STLAbstractSyntaxTable:
             if len(expr) == 1:
                 return self._visit_real_expr(expr[0])
             assert len(expr) == 3
-            return (expr[1], self._visit_real_expr(expr[0]), self._visit_real_expr(expr[2]))
+            return (expr[0], self._visit_real_expr(expr[1]), self._visit_real_expr(expr[2]))
 
     def _visit_binary_variable(self, binary_var):
         # Simply return the identifier, in more complex cases you might want to look up values
         # print(f"Visiting Binary Variable: {binary_var}")
-        prop = ""
         if self.containsVariable(binary_var):
             # print(f"Key '{binary_var}' is in the dictionary.")
             if self.getVariableType(binary_var) == 'real':
@@ -314,7 +248,7 @@ class STLAbstractSyntaxTable:
             prop = self.addSubFormula([binary_var])
             self.addBinaryConstraint(binary_var, prop)
 
-        return prop, '1'
+        return prop, 1
 
     def print(self):
         # Print the list of the subformulas
