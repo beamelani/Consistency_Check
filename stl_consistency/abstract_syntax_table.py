@@ -209,7 +209,7 @@ class STLAbstractSyntaxTable:
         lhs = self._visit_real_expr(left)
         rhs = self._visit_real_expr(right)
         if (operator, lhs, rhs) in self._real_constraints:
-            return self._real_constraints[(operator, lhs, rhs)], '1'
+            return self._real_constraints[(operator, lhs, rhs)], 1
 
         prop = self.addSubFormula([operator, lhs, rhs])
         self._real_constraints[(operator, lhs, rhs)] = prop
@@ -236,7 +236,6 @@ class STLAbstractSyntaxTable:
     def _visit_binary_variable(self, binary_var):
         # Simply return the identifier, in more complex cases you might want to look up values
         # print(f"Visiting Binary Variable: {binary_var}")
-        prop = ""
         if self.containsVariable(binary_var):
             # print(f"Key '{binary_var}' is in the dictionary.")
             if self.getVariableType(binary_var) == 'real':
