@@ -907,10 +907,10 @@ def smt_check(node):
     for i in range(len(node)):
         if node[0] == ',':
             if node[i][0] == 'O' and node[i][1][0] in {'F', 'U'} and node[i][1][1] == node[i][1][2]:
-                if node[i][1][0] in 'F':
-                    print("Node is rejected because finally was never satisfied in this branch")
-                else:
-                    print("Node is rejected because until was never satisfied in this branch")
+                #if node[i][1][0] in 'F':
+                    #print("Node is rejected because finally was never satisfied in this branch")
+                #else:
+                    #print("Node is rejected because until was never satisfied in this branch")
                 return 'Rejected'
             if node[i][0] not in {'O', 'F', 'G', 'U', ',', 'R', '->'}:
                 new_node.extend(node[i])
@@ -921,7 +921,7 @@ def smt_check(node):
                 variabili.extend(new_var)
         else:  # caso con un solo elemento (succede se ho un ramo con solo un finally)
             if node[0] == 'O' and node[i][0] in 'F' and node[1][1] == node[1][2]:
-                print("Node is rejected because finally was never satisfied in this branch")
+                #print("Node is rejected because finally was never satisfied in this branch")
                 return 'Rejected'
             if node[0] not in {'O', 'F', 'G', 'U', ',', 'R', '->'}:
                 new_node.extend(node[i])
@@ -950,10 +950,10 @@ def smt_check(node):
     solver.add(vincoli)
     # Verifica se vincoli sono sat
     if solver.check() == sat:
-        print("Node is accepted, expressions are consistent")
+        #print("Node is accepted, expressions are consistent")
         return node
     else:
-        print("Node is rejected, expressions are inconsistent")
+        #print("Node is rejected, expressions are inconsistent")
         return 'Rejected'
 
 
@@ -1070,24 +1070,28 @@ def count_implications(formula):
     return formula
 
 
-def build_decomposition_tree(root, max_depth, mode = 'complete'):
-    G = nx.DiGraph()
+def build_decomposition_tree(root, max_depth, mode, tree, verbose):
     time = extract_min_time(root)
-    counter = 0
-    root_label = root.to_label(counter)
-    G.add_node(root_label)
-    print(root_label)
+    if tree:
+        counter = 0
+        G = nx.DiGraph()
+        root_label = root.to_label(counter)
+        G.add_node(root_label)
+    if verbose:
+        print(root_label)
 
-    def add_children(node, depth, current_time, mode):
+    def add_children(node, depth, current_time, mode, tree, verbose):
         nonlocal counter
         global true_implications
         if depth < max_depth:
             node_copy = copy.deepcopy(node)
             current_time = extract_min_time(node_copy)
-            node_label = node.to_label(counter)
+            if tree:
+                node_label = node.to_label(counter)
             children = decompose(node_copy, current_time, mode)
             if children is None:
-                print('No more children in this branch')
+                if verbose:
+                    print('No more children in this branch')
                 if mode == 'sat':
                     return True
                 elif mode == 'strong_sat':
@@ -1099,39 +1103,42 @@ def build_decomposition_tree(root, max_depth, mode = 'complete'):
                 else: #complete
                     return None
             else:
-                for child in children:
-                    if not isinstance(child, str):
-                        print(child.to_list())
-                    else:
-                        print(child)
+                if verbose:
+                    for child in children:
+                        if not isinstance(child, str):
+                            print(child.to_list())
+                        else:
+                            print(child)
             for child in children:
                 if child == 'Rejected':
-                    counter += 1
-                    child_label = " ".join([child, str(counter)])
-                    G.add_node(child_label)
-                    G.add_edge(node_label, child_label)
+                    if tree:
+                        counter += 1
+                        child_label = " ".join([child, str(counter)])
+                        G.add_node(child_label)
+                        G.add_edge(node_label, child_label)
                     return False
                 else:
-                    counter += 1
-                    # Compute child time for the label (for debugging)
                     child_time = extract_min_time(child)
                     child_time = current_time if child_time is None else child_time
-                    child_label = child.to_label(counter)
-                    G.add_node(child_label)
-                    G.add_edge(node_label, child_label)
-                    res = add_children(child, depth + 1, current_time, mode)
+                    if tree:
+                        counter += 1
+                        child_label = child.to_label(counter)
+                        G.add_node(child_label)
+                        G.add_edge(node_label, child_label)
+                    res = add_children(child, depth + 1, current_time, mode, tree, verbose)
                     if res and mode in {'sat', 'strong_sat'}:
-                        #print("The requirement set is consistent")
                         return True
         return None
 
-    res = add_children(root, 0, time, mode)
-    if res and mode in {'sat', 'strong_sat'}:
+    res = add_children(root, 0, time, mode, tree, verbose)
+    if res and mode in {'sat', 'strong_sat'} and verbose:
         print("The requirement set is consistent")
-    elif not res and mode in {'sat', 'strong_sat'}:
+    elif not res and mode in {'sat', 'strong_sat'} and verbose:
         print("The requirement set is not consistent")
-    return G, res
-
+    if tree:
+        return G, res
+    else:
+        return res
 
 def plot_tree(G):
     pos = graphviz_layout(G, prog='dot')
@@ -1142,7 +1149,7 @@ def plot_tree(G):
     plt.show()
 
 
-def make_tableau(formula, max_depth, mode='complete'):
+def make_tableau(formula, max_depth, mode, build_tree, verbose):
     global number_of_implications, true_implications
     true_implications = set()
     formula = add_G_for_U(formula, formula.operator, False)
@@ -1151,9 +1158,12 @@ def make_tableau(formula, max_depth, mode='complete'):
     number_of_implications = formula.implications
     set_initial_time(formula)
     # formula = normalize_bounds(formula)
-    tree, res = build_decomposition_tree(formula, max_depth, mode)
-    #return build_decomposition_tree(formula, max_depth, mode)
-    return tree, res
+    if build_tree:
+        tree, res = build_decomposition_tree(formula, max_depth, mode, build_tree, verbose)
+        return tree, res
+    else:
+        res = build_decomposition_tree(formula, max_depth, mode, build_tree, verbose)
+        return res
 
 '''
 CASI NON PROBLEMATICI:

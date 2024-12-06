@@ -13,7 +13,7 @@ from stl_consistency.tableau import make_tableau, plot_tree
 
 # Benchmark: (avionics requirements)
 # 1) stabilire un time horizon (T)
-T = str(100)
+T = str(1000)
 requirements = [
     ['G', '0', T, ['||', ['&&', ['B_active'], ['!', ['B_inactive']], ['!', ['B_armed']]], ['&&', ['B_inactive'], ['!', ['B_active']], ['!', ['B_armed']]], ['&&', ['B_armed'], ['!', ['B_inactive']], ['!', ['B_active']]]]],
     ['G', '0', T, ['->', ['&&', ['B_inactive'], ['R_n_s == 1'],  ['R_X_c-R_X_b <= 5'], ['R_X_c-R_X_b>= -5'], ['G', '0', '5', ['R_airspeed>= R_Vmin']], ['!', ['B_X_over']], ['B_X_Activation_Request']], ['F', '0', '2', ['&&', ['!', ['B_inactive']], ['B_active']]]]],
@@ -110,21 +110,21 @@ def test_combinations_with_smt(formulas):
 formula = make_and(requirements)
 # print(formula)
 
-parser = STLParser()
+# parser = STLParser()
 # print(formula_to_string(formula))
-parsed_formula = parser.parse_relational_exprs(formula)
+# parsed_formula = parser.parse_relational_exprs(formula)
 # print(parsed_formula)
 
 start_t = time.perf_counter()
-smt_check_consistency(parsed_formula, False)
-#test_combinations_with_smt(requirements)
+#smt_check_consistency(parsed_formula, False)
+test_combinations_with_smt(requirements)
 elapsed_smt = time.perf_counter() - start_t
 
 
 sys.setrecursionlimit(10000)
 max_depth = 100000
 # start_t = time.perf_counter()
-# tableau, _ = make_tableau(Node(*formula), max_depth, 'sat')
+# tableau, _ = make_tableau(Node(*formula), max_depth, 'sat', False, False)
 # elapsed = time.perf_counter() - start_t
 # print('Elapsed time:', elapsed)
 
@@ -132,7 +132,7 @@ max_depth = 100000
 
 
 
-def test_combinations_with_tableau(formulas, max_depth, mode='complete'):
+def test_combinations_with_tableau(formulas, max_depth, build_tree, verbose, mode='complete'):
     """
     Testa tutte le combinazioni a due a due di `formulas` usando `make_tableau`.
     Interrompe il ciclo se una combinazione non è soddisfacibile.
@@ -147,7 +147,10 @@ def test_combinations_with_tableau(formulas, max_depth, mode='complete'):
     """
     for formula_pair in combinations(formulas, 2):  # Genera tutte le combinazioni a due a due
         combined_formula = make_and(list(formula_pair))
-        tableau, satisfiable = make_tableau(Node(*combined_formula), max_depth, mode)
+        if build_tree:
+            tableau, satisfiable = make_tableau(Node(*combined_formula), max_depth, mode, build_tree, verbose)
+        else:
+            satisfiable = make_tableau(Node(*combined_formula), max_depth, mode, build_tree, verbose)
         if not satisfiable:  # Se la formula non è soddisfacibile, interrompi
             print(f"Non soddisfacibile trovato per combinazione: {formula_pair}")
             return formula_pair, tableau
@@ -156,8 +159,8 @@ def test_combinations_with_tableau(formulas, max_depth, mode='complete'):
     return None
 
 start_t = time.perf_counter()
-result = test_combinations_with_tableau(requirements, max_depth, 'sat')
-elapsed_tableau = time.perf_counter() - start_t
+result = test_combinations_with_tableau(requirements, max_depth, False, False, 'sat')
+elapsed_tableau_2_by_2 = time.perf_counter() - start_t
 
 print('Elapsed time (SMT):', elapsed_smt)
-print('Elapsed time (tableau):', elapsed_tableau)
+print('Elapsed time (tableau):', elapsed_tableau_2_by_2)

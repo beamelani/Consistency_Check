@@ -1,12 +1,13 @@
 import sys
 import os
 sys.path.append(os.getcwd())
-
+import time
 from stl_consistency.parser import STLParser
 from stl_consistency.node import Node, formula_to_string
 from stl_consistency.smtchecker import smt_check_consistency
 
 from stl_consistency.tableau import make_tableau, plot_tree
+
 
 '''
 Come scrivere le formule:
@@ -21,7 +22,7 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 # formula = [['&&', ['G', '0.0', '9.0', ['B_p']], ['F', '4.0', '7.0', ['B_q']]]] #ok
 # formula = [['&&', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['!', ['B_p']]]]] #ok
 # formula = [['G', '0', '2', ['&&', ['p'], ['q']]]] #come gestirlo? vedi sotto
-formula = ['G', '0', '2', ['B_q']]
+# formula = ['G', '0', '2', ['B_q']]
 # formula = [['F', '0', '5', ['B_q']]]
 # formula = [['||', ['G', '0', '2', ['B_p']], ['F', '1', '3', ['B_q']]]] #ok
 # formula = [['&&', ['F', '0', '2', ['B_p']], ['F', '1', '3', ['B_q']]]] #ok
@@ -87,19 +88,24 @@ formula = ['G', '0', '2', ['B_q']]
 #formula = [',', ['F', '1', '5', ['&&', ['F', '1', '3', ['B_p']], ['G', '2', '4', ['B_q']]]], ['G', '7', '8', ['F', '1', '2', ['B_p']]]]
 #formula = ['||', ['F', '0', '5', ['&&', ['B_q'], ['!', ['B_q']]]], ['G', '0', '10', ['B_p']]]
 #formula = ['||', ['G', '0', '10', ['B_p']], ['F', '0', '5', ['B_q']]]
-#formula = ['||', ['F', '0', '5', ['B_q']], ['G', '0', '10', ['B_p']]]
+#formula = ['||', ['F', '0', '5', ['B_q']], ['G', '0', '10', ['B_p']]]formula = ['&&', ['G', '0', '1000', ['B_p']], ['F', '100', '6000', ['B_q']]]
 #formula = ['&&', ['->', ['B_p'], ['!', ['B_q']]], ['->', ['B_c'], ['!', ['B_z']]], ['->', ['B_o'], ['B_l']]]
-#formula = ['&&',['G', '0', '10', ['||', ['&&', ['B_active'], ['!', ['B_inactive']], ['!', ['B_armed']]], ['&&', ['B_inactive'], ['!', ['B_active']], ['!', ['B_armed']]], ['&&', ['B_armed'], ['!', ['B_inactive']], ['!', ['B_active']]]]],
-    #['G', '0', '10', ['->', ['&&', ['B_inactive'], ['R_n_s == 1'],  ['R_X_c-R_X_b <= 5'], ['R_X_c-R_X_b>= -5'], ['G', '0', '5', ['R_airspeed>= R_Vmin']], ['!', ['B_X_over']], ['B_X_Activation_Request']], ['F', '0', '2', ['&&', ['!', ['B_inactive']], ['B_active']]]]]]
+#formula = ['&&', ['G', '0', '1000', ['B_p']], ['F', '100', '6000', ['B_q']]]
+#formula = ['&&', ['G', '0', '10', ['B_p']], ['F', '1', '60', ['B_q']]]
 
-# TODO: to be removed after making intermediate representation uniform
-#parser = STLParser()
-#print(formula_to_string(formula))
-#parsed_formula = parser.parse_formula_as_list(formula_to_string(formula))
+'''
+parser = STLParser()
+print(formula_to_string(formula))
+parsed_formula = parser.parse_relational_exprs(formula)
+print(parsed_formula)
 
-# Comment this out to avoid smt check
-#smt_check_consistency(parsed_formula, True)
+start_t = time.perf_counter()
 
+smt_check_consistency(parsed_formula, False)
+
+elapsed = time.perf_counter() - start_t
+print('Elapsed time:', elapsed)
+'''
 max_depth = 10000
 '''
 mode: default value is 'complete' (the entire tree is built until depth is equal to max_depth)
@@ -108,6 +114,14 @@ sat = when a branch that satisfies the formula is found (with classical sat defi
 strong_sat = the input that are vacuously satisfied are not explored (when the antecedent of an implication is false)
 the construction of the tree is stopped when a branch that satisfies the formula is found (with the strong def of satisfiability)
 '''
-tableau, res = make_tableau(Node(*formula), max_depth, 'complete')
 
-plot_tree(tableau)
+
+start_t = time.perf_counter()
+
+tableau, res = make_tableau(Node(*formula), max_depth, 'sat', False, False)
+
+elapsed = time.perf_counter() - start_t
+print('Elapsed time:', elapsed)
+
+# plot_tree(tableau)
+
