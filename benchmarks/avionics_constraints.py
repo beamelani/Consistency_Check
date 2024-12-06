@@ -3,6 +3,7 @@ import os
 sys.path.append(os.getcwd())
 
 import time
+from itertools import combinations
 
 from stl_consistency.parser import STLParser
 from stl_consistency.node import Node, formula_to_string
@@ -12,7 +13,7 @@ from stl_consistency.tableau import make_tableau, plot_tree
 
 # Benchmark: (avionics requirements)
 # 1) stabilire un time horizon (T)
-T = str(5)
+T = str(100)
 requirements = [
     ['G', '0', T, ['||', ['&&', ['B_active'], ['!', ['B_inactive']], ['!', ['B_armed']]], ['&&', ['B_inactive'], ['!', ['B_active']], ['!', ['B_armed']]], ['&&', ['B_armed'], ['!', ['B_inactive']], ['!', ['B_active']]]]],
     ['G', '0', T, ['->', ['&&', ['B_inactive'], ['R_n_s == 1'],  ['R_X_c-R_X_b <= 5'], ['R_X_c-R_X_b>= -5'], ['G', '0', '5', ['R_airspeed>= R_Vmin']], ['!', ['B_X_over']], ['B_X_Activation_Request']], ['F', '0', '2', ['&&', ['!', ['B_inactive']], ['B_active']]]]],
@@ -72,31 +73,55 @@ requirements_inconsistent = [
     ['G', '0', T, ['->', ['B_armed'], ['F', '0', '1', ['R_Y_pushbutton == 2']]]],
     ['G', '0', T, ['->', ['R_airspeed < R_Vmin'], ['F', '0', '5', ['B_LS_amr']]]],
 ]
+
 def make_and(formulas):
     if len(formulas) == 1:
         return formulas[0]
     else:
         return ['&&', formulas[0], make_and(formulas[1:])]
 
-#formula = requirements[0]
-# requirements[0:2] takes requirements from 0 to 1
-# formula = make_and(parameter_ranges[0:12])
-#formula = make_and(requirements + parameter_ranges)
-#print(formula)
 
-# parser = STLParser()
+def test_combinations_with_smt(formulas):
+    """
+    Testa tutte le combinazioni a due a due di `formulas` usando `smt_check_consistency`.
+    Interrompe il ciclo se una combinazione non è soddisfacibile.
+
+    Args:
+        formulas (list): Una lista di formule.
+        max_depth (int): La profondità massima del tableau.
+
+    Returns:
+        tuple: La combinazione che non è soddisfacibile (se trovata) e il relativo tableau.
+               Se tutte le combinazioni sono soddisfacibili, restituisce None.
+    """
+    parser = STLParser()
+    for formula_pair in combinations(formulas, 2):  # Genera tutte le combinazioni a due a due
+        combined_formula = make_and(list(formula_pair))
+        parsed_formula = parser.parse_relational_exprs(combined_formula)
+        satisfiable = smt_check_consistency(parsed_formula, False)
+        if not satisfiable:  # Se la formula non è soddisfacibile, interrompi
+            print(f"Non soddisfacibile trovato per combinazione: {formula_pair}")
+            return formula_pair
+
+    print("Tutte le combinazioni sono soddisfacibili.")
+    return None
+
+# formula = requirements[0]
+formula = make_and(requirements)
+# print(formula)
+
+parser = STLParser()
 # print(formula_to_string(formula))
-# parsed_formula = parser.parse_relational_exprs(formula)
-# # print(parsed_formula)
+parsed_formula = parser.parse_relational_exprs(formula)
+# print(parsed_formula)
 
-# start_t = time.perf_counter()
-
-# smt_check_consistency(parsed_formula, False)
-
-# elapsed = time.perf_counter() - start_t
-# print('Elapsed time:', elapsed)
+start_t = time.perf_counter()
+smt_check_consistency(parsed_formula, False)
+#test_combinations_with_smt(requirements)
+elapsed_smt = time.perf_counter() - start_t
 
 
+sys.setrecursionlimit(10000)
 max_depth = 100000
 # start_t = time.perf_counter()
 # tableau, _ = make_tableau(Node(*formula), max_depth, 'sat')
@@ -105,8 +130,6 @@ max_depth = 100000
 
 #plot_tree(tableau)
 
-
-from itertools import combinations
 
 
 def test_combinations_with_tableau(formulas, max_depth, mode='complete'):
@@ -133,6 +156,8 @@ def test_combinations_with_tableau(formulas, max_depth, mode='complete'):
     return None
 
 start_t = time.perf_counter()
-result = test_combinations_with_tableau(requirements_inconsistent, max_depth, 'sat')
-elapsed = time.perf_counter() - start_t
-print('Elapsed time:', elapsed)
+result = test_combinations_with_tableau(requirements, max_depth, 'sat')
+elapsed_tableau = time.perf_counter() - start_t
+
+print('Elapsed time (SMT):', elapsed_smt)
+print('Elapsed time (tableau):', elapsed_tableau)
