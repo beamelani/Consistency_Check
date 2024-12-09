@@ -788,11 +788,14 @@ def decompose_jump(node):
         return None
     if node.operator == ',':
         #new_node = [',']  # scrivo come lista e poi ritrasformo in node
-        new_node = Node(*[',', ['B_p']])
-        del new_node.operands[0]
+        if not flag:
+            new_node = Node(*[',', ['B_p']])
+            del new_node.operands[0]
+        else:
+            new_node = [',']
         if not flag:  # non ci sono operatori probelmatici attivi
             for operand in node.operands:
-                if operand.operator in {'F', 'G', 'U', 'R'}:
+                if operand.operator not in {'P', '!', 'O'}:
                     #new_node.extend([operand.to_list()])
                     new_node.operands.extend([operand])
                 elif operand.operator in {'O'} and Fraction(operand.operands[0].lower) < Fraction(
@@ -808,11 +811,11 @@ def decompose_jump(node):
                 # cioè ha esaurito l'intervallo e viene eliminato, è possibile  che rimanga un solo elemento, ma preceduto dalla virgola anche se non dovrebbe
             if len(new_node.operands) == 1:
                 #return [Node(*new_node[1])]
-                return new_node.operands[0]
+                return [new_node.operands[0]]
             #elif new_node != [',']:
                 #return [Node(*new_node)]
             elif new_node.operands:
-                return new_node
+                return [new_node]
             else:
                 return None
         else:  # caso con operatori problematici, uso direttamente i nodi per non perdere info su is_derived e initial_time
