@@ -59,7 +59,7 @@ class STLParser:
         unary_temporal_op = one_of("G F")
         unary_temporal_prefix = unary_temporal_op + interval
 
-        binary_temporal_op = Literal('U')
+        binary_temporal_op = one_of('U R')
         binary_temporal_prefix = binary_temporal_op + interval
 
         # Define expressions
@@ -92,7 +92,7 @@ class STLParser:
         return Node(*fslist)
 
     def is_stl_operator(f):
-        return any(map(lambda x: f == x, ['G', 'F', 'U', '!', '&&', '||', '->', '<->']))
+        return any(map(lambda x: f == x, ['G', 'F', 'U', 'R', '!', '&&', '||', '->', '<->']))
 
     def arith_expr_prefix(expr):
         if isinstance(expr, list):
@@ -109,7 +109,7 @@ class STLParser:
             if op is not None:
                 # We assume all operators in a list are the same
                 stl_list = [STLParser.list_to_stl_list(el) for el in formula if not STLParser.is_stl_operator(el)]
-                if op == 'U': # We must bring forward intervals of infix operators
+                if op in {'U', 'R'}: # We must bring forward intervals of infix operators
                     prefix = [op] + stl_list[1:3]
                     del stl_list[1:3]
                     return prefix + stl_list
