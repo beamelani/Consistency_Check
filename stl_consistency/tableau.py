@@ -787,23 +787,32 @@ def decompose_jump(node):
     if node.operator == '!':
         return None
     if node.operator == ',':
-        new_node = [',']  # scrivo come lista e poi ritrasformo in node
-        if not flag:  # non ci sono operatori probelmatici
+        #new_node = [',']  # scrivo come lista e poi ritrasformo in node
+        new_node = Node(*[',', ['B_p']])
+        del new_node.operands[0]
+        if not flag:  # non ci sono operatori probelmatici attivi
             for operand in node.operands:
                 if operand.operator in {'F', 'G', 'U', 'R'}:
-                    new_node.extend([operand.to_list()])
+                    #new_node.extend([operand.to_list()])
+                    new_node.operands.extend([operand])
                 elif operand.operator in {'O'} and Fraction(operand.operands[0].lower) < Fraction(
                         operand.operands[0].upper):
-                    sub_formula = copy.deepcopy(operand.operands[0].to_list())
-                    indice = bisect.bisect_right(time_instants, Fraction(
-                        sub_formula[1]))  # trovo il primo numero maggiore dell'istante corrente di tempo
-                    sub_formula[1] = str(time_instants[indice])
-                    new_node.extend([sub_formula])
-            if len(new_node) == 2:  # se uno degli elementi iniziale è della forma OG[x,x],
+                    #sub_formula = copy.deepcopy(operand.operands[0].to_list())
+                    sub_formula = copy.deepcopy(operand.operands[0])
+                    #indice = bisect.bisect_right(time_instants, Fraction(sub_formula[1]))  # trovo il primo numero maggiore dell'istante corrente di tempo
+                    indice = bisect.bisect_right(time_instants, Fraction(sub_formula.lower))
+                    #sub_formula[1] = str(time_instants[indice])
+                    sub_formula.lower = str(time_instants[indice])
+                    new_node.operands.extend([sub_formula])
+            #if len(new_node) == 2:  # se uno degli elementi iniziale è della forma OG[x,x],
                 # cioè ha esaurito l'intervallo e viene eliminato, è possibile  che rimanga un solo elemento, ma preceduto dalla virgola anche se non dovrebbe
-                return [Node(*new_node[1])]
-            elif new_node != [',']:
-                return [Node(*new_node)]
+            if len(new_node.operands) == 1:
+                #return [Node(*new_node[1])]
+                return new_node.operands[0]
+            #elif new_node != [',']:
+                #return [Node(*new_node)]
+            elif new_node.operands:
+                return new_node
             else:
                 return None
         else:  # caso con operatori problematici, uso direttamente i nodi per non perdere info su is_derived e initial_time
@@ -988,6 +997,8 @@ def set_initial_time(formula):
                 operand.initial_time = operand.lower
             elif operand.operator in {'R'} and operand.operands[1].operator not in {'P', '!'}:
                 operand.initial_time = operand.lower
+            elif operand.operator in {'&&', '||', ',', '->'}:
+                return set_initial_time(operand)
     elif formula.operator in {'G', 'U'} and formula.operands[0].operator not in {'P', '!'}:
         formula.initial_time = formula.lower
     elif formula.operator in {'R'} and formula.operands[1].operator not in {'P', '!'}:

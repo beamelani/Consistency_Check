@@ -99,7 +99,7 @@ watertank = [
 railroad = [
     ['F', '0', '50', ['R_pos <= 0']],
     ['G', '20', '40', ['->', ['R_angle >= 80'], ['F', '1', '20', ['R_pos <= 0']]]],
-    ['G', '3', '50', ['F', '5', '20', 'R_angle >= 80']],
+    ['G', '3', '50', ['F', '5', '20', ['R_angle >= 80']]],
     ['G', '10', '60', ['->', ['R_angle >= 80'], ['G', '20', '40', ['R_angle < 60']]]]
 ]
 
@@ -110,12 +110,22 @@ batteries = [
     ['G', '11', '50', ['U', '2', '14', ['||', ['R_g1 >= 0'], ['R_g2 >= 0']], ['&&', ['B_dead1'], ['B_dead2']]]]
 ]
 
-def make_and(formulas):
+'''
+def make_and(formulas): #crea una struttura strana
     if len(formulas) == 1:
         return formulas[0]
     else:
         return ['&&', formulas[0], make_and(formulas[1:])]
+'''
 
+def make_and(formulas):
+    if len(formulas) == 1:
+        return formulas[0]
+    else:
+        formula = ['&&']  # Inizia la formula con l'operatore AND
+        for entry in formulas:
+            formula.append(entry)
+    return formula
 
 def test_combinations_with_smt(formulas):
     """
@@ -143,7 +153,7 @@ def test_combinations_with_smt(formulas):
     return None
 
 # formula = requirements[0]
-formula = make_and(watertank)
+formula = make_and(railroad)
 # print(formula)
 
 parser = STLParser()

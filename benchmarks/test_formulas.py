@@ -91,7 +91,8 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = ['||', ['F', '0', '5', ['B_q']], ['G', '0', '10', ['B_p']]]formula = ['&&', ['G', '0', '1000', ['B_p']], ['F', '100', '6000', ['B_q']]]
 #formula = ['&&', ['->', ['B_p'], ['!', ['B_q']]], ['->', ['B_c'], ['!', ['B_z']]], ['->', ['B_o'], ['B_l']]]
 #formula = ['&&', ['G', '0', '1000', ['B_p']], ['F', '100', '6000', ['B_q']]]
-#formula = ['&&', ['G', '0', '10', ['B_p']], ['F', '1', '60', ['B_q']]]
+#formula = ['&&', ['G', '0', '10', ['B_p']], ['F', '7', '60', ['B_q']]]
+formula = ['G', '0', '10', ['B_p']]
 
 '''
 parser = STLParser()
@@ -118,7 +119,7 @@ the construction of the tree is stopped when a branch that satisfies the formula
 
 start_t = time.perf_counter()
 
-tableau, res = make_tableau(Node(*formula), max_depth, 'sat', False, False)
+tableau, res = make_tableau(Node(*formula), max_depth, 'sat', True, False)
 
 elapsed = time.perf_counter() - start_t
 print('Elapsed time:', elapsed)
