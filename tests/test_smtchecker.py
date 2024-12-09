@@ -47,7 +47,9 @@ class TestSMTChecker(unittest.TestCase):
 
     def test_globally_add_many(self):
         self.make_test("G[2,5] (x + y - z + x > 5 && x - y < 0)", True)
-        
+    
+    def test_release(self):
+        self.make_test("(x == 10) R[1,6] (x < 10)", True)
 
 if __name__ == '__main__':
     unittest.main()

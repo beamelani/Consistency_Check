@@ -159,10 +159,15 @@ class STLAbstractSyntaxTable:
                 if (int(node[1]) > int(node[2])):
                     raise SyntaxError("The lower bound of the time interval is greater than the upper bound")
                 return self._visit_unary_temporal_operator(node[0], node[1], node[2], node[3])
-            elif node[0] in {'U'}:  # Temporal operators with two arguments
+            elif node[0] in {'U', 'R'}:  # Temporal operators with two arguments
                 if (int(node[1]) > int(node[2])):
                     raise SyntaxError("The lower bound of the time interval is greater than the upper bound")
-                return self._visit_binary_temporal_operator(*node)
+                if node[0] == 'U':
+                    return self._visit_binary_temporal_operator(*node)
+                else:
+                    assert node[0] == 'R'
+                    # We translate Release to Until
+                    return self._visit_unary_logical('!', ['U', node[1], node[2], ['!', node[3]], ['!', node[4]]])
             assert node[0] in {'&&', '||', '->', '<->'}  # Binary logical operators
             return self._visit_binary_logical(node[0], node[1], node[2:])
         elif isinstance(node, str):
