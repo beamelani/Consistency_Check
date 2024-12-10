@@ -110,22 +110,11 @@ batteries = [
     ['G', '11', '50', ['U', '2', '14', ['||', ['R_g1 >= 0'], ['R_g2 >= 0']], ['&&', ['B_dead1'], ['B_dead2']]]]
 ]
 
-'''
-def make_and(formulas): #crea una struttura strana
-    if len(formulas) == 1:
-        return formulas[0]
-    else:
-        return ['&&', formulas[0], make_and(formulas[1:])]
-'''
 
 def make_and(formulas):
     if len(formulas) == 1:
         return formulas[0]
-    else:
-        formula = ['&&']  # Inizia la formula con l'operatore AND
-        for entry in formulas:
-            formula.append(entry)
-    return formula
+    return ['&&'] + formulas
 
 def test_combinations_with_smt(formulas):
     """

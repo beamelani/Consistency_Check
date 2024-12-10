@@ -100,13 +100,13 @@ class Node:
         self.operator = operator
         if operator in {'&&', '||', ',', '!', 'O', '->'}:
             self.lower = self.upper = -1
-            self.operands = args
+            self.operands = list(args)
             if operator in {'&&', ','}:
                 self.satisfied_implications = []
         elif operator in {'G', 'F', 'U', 'R'}:
             self.lower = args[0]
             self.upper = args[1]
-            self.operands = args[2:]
+            self.operands = list(args[2:])
         elif operator in {'<', '<=', '>', '>=', '==', '!='}:
             # The comparison is flattened into a str in this case
             # TODO: fix smt_check in tableau to accept list representation
@@ -162,3 +162,9 @@ class Node:
         Can be used to write e.g. node[0] to get the first operand
         '''
         return self.operands[i]
+
+    def flatten(self, now_operands):
+        if self.operator in {'&&', '||', ','}:
+            for i in range(len(self.operands)):
+                if self.operands[i].operator == self.operator:
+                    self.operands[i:i+1] = self.operands[i].operands

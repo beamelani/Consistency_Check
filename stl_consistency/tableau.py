@@ -789,8 +789,7 @@ def decompose_jump(node):
     if node.operator == ',':
         #new_node = [',']  # scrivo come lista e poi ritrasformo in node
         if not flag:
-            new_node = Node(*[',', ['B_p']])
-            del new_node.operands[0]
+            new_node = Node(',')
         else:
             new_node = [',']
         if not flag:  # non ci sono operatori probelmatici attivi
