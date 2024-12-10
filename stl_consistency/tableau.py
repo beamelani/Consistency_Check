@@ -726,11 +726,14 @@ def decompose_imply_classic(node, formula, index):
     '''
     if index >= 0:
         node_2 = Node(*[',', node[1], node[2]])
+        node_1 = Node(*[',', ['!', node[1]]])
+        node_2.operands[0].is_derived = formula.operands[index].operands[0].is_derived
+        node_2.operands[1].is_derived = formula.operands[index].operands[1].is_derived
+        node_1.operands[0].operands[0].is_derived = formula.operands[index].operands[0].is_derived
         del formula.operands[index]
         new_node1 = copy.deepcopy(formula)
         new_node2 = copy.deepcopy(formula)
         new_node2.operands.extend(node_2.operands)
-        node_1 = Node(*[',', ['!', node[1]]])
         new_node1.operands.extend(node_1.operands)
         new_node1 = push_negation(new_node1)
     else:  # se l'imply non è in and con nulla posso direttamente rigettare il ramo negato
@@ -750,6 +753,8 @@ def decompose_imply_new(node, formula, index):
         if formula.implications is None: #non so perché a volte sia None, in attesa di trovare il problema uso questa soluzione
             formula = count_implications(formula)
         node_2 = Node(*[',', node[1], node[2]])
+        node_2.operands[0].is_derived = formula.operands[index].operands[0].is_derived
+        node_2.operands[1].is_derived = formula.operands[index].operands[1].is_derived
         new_node1 = copy.deepcopy(formula)
         new_node2 = copy.deepcopy(formula)
         del new_node1.operands[index]
@@ -758,6 +763,7 @@ def decompose_imply_new(node, formula, index):
         new_node2.operands.extend(node_2.operands)
         if formula.implications > 1:  # quando sono a 1 significa che quello che sto negando ora è l'ultimo e quindi li ho negati tutti
             node_1 = Node(*[',', ['!', node[1]]])
+            node_1.operands[0].operands[0].is_derived = formula.operands[index].operands[0].is_derived
             new_node1.operands.extend(node_1.operands)
             new_node1.implications -= 1  # decremento di 1 ogni volta che passo dal ramo che nega l'antecedente per poter sapere quando li ho negati tutti
             new_node1 = push_negation(new_node1)
@@ -827,7 +833,7 @@ def decompose_jump(node):
                 # una volta stabilito il salto da effettuare faccio un altro ciclo negli operands e applico il salto ad ognuno
                 # controllando se ogni operatore è derivato da un nested o no (perché saltano in modo diverso)
                 if operand.operator in {'O'} and Fraction(operand.operands[0].lower) <= Fraction(
-                        operand.operands[0].upper):
+                        operand.operands[0].upper) and not operand.operands[0].is_derived:
                     if operand.operands[0].operator in {'G', 'U'} and operand.operands[0].operands[0].operator in {'G', 'F', 'U', 'R'}:
                         # se operatore interno è esaurito
                         if Fraction(operand.operands[0].lower) >= Fraction(operand.operands[0].initial_time) + Fraction(operand.operands[0].operands[0].upper):
