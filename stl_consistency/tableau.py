@@ -840,10 +840,13 @@ def decompose_jump(node):
                     elif operand.operands[0].operator in {'G', 'U'} and operand.operands[0].operands[0].operator in {'&&', '||', ',', '->'}:
                         max_upper = 0
                         # trovo il max tra gli upper bound degli op interni
+                        nested = 0
                         for arg in operand.operands[0].operands[0].operands:
+                            if arg.operator in {'G', 'F', 'U', 'R'}:
+                                nested += 1
                             if int(arg.upper) > max_upper:
                                 max_upper = int(arg.upper)
-                        if Fraction(operand.operands[0].lower) >= Fraction(operand.operands[0].initial_time) + Fraction(max_upper):
+                        if nested > 0 and Fraction(operand.operands[0].lower) >= Fraction(operand.operands[0].initial_time) + Fraction(max_upper):
                             sub_formula = copy.deepcopy(operand.operands[0].to_list())
                             indice = bisect.bisect_right(time_instants, Fraction(sub_formula[1]))
                             jump.append(time_instants[indice] - Fraction(operand.operands[0].lower))
@@ -1147,7 +1150,7 @@ def build_decomposition_tree(root, max_depth, mode, tree, verbose):
         return None
 
     res = add_children(root, 0, time, mode, tree, verbose)
-    if res and mode in {'sat', 'strong_sat'}:
+    if res and mode in {'sat', 'strong_sat'} and verbose:
         print("The requirement set is consistent")
     elif not res and mode in {'sat', 'strong_sat'}:
         print("The requirement set is not consistent")
