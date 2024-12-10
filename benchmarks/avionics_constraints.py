@@ -78,7 +78,7 @@ cars = [
     ['G', '0', '100', ['R_dist > 0.1']],
     ['G', '0', '20', ['->', ['R_dist < 6'], ['F', '0', '15', ['B_acc2']]]],
     ['F', '12', '20', ['->', ['B_dec2'], ['F', '3', '18', ['B_acc2']]]],
-    ['F', '4', '40', ['U', '10', '20', ['B_dec2'], ['&&', ['R_x1-R_x2 >= -0.5'], ['R_x1-R_x2 <= 0.5'], ['R_y1-R_y2 >= -0.5'], ['R_y1-R_y2 <= 0.5']]]]
+    ['F', '4', '40', ['U', '10', '20', ['B_dec2'], ['&&', ['R_x >= -0.5'], ['R_x <= 0.5'], ['R_y >= -0.5'], ['R_y <= 0.5']]]]
 ]
 
 thermostat = [
@@ -89,10 +89,10 @@ thermostat = [
 ]
 
 watertank = [
-    ['G', '0', '5000', ['&&', ['R_x1 > 0'], ['R_x1 <= 9'], ['R_x2 > 0'], ['R_x2 <= 9']]],
-    ['G', '0', '1000', ['->', ['R_x1 < 4.9'], ['F', '0', '100', ['R_x1 >= 5.1']]]],
-    ['F', '5', '1400', ['->', ['B_off1'], ['F', '0', '70', ['&&', ['B_on1'], ['R_x1 > 5.5']]]]],
-    ['G', '0', '2000', ['->', ['&&', ['B_on1'], ['B_on2']], ['F', '0', '50', ['||', ['B_off1'], ['B_off2']]]]]
+    ['G', '0', '50', ['&&', ['R_x1 > 0'], ['R_x1 <= 9'], ['R_x2 > 0'], ['R_x2 <= 9']]],
+    ['G', '0', '10', ['->', ['R_x1 < 4.9'], ['F', '0', '10', ['R_x1 >= 5.1']]]],
+    ['F', '5', '14', ['->', ['B_off1'], ['F', '0', '7', ['&&', ['B_on1'], ['R_x1 > 5.5']]]]],
+    ['G', '0', '20', ['->', ['&&', ['B_on1'], ['B_on2']], ['F', '0', '5', ['||', ['B_off1'], ['B_off2']]]]]
 
 ]
 
@@ -104,8 +104,8 @@ railroad = [
 ]
 
 batteries = [
-    ['G', '0', '20.5', ['F', '3', '14', ['R_d1 >= 1.4']]],
-    ['F', '6', '30', ['->', ['&&', ['B_live1'], ['B_live2']], ['G', '7.5', '24', ['&&', ['B_live1'], ['B_live2']]]]],
+    ['G', '0', '20', ['F', '3', '14', ['R_d1 >= 1.4']]],
+    ['F', '6', '30', ['->', ['&&', ['B_live1'], ['B_live2']], ['G', '7', '24', ['&&', ['B_live1'], ['B_live2']]]]],
     ['G', '1', '49', ['&&', ['R_d1 > 0.5'], ['R_d2 > 0.5']]],
     ['G', '11', '50', ['U', '2', '14', ['||', ['R_g1 >= 0'], ['R_g2 >= 0']], ['&&', ['B_dead1'], ['B_dead2']]]]
 ]
@@ -153,7 +153,7 @@ def test_combinations_with_smt(formulas):
     return None
 
 # formula = requirements[0]
-formula = make_and(railroad)
+formula = make_and(cars)
 # print(formula)
 
 parser = STLParser()
@@ -165,6 +165,7 @@ start_t = time.perf_counter()
 smt_check_consistency(parsed_formula, False)
 #test_combinations_with_smt(requirements)
 elapsed_smt = time.perf_counter() - start_t
+print('Elapsed time (SMT):', elapsed_smt)
 
 
 sys.setrecursionlimit(1000000)
@@ -173,7 +174,7 @@ start_t = time.perf_counter()
 #tableau, _ = make_tableau(Node(*formula), max_depth, 'sat', True, False)
 res = make_tableau(Node(*formula), max_depth, 'sat', False, False)
 elapsed_tableau = time.perf_counter() - start_t
-#print('Elapsed time:', elapsed)
+print('Elapsed time (tableau):', elapsed_tableau)
 
 #plot_tree(tableau)
 
@@ -209,8 +210,8 @@ def test_combinations_with_tableau(formulas, max_depth, build_tree, verbose, mod
     return None
 
 #start_t = time.perf_counter()
-#result = test_combinations_with_tableau(requirements, max_depth, False, False, 'sat')
+#result = test_combinations_with_tableau(railroad, max_depth, False, False, 'sat')
 #elapsed_tableau = time.perf_counter() - start_t
 
-print('Elapsed time (SMT):', elapsed_smt)
-print('Elapsed time (tableau):', elapsed_tableau)
+#print('Elapsed time (SMT):', elapsed_smt)
+#print('Elapsed time (tableau):', elapsed_tableau)

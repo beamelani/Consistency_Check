@@ -396,7 +396,7 @@ def decompose(node, current_time, mode):
         # Scrivo un nodo come una virgola (un and) di tutti gli elementi del nodo
         elif node.operator == ',':
             for j in range(len(node.operands)):
-                if node.operands[j].operator == '&&':
+                if node.operands[j].operator in {'&&',','}:
                     return decompose_and(node, j)
                 if node.operands[j].operator == '||':
                     return decompose_or(node.operands[j], node, j)
@@ -535,7 +535,7 @@ def decompose_F(node, formula, index):
         new_node1 = Node(*['O', node.to_list()])
         new_node1.operands[0].current_time = current_time  # serve??
         new_node2 = modify_argument(node.operands[0])
-    return new_node1, new_node2
+    return new_node2, new_node1 #conviene fare prima return del node_2
 
 
 def decompose_U(node, formula, index):
@@ -590,7 +590,7 @@ def decompose_U(node, formula, index):
     else:  # se U è l'unica formula
         formula_1 = node_1
         formula_2 = node_2
-    return [formula_1, formula_2]
+    return [formula_2, formula_1]
 
 
 def decompose_R(node, formula, index):
@@ -699,7 +699,7 @@ def decompose_and(node, index):
         for operand in node.operands:
             # if not isinstance(operand, str):
             # decompose_and(operand)
-            if node.operator == ',' and operand.operator == '&&':
+            if node.operator == ',' and operand.operator in {'&&', ','}:
                 del node.operands[index]
                 for element in operand.operands:
                     node.operands.append(element)
@@ -1092,6 +1092,8 @@ def build_decomposition_tree(root, max_depth, mode, tree, verbose):
         root_label = root.to_label(counter)
         G.add_node(root_label)
     if verbose:
+        counter = 0
+        root_label = root.to_label(counter)
         print(root_label)
 
     def add_children(node, depth, current_time, mode, tree, verbose):
@@ -1145,9 +1147,9 @@ def build_decomposition_tree(root, max_depth, mode, tree, verbose):
         return None
 
     res = add_children(root, 0, time, mode, tree, verbose)
-    if res and mode in {'sat', 'strong_sat'} and verbose:
+    if res and mode in {'sat', 'strong_sat'}:
         print("The requirement set is consistent")
-    elif not res and mode in {'sat', 'strong_sat'} and verbose:
+    elif not res and mode in {'sat', 'strong_sat'}:
         print("The requirement set is not consistent")
     if tree:
         return G, res
