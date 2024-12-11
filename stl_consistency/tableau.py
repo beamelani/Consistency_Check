@@ -444,6 +444,7 @@ def decompose_G(node, formula, index):
             return arg
         elif arg.operator in {'G', 'F', 'U', 'R'}:
             # Modifica bounds sommando quelli del nodo G
+            #if arg.operator in {'F', 'U', 'R'} or (arg.operator == 'G' and node.lower == node.initial_time):
             extract = copy.deepcopy(arg)
             extract.lower = str(int(arg.lower) + int(lower_bound))
             extract.upper = str(int(arg.upper) + int(lower_bound))
@@ -452,9 +453,20 @@ def decompose_G(node, formula, index):
             if arg.operator in {'U', 'R'}:
                 extract = add_G_for_U(extract, extract.operator, True)
             return extract
+            '''
+            Modifca per produrre meno elementi G derived. Funziona, in alcuni casi (GG), ma non in altri (G(->(G),())
+            elif arg.operator == 'G' and node.lower > node.initial_time: #non aggiungo un altro G, ma allungo intervallo di quello già esistente
+                for operand in formula.operands:
+                    if operand.operator == 'G' and operand.is_derived and operand.identifier == node.identifier:
+                        operand.upper = str(int(operand.upper) + 1)
+                        if node.lower == node.upper:
+                            operand.is_derived = False
+                return
+            '''
         elif arg.operator in {'&&', '||', ',', '->'}:
             # Applica la modifica ricorsivamente agli operandi
             new_operands = [modify_argument(op, identifier) for op in arg.operands]
+            new_operands = [x for x in new_operands if x is not None]
             arg.operands = new_operands
             return arg
         else:
@@ -463,32 +475,29 @@ def decompose_G(node, formula, index):
     # Decomponi il nodo originale
     if index < 0:
         if node.lower == node.upper:  # se sono all'ultimo istante non metto il OG
-            new_node = modify_argument(node.operands[0], identifier)
+            new_node = modify_argument(copy.deepcopy(node.operands[0]), identifier)
         else:
-            new_node = Node(*[',', ['O', node.to_list()]])
-            new_node.operands[0].operands[0].identifier = identifier
-            new_node.operands[0].operands[0].initial_time = initial_time
-            new_node.operands[0].operands[0].is_derived = node.is_derived
-            new_operands = modify_argument(node.operands[0], identifier)
+            new_node = Node(',', ['O', ['B_p']])
+            new_node.operands[0].operands[0] = node
+            new_operands = modify_argument(copy.deepcopy(node.operands[0]), identifier)
             new_node.operands.append(new_operands)
         new_node.current_time = node.current_time
         return [new_node]
     else:
         if node.lower == node.upper:
-            new_node = Node(*[',', ['O', node.to_list()]]) #poi il O lo cancelli, qui serve per comodità
-            new_operands = modify_argument(node.operands[0], identifier)
+            new_node = Node(',', ['B_p']) #B_p poi si cancella, serve per comodità
+            new_operands = modify_argument(copy.deepcopy(node.operands[0]), identifier)
             new_node.operands.append(new_operands)
             del new_node.operands[0]
             for operand in new_node.operands[0].operands:
                 if not isinstance(operand, str) and operand.operator in {'G', 'F', 'U', 'R'}: #caso &&, || etc?
                     operand.is_derived = False
         else:
-            new_node = Node(*[',', ['O', node.to_list()]])
-            new_node.operands[0].operands[0].is_derived = node.is_derived
-            new_node.operands[0].operands[0].initial_time = initial_time
-            new_node.operands[0].operands[0].identifier = identifier
-            new_operands = modify_argument(node.operands[0], identifier)
-            new_node.operands.append(new_operands)
+            new_node = Node(',', ['O', ['B_p']])
+            new_node.operands[0].operands[0] = node
+            new_operands = modify_argument(copy.deepcopy(node.operands[0]), identifier)
+            if new_operands:
+                new_node.operands.append(new_operands)
         del formula.operands[index]
         formula.operands.extend(new_node.operands)
         return [formula]
