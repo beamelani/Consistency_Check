@@ -63,6 +63,7 @@ import re
 import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
+import random
 import copy
 from z3 import *
 from fractions import Fraction
@@ -727,7 +728,9 @@ def decompose_or(node, formula, index):
             new_node.operands.append(or_operand)
             res.append(new_node)
             del new_node
-        return res.reverse()
+        #return res
+        #return res.reverse()
+        return random.shuffle(res)
 
 def decompose_imply_classic(node, formula, index):
     '''
