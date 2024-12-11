@@ -466,7 +466,7 @@ def decompose_G(node, formula, index):
         elif arg.operator in {'&&', '||', ',', '->'}:
             # Applica la modifica ricorsivamente agli operandi
             new_operands = [modify_argument(op, identifier) for op in arg.operands]
-            new_operands = [x for x in new_operands if x is not None]
+            #new_operands = [x for x in new_operands if x is not None]
             arg.operands = new_operands
             return arg
         else:
@@ -727,7 +727,7 @@ def decompose_or(node, formula, index):
             new_node.operands.append(or_operand)
             res.append(new_node)
             del new_node
-        return res
+        return res.reverse()
 
 def decompose_imply_classic(node, formula, index):
     '''
