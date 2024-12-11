@@ -370,9 +370,9 @@ def decompose(node, current_time, mode):
             return decompose_or(node, [], -1)
         elif node.operator == '->':
             if mode == 'complete' or mode == 'sat':
-                return decompose_imply_classic(node.to_list(), node, -1)
+                return decompose_imply_classic(node, node, -1)
             else:
-                return decompose_imply_new(node.to_list(), node, -1)
+                return decompose_imply_new(node, node, -1)
         # Se il nodo iniziale ha solo un elemento (quindi non è un and o or di più sottoformule) lo decompongo con i 5 elif di seguito
         elif node.operator == 'G':
             return decompose_G(node, node, -1)
@@ -396,15 +396,15 @@ def decompose(node, current_time, mode):
         # Scrivo un nodo come una virgola (un and) di tutti gli elementi del nodo
         elif node.operator == ',':
             for j in range(len(node.operands)):
-                if node.operands[j].operator in {'&&',','}:
+                if node.operands[j].operator in {'&&', ','}:
                     return decompose_and(node, j)
                 if node.operands[j].operator == '||':
                     return decompose_or(node.operands[j], node, j)
                 elif node.operands[j].operator == '->':
                     if mode == 'complete' or mode == 'sat':
-                        return decompose_imply_classic(node.operands[j].to_list(), node, j)
+                        return decompose_imply_classic(node.operands[j], node, j)
                     else:
-                        return decompose_imply_new(node.operands[j].to_list(), node, j)
+                        return decompose_imply_new(node.operands[j], node, j)
                 elif node.operands[j].operator == 'G' and Fraction(node.operands[j].lower) == current_time:
                     return decompose_G(node.operands[j], node, j)
                 elif node.operands[j].operator == 'F' and Fraction(node.operands[j].lower) == current_time:
@@ -725,21 +725,22 @@ def decompose_imply_classic(node, formula, index):
     :return: decompone p->q come not(p) OR (p and q), senza evitare il caso vacuously true
     '''
     if index >= 0:
-        node_2 = Node(*[',', node[1], node[2]])
-        node_1 = Node(*[',', ['!', node[1]]])
-        node_2.operands[0].is_derived = formula.operands[index].operands[0].is_derived
-        node_2.operands[1].is_derived = formula.operands[index].operands[1].is_derived
-        node_1.operands[0].operands[0].is_derived = formula.operands[index].operands[0].is_derived
+        node_2 = Node(',')
+        node_1 = Node(',', ['!', ['B_p']])
+        node_2.operands = node.operands
+        node_1.operands[0].operands[0] = node.operands[0]
         del formula.operands[index]
         new_node1 = copy.deepcopy(formula)
         new_node2 = copy.deepcopy(formula)
         new_node2.operands.extend(node_2.operands)
         new_node1.operands.extend(node_1.operands)
         new_node1 = push_negation(new_node1)
-    else:  # se l'imply non è in and con nulla posso direttamente rigettare il ramo negato
-        new_node1 = Node(*[',', ['!', node[1]]])
+    else:
+        new_node2 = Node(',')
+        new_node1 = Node(',', ['!', ['B_p']])
+        new_node2.operands = node.operands
+        new_node1.operands[0].operands[0] = node.operands[0]
         new_node1 = push_negation(new_node1)
-        new_node2 = Node(*[',', node[1], node[2]])
     return new_node1, new_node2
 
 
@@ -752,9 +753,8 @@ def decompose_imply_new(node, formula, index):
     if index >= 0:
         if formula.implications is None: #non so perché a volte sia None, in attesa di trovare il problema uso questa soluzione
             formula = count_implications(formula)
-        node_2 = Node(*[',', node[1], node[2]])
-        node_2.operands[0].is_derived = formula.operands[index].operands[0].is_derived
-        node_2.operands[1].is_derived = formula.operands[index].operands[1].is_derived
+        node_2 = Node(',')
+        node_2.operands = node.operands
         new_node1 = copy.deepcopy(formula)
         new_node2 = copy.deepcopy(formula)
         del new_node1.operands[index]
@@ -762,8 +762,8 @@ def decompose_imply_new(node, formula, index):
         new_node2.satisfied_implications.append(formula.operands[index].identifier)
         new_node2.operands.extend(node_2.operands)
         if formula.implications > 1:  # quando sono a 1 significa che quello che sto negando ora è l'ultimo e quindi li ho negati tutti
-            node_1 = Node(*[',', ['!', node[1]]])
-            node_1.operands[0].operands[0].is_derived = formula.operands[index].operands[0].is_derived
+            node_1 = Node(',', ['!', ['B_p']])
+            node_1.operands[0].operands[0] = node.operands[0]
             new_node1.operands.extend(node_1.operands)
             new_node1.implications -= 1  # decremento di 1 ogni volta che passo dal ramo che nega l'antecedente per poter sapere quando li ho negati tutti
             new_node1 = push_negation(new_node1)
@@ -771,7 +771,8 @@ def decompose_imply_new(node, formula, index):
             new_node1 = 'Rejected'
     else:  # se l'imply non è in and con nulla posso direttamente rigettare il ramo negato
         new_node1 = 'Rejected'
-        new_node2 = Node(*[',', node[1], node[2]])
+        new_node2 = Node(',')
+        new_node2.operands = node.operands
     return new_node1, new_node2
 
 
