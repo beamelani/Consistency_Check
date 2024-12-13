@@ -309,11 +309,14 @@ class SMTSTLConsistencyChecker:
 
         if check_res == unsat:
             print("The STL requirements are inconsistent.")
-            print(f"The unsat core is {s.unsat_core()}")
+            if verbose:
+                print(f"The unsat core is {s.unsat_core()}")
             return False
         elif check_res == sat:
-            print("The STL requirements are consistent. This is a signal witness:")
-            print(self._filter_witness(s.model()))
+            print("The STL requirements are consistent.")
+            if verbose:
+                print("This is a signal witness:")
+                print(self._filter_witness(s.model()))
             return True
         else:
             print("Unable to check consistency.")
