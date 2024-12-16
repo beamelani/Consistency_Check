@@ -181,7 +181,7 @@ class SMTSTLConsistencyChecker:
                 elif len(formula) == 3 and formula[0] in {'&&', '||', '->', '<->'}:
                     prop1 = f"{formula[1]}_t{encoded_time}"
                     prop2 = f"{formula[2]}_t{encoded_time}"
-                    if prop1 in self.smt_variables.keys() and prop2 in self.smt_variables.keys():
+                    if prop1 in self.smt_variables and prop2 in self.smt_variables:
                         if verbose:
                             print(f"{prop} = Bool('{prop}')")
                         self.smt_variables[prop] = Bool(prop)
@@ -203,7 +203,7 @@ class SMTSTLConsistencyChecker:
                                 print(f"s.add({prop} == ({prop1} == {prop2}))")
                 elif len(formula) == 2 and formula[0] in {'!'}:
                     prop1 = f"{formula[1]}_t{encoded_time}"
-                    if prop1 in self.smt_variables.keys():
+                    if prop1 in self.smt_variables:
                         if verbose:
                             print(f"{prop} = Bool('{prop}')")
                         self.smt_variables[prop] = Bool(prop)
@@ -252,12 +252,12 @@ class SMTSTLConsistencyChecker:
                         if verbose:
                             print(f"s.add({prop}_B == Or({prop_b_list}))")
                             print("")
-                        if not f"{key}_t{self._encode_time(t + int_a, time_horizon)}_C" in self.smt_variables.keys():
+                        if not f"{key}_t{self._encode_time(t + int_a, time_horizon)}_C" in self.smt_variables:
                             if verbose:
                                 print(
                                     f"The variables {key}_t{self._encode_time(t + int_a, time_horizon)}_C is not in self.smt_variables")
 
-                            if not f"{key}_t{self._encode_time(time_horizon, time_horizon)}_C" in self.smt_variables.keys():
+                            if not f"{key}_t{self._encode_time(time_horizon, time_horizon)}_C" in self.smt_variables:
                                 if verbose:
                                     print(
                                         f"{key}_t{self._encode_time(time_horizon - 1, time_horizon)}_C = Bool('{key}_t{self._encode_time(time_horizon - 1, time_horizon)}_C')")
@@ -273,7 +273,7 @@ class SMTSTLConsistencyChecker:
 
                                 k = time_horizon - i - 2 + int_a
                                 # print(f"i = {i}, k = {k}")
-                                if not f"{key}_t{self._encode_time(k, time_horizon)}_C" in self.smt_variables.keys():
+                                if not f"{key}_t{self._encode_time(k, time_horizon)}_C" in self.smt_variables:
                                     if verbose:
                                         print(
                                             f"{key}_t{self._encode_time(k, time_horizon)}_C = Bool('{key}_t{self._encode_time(k, time_horizon)}_C')")
@@ -334,7 +334,7 @@ class SMTSTLConsistencyChecker:
         if verbose:
             print("")
             print("================================")
-            print(f"Num of variables in SMT solver = {len(self.smt_variables.keys())}")
+            print(f"Num of variables in SMT solver = {len(self.smt_variables)}")
             print("")
             print("Solver statistics")
             print(s.statistics())
