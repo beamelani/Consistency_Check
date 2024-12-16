@@ -22,7 +22,9 @@
 
 from stl_consistency.parser import STLParser
 from stl_consistency.abstract_syntax_table import STLAbstractSyntaxTable
+from stl_consistency.util import all_partitions
 
+from itertools import chain
 from z3 import *
 
 class SMTSTLConsistencyChecker:
@@ -93,7 +95,7 @@ class SMTSTLConsistencyChecker:
 
         return sorted_model
 
-    def solve(self, table, verbose):
+    def solve(self, table, mode, verbose):
         # This hashtable will contain the variables for the SMT Solver
         self.smt_variables = {}
 
@@ -103,7 +105,7 @@ class SMTSTLConsistencyChecker:
         if verbose:
             print("# SMT Encoding in Python")
             print("")
-            print("#===========================")
+            print("============================")
             print("from z3 import *")
             print("")
 
@@ -294,8 +296,41 @@ class SMTSTLConsistencyChecker:
                                                             self.smt_variables[
                                                                 f"{key}_t{self._encode_time(int_a, time_horizon)}_C"]))
                         if verbose:
-                            print(
-                                f"s.add({prop} == And({prop}_A,{prop}_B,{key}_t{self._encode_time(int_a, time_horizon)}_C))")
+                            print(f"s.add({prop} == And({prop}_A,{prop}_B,{key}_t{self._encode_time(int_a, time_horizon)}_C))")
+
+        if mode == 'strong_sat':
+            imply_formulas = list(filter(lambda pf: len(pf[1]) == 3 and pf[1][0] == '->', table.getFormulaKeyValuePairs()))
+            if verbose:
+                print("================================")
+                print("Encoding 'strong_sat' mode")
+                print("List of implications:", imply_formulas)
+
+            for t in range(time_horizon):
+                if verbose:
+                    print("s.add(Or(")
+                encoded_time = self._encode_time(t, time_horizon)
+                imply_formulas_t = map(lambda prop_f: prop_f + (f"{prop_f[0]}_t{encoded_time}",), imply_formulas)
+                encoded_imply_formulas_t = filter(lambda pft: pft[2] in self.smt_variables, imply_formulas_t)
+                clauses = []
+                for p1, p2 in all_partitions(encoded_imply_formulas_t):
+                    true_implications = map(lambda pft: self.smt_variables[pft[2]], p1)
+                    false_implications = map(lambda pft: Not(self.smt_variables[pft[2]]), p2)
+                    true_antecedents = map(lambda pft: self.smt_variables[f"{pft[1][1]}_t{encoded_time}"], p1)
+                    clauses.append(And(list(chain(true_implications, false_implications, true_antecedents))))
+
+                    if verbose:
+                        print("\tAnd(", end='\n\t\t')
+                        print(*map(lambda pft: pft[2], p1), sep=", ", end=',\n\t\t')
+                        print(*map(lambda pft: f"Not({pft[2]})", p2), sep=", ", end=',\n\t\t')
+                        print(*map(lambda pft: f"{pft[1][1]}_t{encoded_time}", p1), sep=", ")
+                        print("\t)")
+
+                s.add(Or(clauses))
+
+                if verbose:
+                    print(")) # end s.add, Or")
+                    
+
         if verbose:
             print("")
             print("================================")
@@ -323,7 +358,7 @@ class SMTSTLConsistencyChecker:
             return False
 
 
-def smt_check_consistency(parsed_formula, verbose=False):
+def smt_check_consistency(parsed_formula, mode='sat', verbose=False):
     table = STLAbstractSyntaxTable(parsed_formula)
 
     if verbose:
@@ -331,4 +366,4 @@ def smt_check_consistency(parsed_formula, verbose=False):
         table.print()
 
     checker = SMTSTLConsistencyChecker()
-    return checker.solve(table, verbose)
+    return checker.solve(table, mode, verbose)

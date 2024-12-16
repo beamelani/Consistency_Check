@@ -142,7 +142,7 @@ def test_combinations_with_smt(formulas):
     return None
 
 # formula = requirements[0]
-formula = make_and(cars)
+formula = make_and(requirements)
 # print(formula)
 
 parser = STLParser()
@@ -151,9 +151,10 @@ parsed_formula = parser.parse_relational_exprs(formula)
 print(parsed_formula)
 
 start_t = time.perf_counter()
-smt_check_consistency(parsed_formula, False)
+res = smt_check_consistency(parsed_formula, 'sat', False)
 #test_combinations_with_smt(requirements)
 elapsed_smt = time.perf_counter() - start_t
+print('Result (SMT):', res)
 print('Elapsed time (SMT):', elapsed_smt)
 
 
@@ -163,6 +164,7 @@ start_t = time.perf_counter()
 #tableau, _ = make_tableau(Node(*formula), max_depth, 'sat', True, False)
 res = make_tableau(Node(*formula), max_depth, 'sat', False, False)
 elapsed_tableau = time.perf_counter() - start_t
+print('Result (tableau):', res)
 print('Elapsed time (tableau):', elapsed_tableau)
 
 #plot_tree(tableau)
