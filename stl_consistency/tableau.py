@@ -256,47 +256,33 @@ def assign_identifier(formula):
             counter += 1
     return formula
 
-
-
-def flagging(formula):
+def has_temporal_operator(node):
     '''
-    :param formula:
-    :return: la formula controlla che non ci siano operatori nested problematici (GF, GG,until con nesting nel
-    primo arg, release con nesting nel secondo arg
+    :param node: Node containing a formula
+    :return: True if the formula contains any temporal operator
     '''
-    if len(formula) == 1:
-        formula = formula[0]
-    if formula[0] == ',':
-        for element in formula:
-            if element[0] == 'O' and element[1][0] in {'G', 'U'}:
-                if element[1][3][0] in {'G', 'F', 'U', 'R'}:
-                    return True
-                elif element[1][3][0] in {'&&', '||', '->', ','}:
-                    for arg in element[3:]:
-                        if arg[0] in {'G', 'F', 'U', 'R'}:
-                            return True
-            elif element[0] == 'O' and element[1][0] in {'R'}:
-                if element[1][4][0] in {'G', 'F', 'U', 'R'}:
-                    return True
-                elif element[1][4][0] in {'&&', '||', '->', ','}:
-                    for arg in element[3:]:
-                        if arg[0] in {'G', 'F', 'U', 'R'}:
-                            return True
-    else:
-        if formula[0] == 'O' and formula[1][0] in {'G', 'U'}:
-            if formula[1][3][0] in {'G', 'F', 'U', 'R'}:
-                return True
-            elif formula[1][3][0] in {'&&', '||', '->', ','}:
-                for arg in formula[1][3][1:]:
-                    if arg[0] in {'G', 'F', 'U', 'R'}:
-                        return True
-        elif formula[0] == 'O' and formula[1][0] in {'R'}:
-            if formula[1][4][0] in {'G', 'F', 'U', 'R'}:
-                return True
-            elif formula[1][4][0] in {'&&', '||', '->', ','}:
-                for arg in formula[1][4][1:]:
-                    if arg[0] in {'G', 'F', 'U', 'R'}:
-                        return True
+    match node.operator:
+        case 'G' | 'F' | 'U' | 'R':
+            return True
+        case '&&' | '||' | ',' | '!' | '->':
+            return any(has_temporal_operator(operand) for operand in node)
+    return False
+
+def flagging(node):
+    '''
+    :param node:
+    :return: True if the node contains any `problematic` operators
+    '''
+    match node.operator:
+        case ',' | '&&' | '||' | '!' | '->':
+            return any(flagging(operand) for operand in node)
+        case 'O':
+            match node[0].operator:
+                case 'G' | 'U':
+                    return has_temporal_operator(node[0][0])
+                case 'R':
+                    return has_temporal_operator(node[0][1])
+            return False
     return False
 
 def formula_to_string(formula):
@@ -799,7 +785,7 @@ def decompose_jump(node):
 
     NB: NON CONTARE I BOUND DEGLI OPERATORI DERIVED DAI NESTED
     '''
-    flag = flagging(node.to_list())
+    flag = flagging(node)
     time_instants = extract_time_instants(node, flag)
     # Caso in cui input sia della forma [',', [], [], ....] (un and di tante sottoformule)
     new_node = []

@@ -31,7 +31,7 @@ class TestTableau(unittest.TestCase):
         parser = STLParser()
         parsed_formula = parser.parse_formula_as_node(formula)
         print(parser.parse_formula_as_stl_list(formula))
-        _, res = make_tableau(parsed_formula, max_depth, 'sat')
+        res = make_tableau(parsed_formula, max_depth, 'sat', False, False)
         self.assertEqual(res, expected)
 
     def test_and(self):
