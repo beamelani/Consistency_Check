@@ -23,6 +23,8 @@
 # SOFTWARE.
 
 import argparse
+import sys
+import time
 
 from stl_consistency.parser import STLParser
 from stl_consistency.smtchecker import smt_check_consistency
@@ -43,6 +45,8 @@ def main():
     argp.add_argument('formula', type=str, help='File containing formula to be checked.')
     args = argp.parse_args()
 
+    sys.setrecursionlimit(1000000)
+
     formula = read_formula(args.formula)
     parser = STLParser()
 
@@ -57,12 +61,24 @@ def main():
         tableau, _ = make_tableau(parsed_formula, args.plot)
         plot_tree(tableau)
     else:
+        start_t = time.perf_counter()
+
         parsed_formula = parser.parse_formula_as_node(formula)
-        tableau, res = make_tableau(parsed_formula, MAX_HORIZON, mode=('strong_sat' if args.strong_sat else 'sat'))
+        elapsed_parsing = time.perf_counter() - start_t
+
+        res = make_tableau(
+            parsed_formula,
+            MAX_HORIZON,
+            mode=('strong_sat' if args.strong_sat else 'sat'),
+            build_tree=False,
+            verbose=args.verbose
+        )
         if res:
             print('The constraints are consistent.')
         else:
             print(f'The constraints are not consistent (for signals up to t = {MAX_HORIZON}).')
+
+        print(f"Elapsed time: {elapsed_parsing} (parsing)")
 
 if __name__ == "__main__":
     main()

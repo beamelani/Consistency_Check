@@ -37,7 +37,7 @@ class TestSTLParser(unittest.TestCase):
         parser = STLParser()
         self.assertEqual(
             parser.parse_formula_as_stl_list(formula),
-            ['G', '0', '5', ['&&', ['<=', ['-', 'x', 'y'], ['+', 'x', ['+', 'z', '5']]], ['>', ['+', 'z', 'y'], '42']]]
+            ['G', '0', '5', ['&&', ['<=', ['-', 'x', 'y'], ['+', ['+', 'x', 'z'], '5']], ['>', ['+', 'z', 'y'], '42']]]
         )
 
 

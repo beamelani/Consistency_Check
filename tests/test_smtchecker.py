@@ -39,6 +39,12 @@ class TestSMTChecker(unittest.TestCase):
     def test_bool(self):
         self.make_test("a && b || c && d && e", True)
 
+    def test_true(self):
+        self.make_test("a && !TrUe", False)
+
+    def test_false(self):
+        self.make_test("a && FaLsE", False)
+
     def test_globally0(self):
         self.make_test("G[2,5] (x > 5 || x < 0)", True)
 

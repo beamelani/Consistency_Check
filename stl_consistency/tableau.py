@@ -950,7 +950,10 @@ def smt_check(node):
         if var not in variabili_z3:
             if var[0] == 'B':
                 var = var[2:]
-                variabili_z3[var] = Bool(var)
+                if var in {'true', 'false'}:
+                    variabili_z3[var] = var == 'true'
+                else:
+                    variabili_z3[var] = Bool(var)
             else:
                 var = var[2:]
                 variabili_z3[var] = Real(var)
@@ -1151,6 +1154,8 @@ def build_decomposition_tree(root, max_depth, mode, tree, verbose):
                     res = add_children(child, depth + 1, current_time, mode, tree, verbose)
                     if res and mode in {'sat', 'strong_sat'}:
                         return True
+            if mode in {'sat', 'strong_sat'}:
+                return False
         return None
 
     res = add_children(root, 0, time, mode, tree, verbose)

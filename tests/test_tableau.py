@@ -37,6 +37,12 @@ class TestTableau(unittest.TestCase):
     def test_and(self):
         self.make_test("a && b", 5, True)
 
+    def test_true(self):
+        self.make_test("a && !TrUe", 5, False)
+
+    def test_false(self):
+        self.make_test("a && FaLsE", 5, False)
+
     def test_globally0(self):
         self.make_test("G[2,5] (R_x > 5 || R_x < 0)", 10, True)
         

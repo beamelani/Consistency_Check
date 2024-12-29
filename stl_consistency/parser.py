@@ -21,15 +21,17 @@
 # SOFTWARE.
  
 from pyparsing import (
-    Optional, Combine, Literal, Suppress, Word, alphas, nums, alphanums, Group,
-    Forward, infix_notation, opAssoc, one_of
-    )
+    pyparsing_common, Optional, Combine, Literal, Suppress, Word, alphas, nums, alphanums, Group,
+    Forward, infix_notation, opAssoc, one_of, ParserElement
+)
+ParserElement.enablePackrat()
+
 from stl_consistency.node import Node
 
 class STLParser:
     def __init__(self):
         # Basic elements
-        identifier = Word(alphas, alphanums + "_")
+        identifier = pyparsing_common.identifier
 
         # Expression for integer
         non_zero_digit = "123456789"
@@ -63,19 +65,16 @@ class STLParser:
         binary_temporal_prefix = binary_temporal_op + interval
 
         # Define expressions
-        expr = Forward()
-
-        # Building the expressions
+        # Boolean terms
         binary_relation = Group(arith_expr + relational_op + arith_expr)
         binary_variable = Group(identifier)
 
-        # Expression with all options
-        expr <<= infix_notation(binary_relation | binary_variable, [
-            (unary_temporal_prefix, 1, opAssoc.RIGHT),
-            ('!', 1, opAssoc.RIGHT),
+        # Expressions with all operators
+        expr = infix_notation(binary_relation | binary_variable, [
+            ('!' | unary_temporal_prefix, 1, opAssoc.RIGHT),
             (binary_temporal_prefix, 2, opAssoc.LEFT),
-            ('&&', 2, opAssoc.LEFT),
-            ('||', 2, opAssoc.LEFT),
+            (one_of('&& &'), 2, opAssoc.LEFT),
+            (one_of('|| |'), 2, opAssoc.LEFT),
             (one_of('-> <->'), 2, opAssoc.RIGHT)
         ])
         self.parser = expr
@@ -92,7 +91,7 @@ class STLParser:
         return Node(*fslist)
 
     def is_stl_operator(f):
-        return any(map(lambda x: f == x, ['G', 'F', 'U', 'R', '!', '&&', '||', '->', '<->']))
+        return any(map(lambda x: f == x, ['G', 'F', 'U', 'R', '!', '&&', '&', '||', '|', '->', '<->']))
 
     def arith_expr_prefix(expr):
         if isinstance(expr, list):
@@ -113,12 +112,18 @@ class STLParser:
                     prefix = [op] + stl_list[1:3]
                     del stl_list[1:3]
                     return prefix + stl_list
+                elif op in {'&', '|'}:
+                    op *= 2
+
                 return [op] + stl_list
             elif len(formula) == 3 and isinstance(formula[1], str) and formula[1] in {'<', '<=', '>', '>=', '==', '!='}:
                 return [formula[1], STLParser.arith_expr_prefix(formula[0]), STLParser.arith_expr_prefix(formula[2])]
             else:
                 # Should be a proposition in this case
                 assert len(formula) == 1
+                prop_lower = formula[0].lower()
+                if prop_lower in {'true', 'false'}:
+                    return ['B_' + prop_lower]
                 return ['B_' + formula[0]]
         else:
             assert isinstance(formula, str) and formula.isdigit()
