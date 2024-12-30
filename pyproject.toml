@@ -9,7 +9,7 @@ dependencies = [
     "matplotlib>=3.9.1",
     "networkx>=3.3",
     "pe>=0.5.0",
-    "pydot==2.0.0",
+    "pydot>=3.0",
     "z3-solver>=4.13.0.0",
 ]
 requires-python = ">=3.11.*"
