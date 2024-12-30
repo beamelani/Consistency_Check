@@ -85,8 +85,10 @@ def exec_bench(fname, args):
 
     time_match = time_pattern.search(raw_stderr)
     mem_match = mem_pattern.search(raw_stderr)
-    result_match = [r[0] for r in result_pattern.findall(raw_stdout)]
-    result = result_match[0]
+    result_match = result_pattern.search(raw_stdout)
+    if not result_match:
+        result_match = result_pattern.search(raw_stderr)
+    result = result_match[0] if result_match else 'no result!'
     return (
         float(time_match.group(1)),
         int(mem_match.group(1)),
