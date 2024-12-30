@@ -41,6 +41,7 @@ def main():
     argp.add_argument('-s', '--smt', action='store_true', help='Use SMT-based bounded satisfiability checker instead of tree-based tableau (default)')
     argp.add_argument('-p', '--plot', type=int, default=0, help='Plot the tree-shaped tableau up to the given depth.')
     argp.add_argument('-t', '--strong-sat', action='store_true', help='Use strong definition of satisfiability that avoids formulas being satisfied vacuously (default is normal satisfiability)')
+    argp.add_argument('--smtlib-result', action='store_true', help='Emit result as SMTLIB output (sat, unsat, unknown)')
     argp.add_argument('-v', '--verbose', action='store_true')
     argp.add_argument('formula', type=str, help='File containing formula to be checked.')
     args = argp.parse_args()
@@ -75,10 +76,16 @@ def main():
             build_tree=False,
             verbose=args.verbose
         )
-        if res:
-            print('The constraints are consistent.')
+        if args.smtlib_result:
+            if res:
+                print('sat')
+            else:
+                print('unsat') # TODO distinguish unknown
         else:
-            print(f'The constraints are not consistent (for signals up to t = {MAX_HORIZON}).')
+            if res:
+                print('The constraints are consistent.')
+            else:
+                print(f'The constraints are not consistent (for signals up to t = {MAX_HORIZON}).')
 
 
 if __name__ == "__main__":
