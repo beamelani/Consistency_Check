@@ -51,37 +51,47 @@ def main():
     formula = read_formula(args.formula)
     parser = STLParser()
 
-    if args.smt:
-        if args.strong_sat:
-            print('Strong sat mode not implemented yet for SMT. Falling back to sat.')
+    mode = 'strong_sat' if args.strong_sat else 'sat'
 
+    if args.smt:
+        start_t = time.perf_counter()
         parsed_formula = parser.parse_formula_as_stl_list(formula)
-        smt_check_consistency(parsed_formula, args.verbose)
+        parsing_t = time.perf_counter()
+        res = smt_check_consistency(parsed_formula, mode, args.verbose)
+
     elif args.plot > 0:
         parsed_formula = parser.parse_formula_as_node(formula)
-        tableau, _ = make_tableau(parsed_formula, args.plot)
+        tableau, _ = make_tableau(
+            parsed_formula,
+            max_depth=args.plot,
+            mode='complete',
+            build_tree=True,
+            verbose=False
+        )
         plot_tree(tableau)
+
     else:
         start_t = time.perf_counter()
 
         parsed_formula = parser.parse_formula_as_node(formula)
-        elapsed_parsing = time.perf_counter() - start_t
-
-        print(f"Elapsed time: {elapsed_parsing} (parsing)")
+        parsing_t = time.perf_counter()
 
         res = make_tableau(
             parsed_formula,
             MAX_HORIZON,
-            mode=('strong_sat' if args.strong_sat else 'sat'),
+            mode,
             build_tree=False,
             verbose=args.verbose
         )
+
+    if args.plot <= 0:
         if args.smtlib_result:
             if res:
                 print('sat')
             else:
                 print('unsat') # TODO distinguish unknown
         else:
+            print(f'Elapsed time: {time.perf_counter() - parsing_t} (parsing: {parsing_t - start_t})')
             if res:
                 print('The constraints are consistent.')
             else:
