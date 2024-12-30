@@ -3,6 +3,7 @@
 import argparse
 import platform
 import os
+import time
 import subprocess
 import re
 import statistics
@@ -64,6 +65,7 @@ def exec_bench(fname, args):
     if args.verbose >= 1:
         print(command)
 
+    start_t = time.perf_counter() # to tentatively check timeout
     raw_res = subprocess.run(
         command,
         capture_output=True,
@@ -78,10 +80,13 @@ def exec_bench(fname, args):
 
     if raw_res.returncode != 0:
         if raw_res.returncode == -9:
-            return (-1, -1, -2**10, 'TO', -1)
+            return (-1, -1, 'TO')
         elif raw_res.returncode == 137:
-            return (-1, -1, -2**10, 'OOM', -1)
-        return (-1, -1, -2**10, 'Error {:d}'.format(raw_res.returncode), -1)
+            if time.perf_counter() - start_t >= args.timeout:
+                return (-1, -1, 'TO')
+            else:
+                return (-1, -1, 'OOM')
+        return (-1, -1, 'Error {:d}'.format(raw_res.returncode))
 
     time_match = time_pattern.search(raw_stderr)
     mem_match = mem_pattern.search(raw_stderr)
