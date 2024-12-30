@@ -12,7 +12,7 @@ import csv
 
 time_pattern = re.compile(r"Total elapsed time \(s\): ([0-9]+\.[0-9]+)")
 mem_pattern = re.compile(r"Max memory used \(KB\): ([0-9]+)")
-result_pattern = re.compile(r"((sat)|(unsat)|(unknown))")
+result_pattern = re.compile(r"((sat)|(unsat)|(unknown)|(syntax error))")
 pomc_pattern = re.compile(r".*\.pomc$")
 
 if platform.system() == 'Darwin':
