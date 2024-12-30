@@ -66,6 +66,8 @@ def main():
         parsed_formula = parser.parse_formula_as_node(formula)
         elapsed_parsing = time.perf_counter() - start_t
 
+        print(f"Elapsed time: {elapsed_parsing} (parsing)")
+
         res = make_tableau(
             parsed_formula,
             MAX_HORIZON,
@@ -78,7 +80,6 @@ def main():
         else:
             print(f'The constraints are not consistent (for signals up to t = {MAX_HORIZON}).')
 
-        print(f"Elapsed time: {elapsed_parsing} (parsing)")
 
 if __name__ == "__main__":
     main()

@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:0a04d9dc68f0f3162d215e500d6b6ccf8c560ea397dff0cd0ea2af7603ed784b"
+content_hash = "sha256:4a91ec4b00c84e8cff7fa65a87e634dbf4df0e3832bcc396949cb4ef3c09d06d"
 
 [[metadata.targets]]
 requires_python = ">=3.11.0"
@@ -241,6 +241,24 @@ groups = ["default"]
 files = [
     {file = "packaging-24.1-py3-none-any.whl", hash = "sha256:5b8f2217dbdbd2f7f384c41c628544e6d52f2d0f53c6d0c3ea61aa5d1d7ff124"},
     {file = "packaging-24.1.tar.gz", hash = "sha256:026ed72c8ed3fcce5bf8950572258698927fd1dbda10a5e981cdf0ac37f4f002"},
+]
+
+[[package]]
+name = "pe"
+version = "0.5.3"
+requires_python = ">=3.8"
+summary = "Library for Parsing Expression Grammars (PEG)"
+groups = ["default"]
+files = [
+    {file = "pe-0.5.3-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:f6d5ee4290b05815abb401c713c54087bbf000fc132b0c5aea714d04337f54d9"},
+    {file = "pe-0.5.3-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:058506986a523983c3a868a1b395b96554432e3ee945439c3fee29f317b75b5f"},
+    {file = "pe-0.5.3-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:329b971d070cf81270f83ae361f7eb35d04ff65df871fab03667d0a9202bc890"},
+    {file = "pe-0.5.3-cp311-cp311-win_amd64.whl", hash = "sha256:236d25db3619abdf2d3904e45b57b46b7933d780a09c436365a06a2a41504f42"},
+    {file = "pe-0.5.3-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:d23407b56bd7e2c2c21e5260cec2bd51776e21c76aedef8a62cec9a53f52a2d9"},
+    {file = "pe-0.5.3-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:26f39bf8b239a3fd278be809b129bcc1429237ae4c12d902c84c91fd102e8d0a"},
+    {file = "pe-0.5.3-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:9cde71eee35468a079b7ca449406797a436cabbd08be4671e58da7f48ae13a93"},
+    {file = "pe-0.5.3-cp312-cp312-win_amd64.whl", hash = "sha256:9f4f0b867a9de95a4e0cbb7308cb29f58dc7ac9c034fed4ef3e1ccd5d3ad2ba9"},
+    {file = "pe-0.5.3.tar.gz", hash = "sha256:a772dccb588b12e21668a6e0ad43669faaf81541cfcab177326efe46ffdcc336"},
 ]
 
 [[package]]

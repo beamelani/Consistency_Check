@@ -98,7 +98,7 @@ class Node:
         self.identifier = None
         self.implications = None
         self.operator = operator
-        if operator in {'&&', '||', ',', '!', 'O', '->'}:
+        if operator in {'&&', '||', ',', '!', 'O', '->', '<->'}:
             self.lower = self.upper = -1
             self.operands = list(args)
             if operator in {'&&', ','}:
@@ -141,7 +141,7 @@ class Node:
         '''
         Convert node to list representation
         '''
-        if self.operator in {'&&', '||', ',', '!', 'O', '->'}:
+        if self.operator in {'&&', '||', ',', '!', 'O', '->', '<->'}:
             return [self.operator] + [op.to_list() for op in self.operands]
         elif self.operator in {'G', 'F', 'U', 'R'}:
             return [self.operator, self.lower, self.upper] + [op.to_list() for op in self.operands]

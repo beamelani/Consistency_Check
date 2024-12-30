@@ -26,68 +26,156 @@ from pyparsing import (
 )
 ParserElement.enablePackrat()
 
+import pe
+from pe.operators import Class, Star
+from pe.actions import Capture, Constant, Pack
+
 from stl_consistency.node import Node
 
 class STLParser:
     def __init__(self):
         # Basic elements
-        identifier = pyparsing_common.identifier
+        # identifier = pyparsing_common.identifier
 
-        # Expression for integer
-        non_zero_digit = "123456789"
-        zero = "0"
-        integer_number = Word(non_zero_digit, nums) | zero
+        # # Expression for integer
+        # non_zero_digit = "123456789"
+        # zero = "0"
+        # integer_number = Word(non_zero_digit, nums) | zero
 
-        # Expression for real
-        point = "."
-        e = Word("eE", exact=1)
-        plus_or_minus = Word("+-", exact=1)
-        real_number = Combine(Optional(plus_or_minus) + Word(nums) + Optional(point + Optional(Word(nums))) + Optional(
-            e + Optional(plus_or_minus) + Word(nums)))
+        # # Expression for real
+        # point = "."
+        # e = Word("eE", exact=1)
+        # plus_or_minus = Word("+-", exact=1)
+        # real_number = Combine(Optional(plus_or_minus) + Word(nums) + Optional(point + Optional(Word(nums))) + Optional(
+        #     e + Optional(plus_or_minus) + Word(nums)))
 
-        # Arithmetic expressions
-        arith_expr = infix_notation(identifier | real_number,
-            [
-                (one_of('+ -'), 2, opAssoc.LEFT)
-            ]
+        # # Arithmetic expressions
+        # arith_expr = infix_notation(identifier | real_number,
+        #     [
+        #         (one_of('+ -'), 2, opAssoc.LEFT)
+        #     ]
+        # )
+
+        # # Define relational operators
+        # relational_op = one_of("< <= > >= == !=")
+
+        # interval = Suppress('[') + integer_number + Suppress(',') + integer_number + Suppress(']')
+
+        # # Temporal operators
+        # unary_temporal_op = one_of("G F")
+        # unary_temporal_prefix = unary_temporal_op + interval
+
+        # binary_temporal_op = one_of('U R')
+        # binary_temporal_prefix = binary_temporal_op + interval
+
+        # # Define expressions
+        # # Boolean terms
+        # binary_relation = Group(arith_expr + relational_op + arith_expr)
+        # binary_variable = Group(identifier)
+
+        # # Expressions with all operators
+        # expr = infix_notation(binary_relation | binary_variable, [
+        #     ('!' | unary_temporal_prefix, 1, opAssoc.RIGHT),
+        #     (binary_temporal_prefix, 2, opAssoc.LEFT),
+        #     (one_of('&& &'), 2, opAssoc.LEFT),
+        #     (one_of('|| |'), 2, opAssoc.LEFT),
+        #     (one_of('-> <->'), 2, opAssoc.RIGHT)
+        # ])
+        # self.parser = expr
+
+        def identifier_action(name):
+            name_lower = name.lower()
+            if name_lower in {'true', 'false'}:
+                return ['B_' + name_lower]
+            return ['B_' + name]
+
+        def bin_expr_action(*args):
+            match len(args):
+                case 3: # Lhs OP Rhs
+                    return [args[1], args[0], args[2]]
+                case 1: # pass lower level
+                    return args[0]
+            assert False
+
+        def un_expr_action(*args):
+            match len(args):
+                case 2: # NOT Term
+                    return list(args)
+                case 3: # UN_TEMP_OP Interval Term
+                    ret = [args[0]]
+                    ret.extend(args[1])
+                    ret.append(args[2])
+                    return ret
+                case 1: # Term
+                    return args[0]
+            assert False
+
+        self.parser = pe.compile(
+            r'''
+            # Hierarchical syntax
+            Formula     <  ImplExpr EOF
+            ImplExpr    <  OrExpr IMPLIFF ImplExpr
+                         / OrExpr
+            OrExpr      <  AndExpr OR OrExpr
+                         / AndExpr
+            AndExpr     <  BinTempExpr AND AndExpr
+                         / BinTempExpr
+                         / UnExpr AND AndExpr
+                         / UnExpr
+            BinTempExpr <  UnExpr BIN_TEMP_OP Interval UnExpr
+            UnExpr      <  NOT Term
+                         / UN_TEMP_OP Interval UnExpr
+                         / Term
+            Term        <  Identifier
+                         / LPAR ImplExpr RPAR
+            Interval    <  '[' TBound ',' TBound ']'
+
+
+            # Lexical syntax
+            Identifier <- IdentStart IdentCont*
+            IdentStart <- [a-zA-Z_]
+            IdentCont  <- IdentStart / [0-9]
+
+            TBound     <- ~( [0-9]* )
+
+            IMPLIFF    <- ~( '->' ) / ~( '<->' )
+            AND        <- '&&' / '&'
+            OR         <- '||' / '|'
+            NOT        <- '!' / '~'
+            BIN_TEMP_OP <- ~( 'U' ) / ~( 'R' )
+            UN_TEMP_OP <- ~( 'G' ) / ~( 'F' )
+            PLUS       <- '+'
+            LPAR       <- '('
+            RPAR       <- ')'
+            EOF        <- !.
+            ''',
+            ignore=Star(Class("\t\n\f\r ")),
+            actions={
+                'Identifier': Capture(identifier_action),
+                'AND': Constant('&&'),
+                'OR': Constant('||'),
+                'NOT': Constant('!'),
+                'Interval': Pack(list),
+                'UnExpr': un_expr_action,
+                'BinTempExpr': lambda lhs, op, bounds, rhs: [op, bounds[0], bounds[1], lhs, rhs],
+                'OrExpr': bin_expr_action,
+                'AndExpr': bin_expr_action,
+                'ImplExpr': bin_expr_action,
+            },
+            flags=pe.OPTIMIZE
         )
-
-        # Define relational operators
-        relational_op = one_of("< <= > >= == !=")
-
-        interval = Suppress('[') + integer_number + Suppress(',') + integer_number + Suppress(']')
-
-        # Temporal operators
-        unary_temporal_op = one_of("G F")
-        unary_temporal_prefix = unary_temporal_op + interval
-
-        binary_temporal_op = one_of('U R')
-        binary_temporal_prefix = binary_temporal_op + interval
-
-        # Define expressions
-        # Boolean terms
-        binary_relation = Group(arith_expr + relational_op + arith_expr)
-        binary_variable = Group(identifier)
-
-        # Expressions with all operators
-        expr = infix_notation(binary_relation | binary_variable, [
-            ('!' | unary_temporal_prefix, 1, opAssoc.RIGHT),
-            (binary_temporal_prefix, 2, opAssoc.LEFT),
-            (one_of('&& &'), 2, opAssoc.LEFT),
-            (one_of('|| |'), 2, opAssoc.LEFT),
-            (one_of('-> <->'), 2, opAssoc.RIGHT)
-        ])
-        self.parser = expr
 
     def parse_formula_as_list(self, formula):
         return self.parser.parse_string(formula, parse_all=True).as_list()
 
     def parse_formula_as_stl_list(self, formula):
-        flist = self.parse_formula_as_list(formula)
-        return STLParser.list_to_stl_list(flist[0])
+        #flist = self.parse_formula_as_list(formula)
+        #return STLParser.list_to_stl_list(flist[0])
+        return self.parser.match(formula, flags=pe.STRICT|pe.MEMOIZE).value()
     
     def parse_formula_as_node(self, formula):
         fslist = self.parse_formula_as_stl_list(formula)
+        #print(fslist)
         return Node(*fslist)
 
     def is_stl_operator(f):
