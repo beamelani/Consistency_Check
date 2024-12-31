@@ -40,6 +40,17 @@ class TestSTLParser(unittest.TestCase):
             ['G', '0', '5', ['&&', ['<=', ['-', 'x', 'y'], ['+', ['+', 'x', 'z'], '5']], ['>', ['+', 'z', 'y'], '42']]]
         )
 
+    def test_iff(self):
+        formula = "G[0,5] (x - y <= x + z + 5 <-> z + y > 42)"
+        parser = STLParser()
+        self.assertEqual(
+            parser.parse_formula_as_stl_list(formula),
+            ['G', '0', '5', [
+                '||',
+                ['&&', ['<=', ['-', 'x', 'y'], ['+', ['+', 'x', 'z'], '5']], ['>', ['+', 'z', 'y'], '42']],
+                ['&&', ['!', ['<=', ['-', 'x', 'y'], ['+', ['+', 'x', 'z'], '5']]], ['!', ['>', ['+', 'z', 'y'], '42']]]
+            ]]
+        )
 
 if __name__ == '__main__':
     unittest.main()

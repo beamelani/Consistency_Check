@@ -28,6 +28,17 @@ from stl_consistency.node import Node
 
 class STLParser:
     def __init__(self):
+        def impl_expr_action(*args):
+            match len(args):
+                case 3: # Lhs OP Rhs
+                    if args[1] == '<->':
+                        return ['||', ['&&', args[0], args[2]], ['&&', ['!', args[0]], ['!', args[2]]]]
+                    assert args[1] == '->'
+                    return [args[1], args[0], args[2]]
+                case 1: # pass lower level
+                    return args[0]
+            assert False
+
         def bin_expr_action(*args):
             match len(args):
                 case 3: # Lhs OP Rhs
@@ -122,7 +133,7 @@ class STLParser:
             ''',
             ignore=Star(Class("\t\n\f\r ")),
             actions={
-                'ImplExpr': bin_expr_action,
+                'ImplExpr': impl_expr_action,
                 'AndExpr': bin_expr_action,
                 'OrExpr': bin_expr_action,
                 'BinTempExpr': lambda lhs, op, bounds, rhs: [op, bounds[0], bounds[1], lhs, rhs],
