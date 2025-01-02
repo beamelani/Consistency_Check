@@ -1200,6 +1200,7 @@ def make_tableau(formula, max_depth, mode, build_tree, verbose):
     formula = count_implications(formula)
     number_of_implications = formula.implications
     set_initial_time(formula)
+    formula = push_negation(formula)
     # formula = normalize_bounds(formula)
     if build_tree:
         tree, res = build_decomposition_tree(formula, max_depth, mode, build_tree, verbose)
