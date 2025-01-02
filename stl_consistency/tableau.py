@@ -485,11 +485,13 @@ def decompose_G(node, formula, index):
         if node.lower == node.upper:
             new_node = Node(',', ['B_p']) #B_p poi si cancella, serve per comodità
             new_operands = modify_argument(copy.deepcopy(node.operands[0]), identifier, True)
-            new_node.operands.append(new_operands)
+            if new_operands:
+                new_node.operands.append(new_operands)
             del new_node.operands[0]
-            for operand in new_node.operands[0].operands:
-                if not isinstance(operand, str) and operand.operator in {'G', 'F', 'U', 'R'}: #caso &&, || etc?
-                    operand.is_derived = False
+            if new_operands:
+                for operand in new_node.operands[0].operands:
+                    if not isinstance(operand, str) and operand.operator in {'G', 'F', 'U', 'R'}: #caso &&, || etc?
+                        operand.is_derived = False
         else:
             new_node = Node(',', ['O', ['B_p']])
             new_node.operands[0].operands[0] = node
@@ -498,6 +500,8 @@ def decompose_G(node, formula, index):
                 new_node.operands.append(new_operands)
         del formula.operands[index]
         formula.operands.extend(new_node.operands)
+        if len(formula.operands) == 1 and formula.operator in {',', '&&'}:
+            formula = formula.operands[0]
         return [formula]
 
 
