@@ -50,7 +50,7 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 # formula = [['U', '1', '3', ['B_q'], ['G', '1', '4', ['B_p']]]]
 # formula = [['U', '1', '3', ['G', '1', '4', ['B_p']], ['G', '2', '5', ['B_q']]]]
 # formula = [['&&', ['G', '0', '7', ['F', '1', '3', ['B_p']]], ['G', '2', '9', ['B_y']]]]
-# formula = [['G', '0', '7', ['F', '1', '3', ['B_p']]]]
+#formula = ['G', '0', '10', ['G', '3', '6', ['B_p']]]
 
 #formula = ['&&', ['G', '0', '9', ['R_x>5']], ['F', '4', '7', ['R_x<4']]]
 #formula = ['&&', ['G', '0', '6', ['B_p']], ['F', '4', '7', ['B_p']]]
@@ -96,7 +96,14 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = ['&&', ['F', '0', '50', ['R_pos <= 0']], ['G', '3', '50', ['F', '5', '20', ['R_angle >= 80']]]]
 #formula = ['&&', ['G', '0', '100', ['R_dist > 0.1']], ['G', '0', '20', ['->', ['R_dist < 6'], ['F', '0', '15', ['B_acc2']]]]]
 #formula = ['F', '4', '40', ['U', '10', '20', ['B_dec2'], ['&&', ['R_x >= -0.5'], ['R_x <= 0.5'], ['R_y >= -0.5'], ['R_y <= 0.5']]]]
-formula = ['&&', ['G', '0', '100', ['R_dist > 0.1']], ['F', '4', '40', ['U', '10', '20', ['B_dec2'], ['&&', ['R_x >= -0.5'], ['R_x <= 0.5'], ['R_y >= -0.5'], ['R_y <= 0.5']]]]]
+#formula = ['&&', ['G', '0', '100', ['R_dist > 0.1']], ['F', '4', '40', ['U', '10', '20', ['B_dec2'], ['&&', ['R_x >= -0.5'], ['R_x <= 0.5'], ['R_y >= -0.5'], ['R_y <= 0.5']]]]]
+#formula = ['G', '1', '10', ['G', '1', '5', ['B_p']]]
+#formula = [',', ['G', '1', '10', ['G', '1', '5', ['B_p']]], ['F', '10', '20', ['B_q']]]
+#formula = ['G', '0', '10', ['&&', ['G', '1', '4', ['B_p']], ['B_q']]]
+#F[51,72] (G[33,67] (G[0,70]  a ))
+formula = ['F', '51', '72', ['G', '33', '67', ['G', '0', '70', ['B_a']]]]
+#formula = ['&&', ['!', ['||', ['B_a'], ['B_a']]], ['F', '3', '100', ['B_a']]]
+
 '''
 parser = STLParser()
 print(formula_to_string(formula))
@@ -111,7 +118,7 @@ elapsed = time.perf_counter() - start_t
 print('Elapsed time:', elapsed)
 '''
 sys.setrecursionlimit(1000000)
-max_depth = 10
+max_depth = 50
 '''
 mode: default value is 'complete' (the entire tree is built until depth is equal to max_depth)
 other values:
@@ -123,7 +130,7 @@ the construction of the tree is stopped when a branch that satisfies the formula
 
 start_t = time.perf_counter()
 
-tableau = make_tableau(Node(*formula), max_depth, 'sat', False, True)
+tableau = make_tableau(Node(*formula), max_depth, 'complete', False, True)
 
 elapsed = time.perf_counter() - start_t
 print('Elapsed time:', elapsed)

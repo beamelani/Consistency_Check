@@ -431,15 +431,16 @@ def decompose_G(node, formula, index):
     """
     lower_bound = node.lower
     identifier = node.identifier
-    initial_time = node.initial_time
-
+    #initial_time = node.initial_time
+    # a volte se il G annidato viene dalla dec di un altro op annidato diverso da G (tipo F), non ha l'initial time settato
+    if node.operator == 'G' and node.operands[0].operator not in {'P', '!'} and node.initial_time == '-1':
+        set_initial_time(node)
     # Funzione interna ricorsiva per modificare l'argomento
     def modify_argument(arg, identifier, short):
         if arg.operator in {'P', '!'}:
             return arg
         elif arg.operator in {'F', 'U', 'R'} or (arg.operator == 'G' and node.lower == node.initial_time) or (arg.operator == 'G' and not short):
             # Modifica bounds sommando quelli del nodo G
-            #if arg.operator in {'F', 'U', 'R'} or (arg.operator == 'G' and node.lower == node.initial_time):
             extract = copy.deepcopy(arg)
             extract.lower = str(int(arg.lower) + int(lower_bound))
             extract.upper = str(int(arg.upper) + int(lower_bound))
@@ -448,7 +449,7 @@ def decompose_G(node, formula, index):
             if arg.operator in {'U', 'R'}:
                 extract = add_G_for_U(extract, extract.operator, True)
             return extract
-        elif short and arg.operator == 'G' and node.lower > node.initial_time: #non aggiungo un altro G, ma allungo intervallo di quello già esistente
+        elif short and arg.operator == 'G' and int(node.lower) > int(node.initial_time): #non aggiungo un altro G, ma allungo intervallo di quello già esistente
             for operand in formula.operands:
                 if operand.operator == 'G' and operand.is_derived and operand.identifier == node.identifier:
                     operand.upper = str(int(operand.upper) + 1)

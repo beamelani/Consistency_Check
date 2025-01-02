@@ -93,7 +93,7 @@ def arith_expr_to_string(expr):
 class Node:
     def __init__(self, operator, *args):
         self.current_time = None
-        self.initial_time = None
+        self.initial_time = '-1'
         self.is_derived = False
         self.identifier = None
         self.implications = None
