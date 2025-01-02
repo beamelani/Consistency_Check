@@ -57,6 +57,14 @@ Creare il problema con tutti i vincoli
 solve(constraint1, constraint2,...)  #li considera in and
 """
 
+'''
+COSE DA FARE:
+1) verifica come sistemare decompose_imply nel caso in cui tu abbia una formula del tipo G(->, G..., XXX) o G(->, XXX, G...).
+Quando decomponi -> estrai gli operatori interni e anche lì in alcuni casi puoi accorpare i G/F
+2) verifica cosa fare nel caso in cui tu abbia G(||, G, XXX)
+3) sistema il caso con G(F...) e versioni + complesse (G(&&, F.., XXX)) etc
+'''
+
 # utente deve solo inserire in input la max_depth dell'albero
 
 import re
@@ -426,10 +434,10 @@ def decompose_G(node, formula, index):
     initial_time = node.initial_time
 
     # Funzione interna ricorsiva per modificare l'argomento
-    def modify_argument(arg, identifier):
+    def modify_argument(arg, identifier, short):
         if arg.operator in {'P', '!'}:
             return arg
-        elif arg.operator in {'G', 'F', 'U', 'R'}:
+        elif arg.operator in {'F', 'U', 'R'} or (arg.operator == 'G' and node.lower == node.initial_time) or (arg.operator == 'G' and not short):
             # Modifica bounds sommando quelli del nodo G
             #if arg.operator in {'F', 'U', 'R'} or (arg.operator == 'G' and node.lower == node.initial_time):
             extract = copy.deepcopy(arg)
@@ -440,20 +448,22 @@ def decompose_G(node, formula, index):
             if arg.operator in {'U', 'R'}:
                 extract = add_G_for_U(extract, extract.operator, True)
             return extract
-            '''
-            Modifca per produrre meno elementi G derived. Funziona, in alcuni casi (GG), ma non in altri (G(->(G),())
-            elif arg.operator == 'G' and node.lower > node.initial_time: #non aggiungo un altro G, ma allungo intervallo di quello già esistente
-                for operand in formula.operands:
-                    if operand.operator == 'G' and operand.is_derived and operand.identifier == node.identifier:
-                        operand.upper = str(int(operand.upper) + 1)
-                        if node.lower == node.upper:
-                            operand.is_derived = False
-                return
-            '''
-        elif arg.operator in {'&&', '||', ',', '->'}:
+        elif short and arg.operator == 'G' and node.lower > node.initial_time: #non aggiungo un altro G, ma allungo intervallo di quello già esistente
+            for operand in formula.operands:
+                if operand.operator == 'G' and operand.is_derived and operand.identifier == node.identifier:
+                    operand.upper = str(int(operand.upper) + 1)
+                    if node.lower == node.upper:
+                        operand.is_derived = False
+            return #non ritorno niente perché è bastato modificare il nodo esistente
+        elif arg.operator in {'&&', ','}:
             # Applica la modifica ricorsivamente agli operandi
-            new_operands = [modify_argument(op, identifier) for op in arg.operands]
-            #new_operands = [x for x in new_operands if x is not None]
+            new_operands = [modify_argument(op, identifier, True) for op in arg.operands]
+            new_operands = [x for x in new_operands if x is not None]
+            arg.operands = new_operands
+            return arg
+        elif arg.operator in {'||', '->'}:
+            new_operands = [modify_argument(op, identifier, False) for op in arg.operands]
+            new_operands = [x for x in new_operands if x is not None]
             arg.operands = new_operands
             return arg
         else:
@@ -462,18 +472,18 @@ def decompose_G(node, formula, index):
     # Decomponi il nodo originale
     if index < 0:
         if node.lower == node.upper:  # se sono all'ultimo istante non metto il OG
-            new_node = modify_argument(copy.deepcopy(node.operands[0]), identifier)
+            new_node = modify_argument(copy.deepcopy(node.operands[0]), identifier, True)
         else:
             new_node = Node(',', ['O', ['B_p']])
             new_node.operands[0].operands[0] = node
-            new_operands = modify_argument(copy.deepcopy(node.operands[0]), identifier)
+            new_operands = modify_argument(copy.deepcopy(node.operands[0]), identifier, True)
             new_node.operands.append(new_operands)
         new_node.current_time = node.current_time
         return [new_node]
     else:
         if node.lower == node.upper:
             new_node = Node(',', ['B_p']) #B_p poi si cancella, serve per comodità
-            new_operands = modify_argument(copy.deepcopy(node.operands[0]), identifier)
+            new_operands = modify_argument(copy.deepcopy(node.operands[0]), identifier, True)
             new_node.operands.append(new_operands)
             del new_node.operands[0]
             for operand in new_node.operands[0].operands:
@@ -482,7 +492,7 @@ def decompose_G(node, formula, index):
         else:
             new_node = Node(',', ['O', ['B_p']])
             new_node.operands[0].operands[0] = node
-            new_operands = modify_argument(copy.deepcopy(node.operands[0]), identifier)
+            new_operands = modify_argument(copy.deepcopy(node.operands[0]), identifier, True)
             if new_operands:
                 new_node.operands.append(new_operands)
         del formula.operands[index]
