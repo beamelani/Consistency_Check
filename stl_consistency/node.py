@@ -98,6 +98,7 @@ class Node:
         self.identifier = None
         self.implications = None
         self.operator = operator
+        self.id_implication = -1 #serve per identificare da quale el. dell'implicazione proviene un termine quando è stato estratto (mi serve se l'impl è annidata e ha elementi con G e devo quindi sapere quale el incrementare invece di estrarre)
         if operator in {'&&', '||', ',', '!', 'O', '->', '<->'}:
             self.lower = self.upper = -1
             self.operands = list(args)

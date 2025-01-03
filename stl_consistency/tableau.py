@@ -737,15 +737,35 @@ def decompose_imply_classic(node, formula, index):
     '''
     :return: decompone p->q come not(p) OR (p and q), senza evitare il caso vacuously true
     '''
+    if node.operands[0].id_implication == -1:
+        node.operands[0].id_implication = 0
+    if node.operands[1].id_implication == -1:
+        node.operands[1].id_implication = 1
+    def merge_derived_g_nodes(new_node): #PROBELMA: se entambi gli operandi di -> sono G, non riesco a distinguere quale op di new_node corrisponde a quale
+        # Cerca nodi 'G' derivati nel nuovo nodo
+        for operand in new_node2.operands:
+            if operand.operator == 'G' and operand.identifier == new_node.identifier and operand.is_derived and operand.id_implication == new_node.id_implication:
+                operand.upper = str(int(operand.upper)+1)
+                return None
+        return new_node
     if index >= 0:
         node_2 = Node(',')
         node_1 = Node(',', ['!', ['B_p']])
-        node_2.operands = node.operands
-        node_1.operands[0].operands[0] = node.operands[0]
-        del formula.operands[index]
+        node_2.operands = copy.deepcopy(node.operands)
+        #del formula.operands[index]
         new_node1 = copy.deepcopy(formula)
         new_node2 = copy.deepcopy(formula)
-        new_node2.operands.extend(node_2.operands)
+        del new_node1.operands[index]
+        del new_node2.operands[index]
+        node_1.operands[0].operands[0] = node.operands[0]
+        if node_2.operands[0].operator == 'G' and node_2.operands[0].is_derived:
+            node_2.operands[0] = merge_derived_g_nodes(node_2.operands[0])
+        if node_2.operands[1].operator == 'G' and node_2.operands[1].is_derived:
+            node_2.operands[1] = merge_derived_g_nodes(node_2.operands[1])
+        node_2.operands = [x for x in node_2.operands if x is not None]
+        node_1.operands[0].operands[0] = node.operands[0]
+        if node_2.operands:
+            new_node2.operands.extend(node_2.operands)
         new_node1.operands.extend(node_1.operands)
         new_node1 = push_negation(new_node1)
     else:
