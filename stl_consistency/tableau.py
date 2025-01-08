@@ -595,6 +595,15 @@ def decompose_F(node, formula, index):
                     if operand.counter_F == limit:
                         limit = -1
         new_node2 = copy.deepcopy(formula)
+        #nel nodo 2 (quello in cui esegui il finally), devi anche decrementare counter_F (se questo è > 0)
+        if special:
+            for operand in new_node2.operands:
+                if operand.operator == 'G' and operand.identifier == node.identifier and operand.operands[0].operator not in {'P', '!'}:
+                    if operand.counter_F > 0:
+                        operand.counter_F -= 1
+                elif operand.operator == 'O' and operand.operands[0].identifier == node.identifier and operand.operands[0].operands[0].operator not in {'P', '!'}:
+                    if operand.operands[0].counter_F > 0:
+                        operand.operands[0].counter_F -= 1
         new_node1.operands.extend(node_1.operands)
         new_node2.operands.extend(node_2.operands)
         if limit == -1:
