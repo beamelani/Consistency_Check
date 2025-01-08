@@ -99,10 +99,12 @@ l'argomento di un operatore temporale, se non contiene un alto op temporale, dev
 #formula = ['&&', ['G', '0', '100', ['R_dist > 0.1']], ['F', '4', '40', ['U', '10', '20', ['B_dec2'], ['&&', ['R_x >= -0.5'], ['R_x <= 0.5'], ['R_y >= -0.5'], ['R_y <= 0.5']]]]]
 #formula = ['G', '1', '10', ['G', '1', '5', ['B_p']]]
 #formula = [',', ['G', '1', '10', ['G', '1', '5', ['B_p']]], ['F', '10', '20', ['B_q']]]
-#formula = ['G', '0', '10', ['&&', ['G', '1', '4', ['B_p']], ['B_q']]]
-#F[51,72] (G[33,67] (G[0,70]  a ))
-formula = ['F', '51', '72', ['G', '33', '67', ['G', '0', '70', ['B_a']]]]
+#formula = ['G', '0', '5', ['&&', ['G', '2', '5', ['B_q']], ['F', '2', '4', ['B_p']]]]
+#formula = ['F', '51', '72', ['G', '33', '67', ['G', '0', '70', ['B_a']]]]
 #formula = ['&&', ['!', ['||', ['B_a'], ['B_a']]], ['F', '3', '100', ['B_a']]]
+#formula = ['&&', ['G', '100', '100', ['B_p']], ['F', '105', '120', ['B_q']]]
+formula = ['G', '1', '10', ['F', '3', '5', ['B_p']]]
+
 
 '''
 parser = STLParser()
@@ -118,7 +120,7 @@ elapsed = time.perf_counter() - start_t
 print('Elapsed time:', elapsed)
 '''
 sys.setrecursionlimit(1000000)
-max_depth = 50
+max_depth = 15
 '''
 mode: default value is 'complete' (the entire tree is built until depth is equal to max_depth)
 other values:
@@ -130,10 +132,10 @@ the construction of the tree is stopped when a branch that satisfies the formula
 
 start_t = time.perf_counter()
 
-tableau = make_tableau(Node(*formula), max_depth, 'complete', False, True)
-
+#tableau = make_tableau(Node(*formula), max_depth, 'complete', False, True)
+tableau, res = make_tableau(Node(*formula), max_depth, 'complete', True, True)
 elapsed = time.perf_counter() - start_t
 print('Elapsed time:', elapsed)
 
-#plot_tree(tableau)
+plot_tree(tableau)
 

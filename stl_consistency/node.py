@@ -93,12 +93,13 @@ def arith_expr_to_string(expr):
 class Node:
     def __init__(self, operator, *args):
         self.current_time = None
-        self.initial_time = '-1'
-        self.is_derived = False
-        self.identifier = None
-        self.implications = None
+        self.initial_time = '-1' #the initial time of the outer operator of a nested operator
+        self.is_derived = False  #tells if a temporal operand is derived from the decomposition of a nested temporal operand
+        self.identifier = None   #a number that uniquely identifies (some) operands
+        self.implications = None #counts how many implications need to be satisfied at a given time instant
         self.operator = operator
         self.id_implication = -1 #serve per identificare da quale el. dell'implicazione proviene un termine quando è stato estratto (mi serve se l'impl è annidata e ha elementi con G e devo quindi sapere quale el incrementare invece di estrarre)
+        self.and_element = -1 #identifica univoc gli operandi di un && dentro a un G
         if operator in {'&&', '||', ',', '!', 'O', '->', '<->'}:
             self.lower = self.upper = -1
             self.operands = list(args)
@@ -108,6 +109,8 @@ class Node:
             self.lower = args[0]
             self.upper = args[1]
             self.operands = list(args[2:])
+            if operator == 'G':
+                self.counter_F = 0 #needed in case you have GF and need to keep track of when F is satisfied
         elif operator in {'<', '<=', '>', '>=', '==', '!='}:
             # The comparison is flattened into a str in this case
             # TODO: fix smt_check in tableau to accept list representation

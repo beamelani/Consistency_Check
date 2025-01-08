@@ -59,10 +59,12 @@ solve(constraint1, constraint2,...)  #li considera in and
 
 '''
 COSE DA FARE:
-1) verifica come sistemare decompose_imply nel caso in cui tu abbia una formula del tipo G(->, G..., XXX) o G(->, XXX, G...).
+1) DONE verifica come sistemare decompose_imply nel caso in cui tu abbia una formula del tipo G(->, G..., XXX) o G(->, XXX, G...).
 Quando decomponi -> estrai gli operatori interni e anche lì in alcuni casi puoi accorpare i G/F
 2) verifica cosa fare nel caso in cui tu abbia G(||, G, XXX)
-3) sistema il caso con G(F...) e versioni + complesse (G(&&, F.., XXX)) etc
+3) sistema il caso con G(F...) [DONE] e versioni + complesse (G(&&, F.., XXX)) 
+4) Probelma: caso G(&&, (F..), (F...)), come distinguo i F? ho anche bisogno di + counter. Cosa + semplice sarebbe
+riscrivere come GF && GF
 '''
 
 # utente deve solo inserire in input la max_depth dell'albero
@@ -206,6 +208,7 @@ def normalize_bounds(formula):
 def extract_time_instants(formula, flag):
     """
     :return: funzione che restituisce gli estremi di tutti gli intervalli della formula in un vettore ordinato
+    (non quelli degli op derivati)
     Come fare per operatori annidati? Forse la funzione andrebbe richiamata ogni volta e non solo una, perché
     si generano nuovi elementi
     """
@@ -439,7 +442,7 @@ def decompose_G(node, formula, index):
     def modify_argument(arg, identifier, short):
         if arg.operator in {'P', '!'}:
             return arg
-        elif arg.operator in {'F', 'U', 'R'} or (arg.operator == 'G' and node.lower == node.initial_time) or (arg.operator == 'G' and not short):
+        elif arg.operator in {'U', 'R', 'F'} or (arg.operator in {'G', 'F'} and node.lower == node.initial_time) or (arg.operator in {'G', 'F'} and not short):
             # Modifica bounds sommando quelli del nodo G
             extract = copy.deepcopy(arg)
             extract.lower = str(int(arg.lower) + int(lower_bound))
@@ -449,13 +452,28 @@ def decompose_G(node, formula, index):
             if arg.operator in {'U', 'R'}:
                 extract = add_G_for_U(extract, extract.operator, True)
             return extract
-        elif short and arg.operator == 'G' and int(node.lower) > int(node.initial_time): #non aggiungo un altro G, ma allungo intervallo di quello già esistente
+        elif short and arg.operator in {'G'} and int(node.lower) > int(node.initial_time): #non aggiungo un altro G, ma allungo intervallo di quello già esistente
             for operand in formula.operands:
-                if operand.operator == 'G' and operand.is_derived and operand.identifier == node.identifier:
+                if operand.operator in {'G'} and operand.is_derived and operand.identifier == node.identifier:
                     operand.upper = str(int(operand.upper) + 1)
                     if node.lower == node.upper:
                         operand.is_derived = False
+                elif operand.operator in {'O'} and operand.operands[0].operator in {'G'} and operand.operands[0].is_derived and operand.operands[0].identifier == node.identifier:
+                    operand.operands[0].upper = str(int(operand.operands[0].upper) + 1)
+                    if node.lower == node.upper:
+                        operand.operands[0].is_derived = False
             return #non ritorno niente perché è bastato modificare il nodo esistente
+        #elif short and arg.operator in {'F'} and int(node.lower) > int(node.initial_time): #non aggiungo un altro G, ma allungo intervallo di quello già esistente
+            #for operand in formula.operands:
+                #if operand.operator in {'F'} and operand.is_derived and operand.identifier == node.identifier:
+                    #operand.upper = str(int(operand.upper) + 1)
+                    #if node.lower == node.upper:
+                        #operand.is_derived = False
+                #elif operand.operator in {'O'} and operand.operands[0].operator in {'F'} and operand.operands[0].is_derived and operand.operands[0].identifier == node.identifier:
+                    #operand.operands[0].upper = str(int(operand.operands[0].upper) + 1)
+                    #if node.lower == node.upper:
+                        #operand.operands[0].is_derived = False
+            #return #non ritorno niente perché è bastato modificare il nodo esistente
         elif arg.operator in {'&&', ','}:
             # Applica la modifica ricorsivamente agli operandi
             new_operands = [modify_argument(op, identifier, True) for op in arg.operands]
@@ -479,7 +497,8 @@ def decompose_G(node, formula, index):
             new_node.operands[0].operands[0] = node
             new_operands = modify_argument(copy.deepcopy(node.operands[0]), identifier, True)
             new_node.operands.append(new_operands)
-        new_node.current_time = node.current_time
+        if new_node:
+            new_node.current_time = node.current_time
         return [new_node]
     else:
         if node.lower == node.upper:
@@ -497,9 +516,11 @@ def decompose_G(node, formula, index):
             new_node.operands[0].operands[0] = node
             new_operands = modify_argument(copy.deepcopy(node.operands[0]), identifier, True)
             if new_operands:
-                new_node.operands.append(new_operands)
+                if new_operands.operator in {'P', '!'} or new_operands.operands: #aggiunto, verifica se crea prob
+                    new_node.operands.append(new_operands)
         del formula.operands[index]
         formula.operands.extend(new_node.operands)
+        #formula.operands = new_node.operands + formula.operands
         if len(formula.operands) == 1 and formula.operator in {',', '&&'}:
             formula = formula.operands[0]
         return [formula]
@@ -508,7 +529,29 @@ def decompose_G(node, formula, index):
 def decompose_F(node, formula, index):
     lower_bound = node.lower
     current_time = node.current_time
-
+    special = False
+    limit = None
+    '''
+    if node.is_derived and node.identifier >= 0: #è il caso in cui il F deriva da un GF e quindi è creato da diversi F accorpati
+        special = True
+        #NB questa parte sotto per calcolare limit andrebbe sostituita con funz ricorsiva perché ora funziona fino a max G(&&, (F..), ())
+        for operand in formula.operands:
+            #limit è il range di F in GF (mi dice ogni quanto devo soddisfare F cumulativo per soddisfare ogni singolo F che rappresenta
+            if operand.operator == 'G' and operand.identifier == node.identifier and not operand.is_derived:
+                if operand.operands[0].operator == 'F':
+                    limit = int(operand.operands[0].upper) - int(operand.operands[0].lower) + 1
+                elif operand.operands[0].operator in {'&&', ',', '->', '||'}:
+                    for element in operand.operands[0].operands:
+                        if element.operator == 'F' and element.and_element == node.and_element:
+                            limit = int(element.upper) - int(element.lower) + 1
+            elif operand.operator == 'O' and operand.operands[0].identifier == node.identifier and not operand.operands[0].is_derived:
+                if operand.operands[0].operands[0].operator == 'F':
+                    limit = int(operand.operands[0].operands[0].upper) - int(operand.operands[0].operands[0].lower) + 1
+                elif operand.operands[0].operands[0].operator in {'&&', ',', '->', '||'}:
+                    for element in operand.operands[0].operands[0].operands:
+                        if element.operator == 'F' and element.and_element == node.and_element:
+                            limit = int(element.upper) - int(element.lower) + 1
+    '''
     # Funzione interna ricorsiva per modificare l'argomento
     def modify_argument(arg):
         if arg.operator in {'P', '!'}:
@@ -531,20 +574,33 @@ def decompose_F(node, formula, index):
             raise ValueError(f"Operatore non gestito: {arg.operator}")
 
     if index >= 0:
-        node_1 = Node(*[',', ['O', node.to_list()]])
-        node_1.operands[0].operands[0].is_derived = node.is_derived
+        node_1 = Node(',', ['O', node])
         new_operands = modify_argument(node.operands[0])
-        node_2 = copy.deepcopy(node_1)
-        node_2.operands.append(new_operands)
-        del node_2.operands[0]
+        node_2 = Node(',')
+        node_2.operands = [new_operands]
+        if special: #in questo caso nel ramo in cui esegui il F non devi togliere il F ma devi rimetterlo con il lower bound incrementato di 1 (perché hai eseguito il primo F, ma non tutti gli altri)
+            modified_node = copy.deepcopy(node)
+            modified_node.lower = str(int(modified_node.lower) + 1)
+            node_2.operands.append(modified_node)
         del formula.operands[index]
         new_node1 = copy.deepcopy(formula)
+        if special:
+            for operand in new_node1.operands:
+                if operand.operator == 'G' and operand.identifier == node.identifier and operand.operands[0].operator not in {'P', '!'}:
+                    operand.counter_F += 1
+                    if operand.counter_F == limit:
+                        limit = -1
+                elif operand.operator == 'O' and operand.operands[0].identifier == node.identifier and operand.operands[0].operands[0].operator not in {'P', '!'}:
+                    operand.operands[0].counter_F += 1
+                    if operand.counter_F == limit:
+                        limit = -1
         new_node2 = copy.deepcopy(formula)
         new_node1.operands.extend(node_1.operands)
         new_node2.operands.extend(node_2.operands)
+        if limit == -1:
+            new_node1 = 'Rejected'
     else:
-        new_node1 = Node(*['O', node.to_list()])
-        new_node1.operands[0].current_time = current_time  # serve??
+        new_node1 = Node('O', node)
         new_node2 = modify_argument(node.operands[0])
     return new_node2, new_node1 #conviene fare prima return del node_2
 
@@ -741,7 +797,7 @@ def decompose_imply_classic(node, formula, index):
         node.operands[0].id_implication = 0
     if node.operands[1].id_implication == -1:
         node.operands[1].id_implication = 1
-    def merge_derived_g_nodes(new_node): #PROBELMA: se entambi gli operandi di -> sono G, non riesco a distinguere quale op di new_node corrisponde a quale
+    def merge_derived_g_nodes(new_node):
         # Cerca nodi 'G' derivati nel nuovo nodo
         for operand in new_node2.operands:
             if operand.operator == 'G' and operand.identifier == new_node.identifier and operand.is_derived and operand.id_implication == new_node.id_implication:
@@ -752,7 +808,6 @@ def decompose_imply_classic(node, formula, index):
         node_2 = Node(',')
         node_1 = Node(',', ['!', ['B_p']])
         node_2.operands = copy.deepcopy(node.operands)
-        #del formula.operands[index]
         new_node1 = copy.deepcopy(formula)
         new_node2 = copy.deepcopy(formula)
         del new_node1.operands[index]
@@ -781,13 +836,13 @@ def decompose_imply_new(node, formula, index):
     '''
     :return: decompone p->q come not(p) OR (p and q). Se ci sono più -> in and, viene rigettato il nodo in cui tutti
     gli antecedenti sono negati. Se c'è un solo -> viene rigettato il nodo con antecedente negato
-    MODIFICA: voglio che si comporti così solo in strong_sat, altrimenti voglio che non abbia rami rejected perché antecedente è falso
+    NB: non so se qui si può introdurre la semplificazione per creare meno elementi (verifica che satisfied implications venga comnque correttamente aggiornato)
     '''
     if index >= 0:
         if formula.implications is None: #non so perché a volte sia None, in attesa di trovare il problema uso questa soluzione
             formula = count_implications(formula)
         node_2 = Node(',')
-        node_2.operands = node.operands
+        node_2.operands = copy.deepcopy(node.operands)
         new_node1 = copy.deepcopy(formula)
         new_node2 = copy.deepcopy(formula)
         del new_node1.operands[index]
@@ -1128,6 +1183,45 @@ def count_implications(formula):
                 count_implications(operand)
     return formula
 
+def separate_G_with_and(node):
+    """
+    Riscrive G(&&,a,b,c) in &&(Ga, Gb, Gc) così i matching Ga, Gb e Gc sono univoci
+    elimino problema nei casi G(&&, F..., F...) dove poi non riesco a identificare i F dopo averli estratti
+    """
+    if not node.operands:
+        return node
+
+    if node.operator == 'G' and isinstance(node.operands[0], Node) and node.operands[0].operator == '&&':
+        # Creare una lista di nuovi nodi 'G'
+        separated_operands = [
+            Node('G', node.lower, node.upper, operand)
+            for operand in node.operands[0].operands
+        ]
+        # Restituire un nuovo nodo '&&' che contiene i nuovi 'G'
+        return Node('&&', *separated_operands)
+
+    else:
+        new_operands = [separate_G_with_and(operand) for operand in node.operands]
+        node.operands = new_operands
+        return node
+
+
+def assign_and_element(node):
+    """
+    Assegna l'attributo and_element numerato a ogni operando di un nodo G con operando &&
+    """
+    if not node.operands:
+        return
+
+    if node.operator == 'G' and node.operands[0].operator == '&&':
+        # Scorre i figli e assegna and_element
+        for index, operand in enumerate(node.operands[0].operands):
+            operand.and_element = index
+
+    # Ricorsione su tutti gli operandi
+    for operand in node.operands:
+        if isinstance(operand, Node):
+            assign_and_element(operand)
 
 def build_decomposition_tree(root, max_depth, mode, tree, verbose):
     time = extract_min_time(root)
@@ -1216,6 +1310,8 @@ def make_tableau(formula, max_depth, mode, build_tree, verbose):
     global number_of_implications, true_implications
     true_implications = set()
     formula = add_G_for_U(formula, formula.operator, False)
+    #formula = separate_G_with_and(formula)
+    assign_and_element(formula)
     formula = assign_identifier(formula)
     formula = count_implications(formula)
     number_of_implications = formula.implications
