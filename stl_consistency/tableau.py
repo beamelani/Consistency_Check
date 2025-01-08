@@ -600,10 +600,10 @@ def decompose_F(node, formula, index):
             for operand in new_node2.operands:
                 if operand.operator == 'G' and operand.identifier == node.identifier and operand.operands[0].operator not in {'P', '!'}:
                     if operand.counter_F > 0:
-                        operand.counter_F -= 1
+                        operand.counter_F = 0 #-= 1
                 elif operand.operator == 'O' and operand.operands[0].identifier == node.identifier and operand.operands[0].operands[0].operator not in {'P', '!'}:
                     if operand.operands[0].counter_F > 0:
-                        operand.operands[0].counter_F -= 1
+                        operand.operands[0].counter_F = 0 #-= 1
         new_node1.operands.extend(node_1.operands)
         new_node2.operands.extend(node_2.operands)
         if limit == -1:
@@ -771,15 +771,17 @@ def decompose_and(node, index):
     if index == -1 and node.operator == '&&':
         node.operator = ','
         # Sostituisco ovunque
+        return [node]
     else:
+        new_node = copy.deepcopy(node)
         for operand in node.operands:
             # if not isinstance(operand, str):
             # decompose_and(operand)
             if node.operator == ',' and operand.operator in {'&&', ','}:
-                del node.operands[index]
+                del new_node.operands[index]
                 for element in operand.operands:
-                    node.operands.append(element)
-    return [node]
+                    new_node.operands.append(element)
+        return [new_node]
 
 
 def decompose_or(node, formula, index):
