@@ -99,7 +99,7 @@ class Node:
         self.implications = None #counts how many implications need to be satisfied at a given time instant
         self.operator = operator
         self.id_implication = -1 #serve per identificare da quale el. dell'implicazione proviene un termine quando è stato estratto (mi serve se l'impl è annidata e ha elementi con G e devo quindi sapere quale el incrementare invece di estrarre)
-        self.and_element = -1 #identifica univoc gli operandi di un && dentro a un G
+        self.and_element = -1 #identifica univoc gli operandi di un && o || dentro a un G
         if operator in {'&&', '||', ',', '!', 'O', '->', '<->'}:
             self.lower = self.upper = -1
             self.operands = list(args)

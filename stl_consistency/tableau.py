@@ -63,8 +63,7 @@ COSE DA FARE:
 Quando decomponi -> estrai gli operatori interni e anche lì in alcuni casi puoi accorpare i G/F
 2) verifica cosa fare nel caso in cui tu abbia G(||, G, XXX)
 3) sistema il caso con G(F...) [DONE] e versioni + complesse (G(&&, F.., XXX)) 
-4) Probelma: caso G(&&, (F..), (F...)), come distinguo i F? ho anche bisogno di + counter. Cosa + semplice sarebbe
-riscrivere come GF && GF
+
 '''
 
 # utente deve solo inserire in input la max_depth dell'albero
@@ -349,9 +348,10 @@ def formula_to_string(formula):
         subformulas = [f"({formula_to_string(subformula)})" for subformula in formula[1:]]
         return " || ".join(subformulas)
 
-    elif operator == '->':  # Implication
+    elif operator == '->':
         _, arg1, arg2 = formula
         return f"({formula_to_string(arg1)}) -> ({formula_to_string(arg2)})"
+
 
 
 def decompose(node, current_time, mode):
@@ -793,12 +793,23 @@ def decompose_or(node, formula, index):
         res = []
         for or_operand in node.operands:
             new_node = copy.deepcopy(formula)
-            new_node.operands.append(or_operand)
+            if or_operand.is_derived and or_operand.and_element > -1:
+                z = 0
+                for element in new_node.operands:
+                    if element.operator == 'G' and element.identifier == or_operand.identifier and element.and_element == or_operand.and_element:
+                        z += 1
+                        element.upper = str(int(element.upper) + 1)
+                    elif element.operator == 'O' and element.operands[0].operator == 'G' and element.operands[0].is_derived and element.operands[0].identifier == or_operand.identifier and element.operands[0].and_element == or_operand.and_element:
+                        z += 1
+                        element.operands[0].upper = str(int(element.operands[0].upper) + 1)
+                if z == 0: #se il G non era ancora mai stato estratto
+                    new_node.operands.append(or_operand)
+            else:
+                new_node.operands.append(or_operand)
             res.append(new_node)
             del new_node
-        #return res
-        #return res.reverse()
-        return random.shuffle(res)
+        random.shuffle(res)
+        return res
 
 def decompose_imply_classic(node, formula, index):
     '''
@@ -1043,7 +1054,7 @@ def smt_check(node):
             if node[0] == 'O' and node[i][0] in 'F' and node[1][1] == node[1][2]:
                 #print("Node is rejected because finally was never satisfied in this branch")
                 return 'Rejected'
-            if node[0] not in {'O', 'F', 'G', 'U', ',', 'R', '->'}:
+            if node[0] not in {'O', 'F', 'G', 'U', ',', 'R', '->', '<->'}:
                 new_node.extend(node[i])
                 new_var = re.findall(r'\b[B|R]_[a-zA-Z]\w*\b', new_node[-1])
                 variabili.extend(new_var)
@@ -1111,7 +1122,7 @@ def set_initial_time(formula):
                 operand.initial_time = operand.lower
             elif operand.operator in {'R'} and operand.operands[1].operator not in {'P', '!'}:
                 operand.initial_time = operand.lower
-            elif operand.operator in {'&&', '||', ',', '->'}:
+            elif operand.operator in {'&&', '||', ',', '->', '<->'}:
                 return set_initial_time(operand)
     elif formula.operator in {'G', 'U'} and formula.operands[0].operator not in {'P', '!'}:
         formula.initial_time = formula.lower
@@ -1194,37 +1205,15 @@ def count_implications(formula):
                 count_implications(operand)
     return formula
 
-def separate_G_with_and(node):
-    """
-    Riscrive G(&&,a,b,c) in &&(Ga, Gb, Gc) così i matching Ga, Gb e Gc sono univoci
-    elimino problema nei casi G(&&, F..., F...) dove poi non riesco a identificare i F dopo averli estratti
-    """
-    if not node.operands:
-        return node
 
-    if node.operator == 'G' and isinstance(node.operands[0], Node) and node.operands[0].operator == '&&':
-        # Creare una lista di nuovi nodi 'G'
-        separated_operands = [
-            Node('G', node.lower, node.upper, operand)
-            for operand in node.operands[0].operands
-        ]
-        # Restituire un nuovo nodo '&&' che contiene i nuovi 'G'
-        return Node('&&', *separated_operands)
-
-    else:
-        new_operands = [separate_G_with_and(operand) for operand in node.operands]
-        node.operands = new_operands
-        return node
-
-
-def assign_and_element(node):
+def assign_and_or_element(node):
     """
     Assegna l'attributo and_element numerato a ogni operando di un nodo G con operando &&
     """
     if not node.operands:
         return
 
-    if node.operator == 'G' and node.operands[0].operator == '&&':
+    if node.operator == 'G' and node.operands[0].operator in {'&&', '||'}:
         # Scorre i figli e assegna and_element
         for index, operand in enumerate(node.operands[0].operands):
             operand.and_element = index
@@ -1232,7 +1221,7 @@ def assign_and_element(node):
     # Ricorsione su tutti gli operandi
     for operand in node.operands:
         if isinstance(operand, Node):
-            assign_and_element(operand)
+            assign_and_or_element(operand)
 
 def build_decomposition_tree(root, max_depth, mode, tree, verbose):
     time = extract_min_time(root)
@@ -1321,8 +1310,7 @@ def make_tableau(formula, max_depth, mode, build_tree, verbose):
     global number_of_implications, true_implications
     true_implications = set()
     formula = add_G_for_U(formula, formula.operator, False)
-    #formula = separate_G_with_and(formula)
-    assign_and_element(formula)
+    assign_and_or_element(formula)
     formula = assign_identifier(formula)
     formula = count_implications(formula)
     number_of_implications = formula.implications
