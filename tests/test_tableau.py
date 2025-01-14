@@ -30,12 +30,15 @@ class TestTableau(unittest.TestCase):
     def make_test(self, formula, max_depth, expected):
         parser = STLParser()
         parsed_formula = parser.parse_formula_as_node(formula)
-        print(parser.parse_formula_as_stl_list(formula))
+        #print(parser.parse_formula_as_stl_list(formula))
         res = make_tableau(parsed_formula, max_depth, 'sat', False, False)
         self.assertEqual(res, expected)
 
     def test_and(self):
         self.make_test("a && b", 5, True)
+
+    def test_many_ops(self):
+        self.make_test("a && b && c && (a || b || c) && d", 5, True)
 
     def test_true(self):
         self.make_test("a && !TrUe", 5, False)

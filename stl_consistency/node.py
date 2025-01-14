@@ -167,8 +167,12 @@ class Node:
         '''
         return self.operands[i]
 
-    def flatten(self, now_operands):
+    def flatten(self):
         if self.operator in {'&&', '||', ','}:
             for i in range(len(self.operands)):
+                self.operands[i].flatten()
                 if self.operands[i].operator == self.operator:
                     self.operands[i:i+1] = self.operands[i].operands
+        if self.operator != 'P':
+            for op in self.operands:
+                op.flatten()

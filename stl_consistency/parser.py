@@ -153,7 +153,9 @@ class STLParser:
     
     def parse_formula_as_node(self, formula):
         fslist = self.parse_formula_as_stl_list(formula)
-        return Node(*fslist)
+        node = Node(*fslist)
+        node.flatten()
+        return node
 
     def is_float(string):
         first = string[0]
