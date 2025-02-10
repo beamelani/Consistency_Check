@@ -11,6 +11,9 @@ from stl_consistency.smtchecker import smt_check_consistency
 
 from stl_consistency.tableau import make_tableau, plot_tree
 
+import csv
+from tabulate import tabulate
+
 # Benchmark: (avionics requirements)
 # 1) stabilire un time horizon (T)
 T = str(10)
@@ -97,14 +100,14 @@ watertank = [
 ]
 
 railroad = [
-    ['F', '0', '50', ['R_pos <= 0']],
+    ['F', '1', '49', ['R_pos <= 0']],
     ['G', '20', '40', ['->', ['R_angle >= 80'], ['F', '1', '20', ['R_pos <= 0']]]],
     ['G', '3', '50', ['F', '5', '20', ['R_angle >= 80']]],
     ['G', '10', '60', ['->', ['R_angle >= 80'], ['G', '20', '40', ['R_angle < 60']]]]
 ]
 
 batteries = [
-    ['G', '0', '20', ['F', '3', '14', ['R_d1 >= 1.4']]],
+    ['G', '1', '20', ['F', '3', '14', ['R_d1 >= 1.4']]],
     ['F', '6', '30', ['->', ['&&', ['B_live1'], ['B_live2']], ['G', '7', '24', ['&&', ['B_live1'], ['B_live2']]]]],
     ['G', '1', '49', ['&&', ['R_d1 > 0.5'], ['R_d2 > 0.5']]],
     ['G', '11', '50', ['U', '2', '14', ['||', ['R_g1 >= 0'], ['R_g2 >= 0']], ['&&', ['B_dead1'], ['B_dead2']]]]
@@ -116,6 +119,74 @@ def make_and(formulas):
         return formulas[0]
     return ['&&'] + formulas
 
+
+# Funzione per eseguire entrambi i test su un dataset
+def check_dataset(dataset_name, dataset, max_depth):
+    # Formula
+    formula = make_and(dataset)
+    parser = STLParser()
+    parsed_formula = parser.parse_relational_exprs(formula)
+
+    # Prima prova: SMT
+    start_t = time.perf_counter()
+    res_smt = smt_check_consistency(parsed_formula, 'sat', False)
+    elapsed_smt = time.perf_counter() - start_t
+
+    # Seconda prova: Tableau
+    start_t = time.perf_counter()
+    res_tableau = make_tableau(Node(*formula), max_depth, 'sat', False, False)
+    elapsed_tableau = time.perf_counter() - start_t
+
+    # Dizionario con i risultati
+    return {
+        'dataset': dataset_name,
+        'time_smt': elapsed_smt,
+        'result_smt': res_smt,
+        'time_tableau': elapsed_tableau,
+        'result_tableau': res_tableau
+    }
+
+# Funzione per stampare i risultati
+def pretty_print(results, ms, csvfile):
+    timeh, timef = ("Time (ms)", lambda t: t * 1000) if ms else ("Time (s)", lambda x: x)
+
+    # Tabella
+    results_matrix = [
+        [r['dataset'], timef(r['time_smt']), r['result_smt'], timef(r['time_tableau']), r['result_tableau']]
+        for r in results
+    ]
+
+    # Intestazione della tabella
+    header = ["Dataset", f"SMT {timeh}", "SMT Result", f"Tableau {timeh}", "Tableau Result"]
+
+    print(tabulate(results_matrix, headers=header))
+
+    if csvfile:
+        with open(csvfile, 'w', newline='') as f:
+            cw = csv.writer(f)
+            cw.writerow(header)
+            cw.writerows(results_matrix)
+
+# Esecuzione principale
+if __name__ == '__main__':
+    datasets = {
+        "cars": cars,
+        "thermostat": thermostat,
+        "watertank": watertank,
+        #"railroad": railroad,
+        "batteries": batteries
+    }
+    #datasets = [cars, thermostat, watertank, batteries]
+    max_depth = 100000
+
+    #results = [check_dataset(ds, max_depth) for ds in datasets]
+    results = [check_dataset(name, data, max_depth) for name, data in datasets.items()]
+
+    print("Benchmark results:")
+    pretty_print(results, ms=False, csvfile="results.csv")
+
+
+'''
 def test_combinations_with_smt(formulas):
     """
     Testa tutte le combinazioni a due a due di `formulas` usando `smt_check_consistency`.
@@ -142,7 +213,7 @@ def test_combinations_with_smt(formulas):
     return None
 
 # formula = requirements[0]
-formula = make_and(requirements)
+formula = make_and(railroad)
 # print(formula)
 
 parser = STLParser()
@@ -206,3 +277,4 @@ def test_combinations_with_tableau(formulas, max_depth, build_tree, verbose, mod
 
 #print('Elapsed time (SMT):', elapsed_smt)
 #print('Elapsed time (tableau):', elapsed_tableau)
+'''
