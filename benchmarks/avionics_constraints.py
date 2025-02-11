@@ -134,7 +134,7 @@ def check_dataset(dataset_name, dataset, max_depth):
 
     # Seconda prova: Tableau
     start_t = time.perf_counter()
-    res_tableau = make_tableau(Node(*formula), max_depth, 'sat', False, False)
+    res_tableau = make_tableau(Node(*formula), max_depth, 'sat', False, False, False)
     elapsed_tableau = time.perf_counter() - start_t
 
     # Dizionario con i risultati

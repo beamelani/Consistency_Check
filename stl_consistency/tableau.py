@@ -79,6 +79,7 @@ from fractions import Fraction
 from math import gcd, lcm
 from functools import reduce
 import bisect
+import concurrent.futures as fs
 from stl_consistency.node import Node
 
 
@@ -1223,7 +1224,88 @@ def assign_and_or_element(node):
         if isinstance(operand, Node):
             assign_and_or_element(operand)
 
-def build_decomposition_tree(root, max_depth, mode, tree, verbose):
+
+def add_tree_child(G, parent_label, child):
+    global counter
+    counter += 1
+    if isinstance(child, str):
+        child_label = child + ' ' + str(counter)
+    else:
+        child_label = child.to_label(counter)
+    G.add_node(child_label)
+    G.add_edge(parent_label, child_label)
+
+def add_children(node, depth, last_spawned, max_depth, current_time, mode, tree, parallel, verbose):
+    global counter
+    global true_implications
+
+    if depth >= max_depth:
+        return None
+
+    if tree:
+        node_label = node.to_label(counter)
+
+    node_copy = copy.deepcopy(node)
+    current_time = extract_min_time(node_copy)
+    children = decompose(node_copy, current_time, mode)
+    if children is None:
+        if verbose:
+            print('No more children in this branch')
+        if mode in {'sat', 'complete'}:
+            return True
+        else: # mode == 'strong_sat':
+            true_implications.update(node.satisfied_implications)
+            if len(true_implications) == number_of_implications:
+                return True
+            else:
+                return False
+    if verbose:
+        for child in children:
+            if not isinstance(child, str):
+                print(child.to_list())
+            else:
+                print(child)
+    child_queue = []
+    for child in children:
+        if child == 'Rejected':
+            if tree:
+                add_tree_child(tree, node_label, child)
+        else:
+            extract_min_time(child) # this function sets child's current_time attribute
+            if tree:
+                add_tree_child(tree, node_label, child)
+            child_queue.append(child)
+    
+    if mode == 'complete':
+        complete_result = False
+    if parallel and mode == 'sat' and depth - last_spawned > 30 and len(child_queue) > 1: # add 'strong_sat'
+        # print("spawning", node.to_list())
+        # print("children: ", str([child.to_list() for child in child_queue]))
+
+        pool = fs.ProcessPoolExecutor(max_workers=2)
+        try:
+            futures = [pool.submit(add_children, child, depth + 1, depth, max_depth, current_time, mode, tree, parallel, verbose) for child in child_queue]
+            for fut in fs.as_completed(futures):
+                if fut.result():
+                    return True
+        finally:
+            # We wait for running subtask to finish, otherwise they remain hanging.
+            # TODO maybe use Event to stop them asap
+            pool.shutdown(wait=True, cancel_futures=True)
+    else:
+        for child in child_queue:
+            if add_children(child, depth + 1, last_spawned, max_depth, current_time, mode, tree, parallel, verbose):
+                if mode == 'complete':
+                    complete_result = True
+                else: # mode in {'sat', 'strong_sat'}
+                    return True
+
+    if mode in {'sat', 'strong_sat'}:
+        return False
+    else: # mode == 'complete'
+        return complete_result
+
+def build_decomposition_tree(root, max_depth, mode, build_tree, parallel, verbose):
     """
     : return:
         if mode in {'sat', 'complete'}:
@@ -1236,81 +1318,23 @@ def build_decomposition_tree(root, max_depth, mode, tree, verbose):
             None if we reached max_dept without finding an accepting branch
     """
     time = extract_min_time(root)
-    if tree:
+    if build_tree:
         counter = 0
         G = nx.DiGraph()
         G.add_node(root.to_label(counter))
-
-        def add_tree_child(parent_label, child):
-            nonlocal counter
-            counter += 1
-            if isinstance(child, str):
-                child_label = child + ' ' + str(counter)
-            else:
-                child_label = child.to_label(counter)
-            G.add_node(child_label)
-            G.add_edge(parent_label, child_label)
+    else:
+        G = None
 
     if verbose:
         print(root.to_list())
 
-    def add_children(node, depth, current_time, mode, tree, verbose):
-        nonlocal counter
-        global true_implications
+    res = add_children(root, 0, 0, max_depth, time, mode, G, parallel, verbose)
 
-        if depth >= max_depth:
-            return None
-
-        if tree:
-            node_label = node.to_label(counter)
-
-        node_copy = copy.deepcopy(node)
-        current_time = extract_min_time(node_copy)
-        children = decompose(node_copy, current_time, mode)
-        if children is None:
-            if verbose:
-                print('No more children in this branch')
-            if mode in {'sat', 'complete'}:
-                return True
-            else: # mode == 'strong_sat':
-                true_implications.update(node.satisfied_implications)
-                if len(true_implications) == number_of_implications:
-                    return True
-                else:
-                    return False
-        if verbose:
-            for child in children:
-                if not isinstance(child, str):
-                    print(child.to_list())
-                else:
-                    print(child)
-        if mode == 'complete':
-            complete_result = False
-        for child in children:
-            if child == 'Rejected':
-                if tree:
-                    add_tree_child(node_label, child)
-            else:
-                extract_min_time(child) # this function sets child's current_time attribute
-                if tree:
-                    add_tree_child(node_label, child)
-                if add_children(child, depth + 1, current_time, mode, tree, verbose):
-                    if mode == 'complete':
-                        complete_result = True
-                    else: # mode in {'sat', 'strong_sat'}
-                        return True
-
-        if mode in {'sat', 'strong_sat'}:
-            return False
-        else: # mode == 'complete'
-            return complete_result
-
-    res = add_children(root, 0, time, mode, tree, verbose)
     if res and mode in {'sat', 'strong_sat'} and verbose:
         print("The requirement set is consistent")
     elif not res and mode in {'sat', 'strong_sat'}:
         print("The requirement set is not consistent")
-    if tree:
+    if build_tree:
         return G, res
     else:
         return res
@@ -1325,7 +1349,7 @@ def plot_tree(G):
     plt.show()
 
 
-def make_tableau(formula, max_depth, mode, build_tree, verbose):
+def make_tableau(formula, max_depth, mode, build_tree, parallel, verbose):
     global number_of_implications, true_implications
     true_implications = set()
     formula = add_G_for_U(formula, formula.operator, False)
@@ -1337,10 +1361,10 @@ def make_tableau(formula, max_depth, mode, build_tree, verbose):
     formula = push_negation(formula)
     # formula = normalize_bounds(formula)
     if build_tree:
-        tree, res = build_decomposition_tree(formula, max_depth, mode, build_tree, verbose)
+        tree, res = build_decomposition_tree(formula, max_depth, mode, build_tree, parallel, verbose)
         return tree, res
     else:
-        res = build_decomposition_tree(formula, max_depth, mode, build_tree, verbose)
+        res = build_decomposition_tree(formula, max_depth, mode, build_tree, parallel, verbose)
         return res
 
 '''

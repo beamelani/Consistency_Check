@@ -42,6 +42,7 @@ def main():
     argp.add_argument('-p', '--plot', type=int, default=0, help='Plot the tree-shaped tableau up to the given depth.')
     argp.add_argument('-t', '--strong-sat', action='store_true', help='Use strong definition of satisfiability that avoids formulas being satisfied vacuously (default is normal satisfiability)')
     argp.add_argument('--smtlib-result', action='store_true', help='Emit result as SMTLIB output (sat, unsat, unknown)')
+    argp.add_argument('--parallel', action='store_true', help='Use parallel version of the tableau')
     argp.add_argument('-v', '--verbose', action='store_true')
     argp.add_argument('formula', type=str, help='File containing formula to be checked.')
     args = argp.parse_args()
@@ -66,6 +67,7 @@ def main():
             max_depth=args.plot,
             mode='complete',
             build_tree=True,
+            parallel=args.parallel,
             verbose=False
         )
         plot_tree(tableau)
@@ -81,6 +83,7 @@ def main():
             MAX_HORIZON,
             mode,
             build_tree=False,
+            parallel=args.parallel,
             verbose=args.verbose
         )
 
