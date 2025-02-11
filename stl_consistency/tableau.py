@@ -808,7 +808,7 @@ def decompose_or(node, formula, index):
                 new_node.operands.append(or_operand)
             res.append(new_node)
             del new_node
-        random.shuffle(res)
+        #random.shuffle(res)
         return res
 
 def decompose_imply_classic(node, formula, index):
@@ -1224,68 +1224,86 @@ def assign_and_or_element(node):
             assign_and_or_element(operand)
 
 def build_decomposition_tree(root, max_depth, mode, tree, verbose):
+    """
+    : return:
+        if mode in {'sat', 'complete'}:
+            True if the tableau has an accepting branch rooted at node,
+            False if the tableau has only rejected branches rooted at node,
+            None if we reached max_dept without finding an accepting branch
+        if mode == 'strong_sat':
+            True if the tableau has an accepting branch rooted at node and all implications are satisfied,
+            False if the tableau has only rejected branches rooted at node,
+            None if we reached max_dept without finding an accepting branch
+    """
     time = extract_min_time(root)
     if tree:
         counter = 0
         G = nx.DiGraph()
-        root_label = root.to_label(counter)
-        G.add_node(root_label)
+        G.add_node(root.to_label(counter))
+
+        def add_tree_child(parent_label, child):
+            nonlocal counter
+            counter += 1
+            if isinstance(child, str):
+                child_label = child + ' ' + str(counter)
+            else:
+                child_label = child.to_label(counter)
+            G.add_node(child_label)
+            G.add_edge(parent_label, child_label)
+
     if verbose:
-        counter = 0
-        root_label = root.to_label(counter)
-        print(root_label)
+        print(root.to_list())
 
     def add_children(node, depth, current_time, mode, tree, verbose):
         nonlocal counter
         global true_implications
-        if depth < max_depth:
-            node_copy = copy.deepcopy(node)
-            current_time = extract_min_time(node_copy)
-            if tree:
-                node_label = node.to_label(counter)
-            children = decompose(node_copy, current_time, mode)
-            if children is None:
-                if verbose:
-                    print('No more children in this branch')
-                if mode == 'sat':
+
+        if depth >= max_depth:
+            return None
+
+        if tree:
+            node_label = node.to_label(counter)
+
+        node_copy = copy.deepcopy(node)
+        current_time = extract_min_time(node_copy)
+        children = decompose(node_copy, current_time, mode)
+        if children is None:
+            if verbose:
+                print('No more children in this branch')
+            if mode in {'sat', 'complete'}:
+                return True
+            else: # mode == 'strong_sat':
+                true_implications.update(node.satisfied_implications)
+                if len(true_implications) == number_of_implications:
                     return True
-                elif mode == 'strong_sat':
-                    true_implications.update(node.satisfied_implications)
-                    if len(true_implications) == number_of_implications:
-                        return True
-                    else:
-                        return False
-                else: #complete
-                    return None
-            else:
-                if verbose:
-                    for child in children:
-                        if not isinstance(child, str):
-                            print(child.to_list())
-                        else:
-                            print(child)
-            for child in children:
-                if child == 'Rejected':
-                    if tree:
-                        counter += 1
-                        child_label = " ".join([child, str(counter)])
-                        G.add_node(child_label)
-                        G.add_edge(node_label, child_label)
-                    return False
                 else:
-                    child_time = extract_min_time(child)
-                    child_time = current_time if child_time is None else child_time
-                    if tree:
-                        counter += 1
-                        child_label = child.to_label(counter)
-                        G.add_node(child_label)
-                        G.add_edge(node_label, child_label)
-                    res = add_children(child, depth + 1, current_time, mode, tree, verbose)
-                    if res and mode in {'sat', 'strong_sat'}:
+                    return False
+        if verbose:
+            for child in children:
+                if not isinstance(child, str):
+                    print(child.to_list())
+                else:
+                    print(child)
+        if mode == 'complete':
+            complete_result = False
+        for child in children:
+            if child == 'Rejected':
+                if tree:
+                    add_tree_child(node_label, child)
+            else:
+                extract_min_time(child) # this function sets child's current_time attribute
+                if tree:
+                    add_tree_child(node_label, child)
+                if add_children(child, depth + 1, current_time, mode, tree, verbose):
+                    if mode == 'complete':
+                        complete_result = True
+                    else: # mode in {'sat', 'strong_sat'}
                         return True
-            if mode in {'sat', 'strong_sat'}:
-                return False
-        return None
+
+        if mode in {'sat', 'strong_sat'}:
+            return False
+        else: # mode == 'complete'
+            return complete_result
 
     res = add_children(root, 0, time, mode, tree, verbose)
     if res and mode in {'sat', 'strong_sat'} and verbose:
@@ -1296,6 +1314,7 @@ def build_decomposition_tree(root, max_depth, mode, tree, verbose):
         return G, res
     else:
         return res
+
 
 def plot_tree(G):
     pos = graphviz_layout(G, prog='dot')
