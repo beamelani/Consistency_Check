@@ -464,17 +464,6 @@ def decompose_G(node, formula, index):
                     if node.lower == node.upper:
                         operand.operands[0].is_derived = False
             return #non ritorno niente perché è bastato modificare il nodo esistente
-        #elif short and arg.operator in {'F'} and int(node.lower) > int(node.initial_time): #non aggiungo un altro G, ma allungo intervallo di quello già esistente
-            #for operand in formula.operands:
-                #if operand.operator in {'F'} and operand.is_derived and operand.identifier == node.identifier:
-                    #operand.upper = str(int(operand.upper) + 1)
-                    #if node.lower == node.upper:
-                        #operand.is_derived = False
-                #elif operand.operator in {'O'} and operand.operands[0].operator in {'F'} and operand.operands[0].is_derived and operand.operands[0].identifier == node.identifier:
-                    #operand.operands[0].upper = str(int(operand.operands[0].upper) + 1)
-                    #if node.lower == node.upper:
-                        #operand.operands[0].is_derived = False
-            #return #non ritorno niente perché è bastato modificare il nodo esistente
         elif arg.operator in {'&&', ','}:
             # Applica la modifica ricorsivamente agli operandi
             new_operands = [modify_argument(op, identifier, True) for op in arg.operands]
@@ -530,29 +519,6 @@ def decompose_G(node, formula, index):
 def decompose_F(node, formula, index):
     lower_bound = node.lower
     current_time = node.current_time
-    special = False
-    limit = None
-    '''
-    if node.is_derived and node.identifier >= 0: #è il caso in cui il F deriva da un GF e quindi è creato da diversi F accorpati
-        special = True
-        #NB questa parte sotto per calcolare limit andrebbe sostituita con funz ricorsiva perché ora funziona fino a max G(&&, (F..), ())
-        for operand in formula.operands:
-            #limit è il range di F in GF (mi dice ogni quanto devo soddisfare F cumulativo per soddisfare ogni singolo F che rappresenta
-            if operand.operator == 'G' and operand.identifier == node.identifier and not operand.is_derived:
-                if operand.operands[0].operator == 'F':
-                    limit = int(operand.operands[0].upper) - int(operand.operands[0].lower) + 1
-                elif operand.operands[0].operator in {'&&', ',', '->', '||'}:
-                    for element in operand.operands[0].operands:
-                        if element.operator == 'F' and element.and_element == node.and_element:
-                            limit = int(element.upper) - int(element.lower) + 1
-            elif operand.operator == 'O' and operand.operands[0].identifier == node.identifier and not operand.operands[0].is_derived:
-                if operand.operands[0].operands[0].operator == 'F':
-                    limit = int(operand.operands[0].operands[0].upper) - int(operand.operands[0].operands[0].lower) + 1
-                elif operand.operands[0].operands[0].operator in {'&&', ',', '->', '||'}:
-                    for element in operand.operands[0].operands[0].operands:
-                        if element.operator == 'F' and element.and_element == node.and_element:
-                            limit = int(element.upper) - int(element.lower) + 1
-    '''
     # Funzione interna ricorsiva per modificare l'argomento
     def modify_argument(arg):
         if arg.operator in {'P', '!'}:
@@ -579,36 +545,11 @@ def decompose_F(node, formula, index):
         new_operands = modify_argument(node.operands[0])
         node_2 = Node(',')
         node_2.operands = [new_operands]
-        if special: #in questo caso nel ramo in cui esegui il F non devi togliere il F ma devi rimetterlo con il lower bound incrementato di 1 (perché hai eseguito il primo F, ma non tutti gli altri)
-            modified_node = copy.deepcopy(node)
-            modified_node.lower = str(int(modified_node.lower) + 1)
-            node_2.operands.append(modified_node)
         del formula.operands[index]
         new_node1 = copy.deepcopy(formula)
-        if special:
-            for operand in new_node1.operands:
-                if operand.operator == 'G' and operand.identifier == node.identifier and operand.operands[0].operator not in {'P', '!'}:
-                    operand.counter_F += 1
-                    if operand.counter_F == limit:
-                        limit = -1
-                elif operand.operator == 'O' and operand.operands[0].identifier == node.identifier and operand.operands[0].operands[0].operator not in {'P', '!'}:
-                    operand.operands[0].counter_F += 1
-                    if operand.counter_F == limit:
-                        limit = -1
         new_node2 = copy.deepcopy(formula)
-        #nel nodo 2 (quello in cui esegui il finally), devi anche decrementare counter_F (se questo è > 0)
-        if special:
-            for operand in new_node2.operands:
-                if operand.operator == 'G' and operand.identifier == node.identifier and operand.operands[0].operator not in {'P', '!'}:
-                    if operand.counter_F > 0:
-                        operand.counter_F = 0 #-= 1
-                elif operand.operator == 'O' and operand.operands[0].identifier == node.identifier and operand.operands[0].operands[0].operator not in {'P', '!'}:
-                    if operand.operands[0].counter_F > 0:
-                        operand.operands[0].counter_F = 0 #-= 1
         new_node1.operands.extend(node_1.operands)
         new_node2.operands.extend(node_2.operands)
-        if limit == -1:
-            new_node1 = 'Rejected'
     else:
         new_node1 = Node('O', node)
         new_node2 = modify_argument(node.operands[0])
@@ -913,24 +854,18 @@ def decompose_jump(node):
         if not flag:  # non ci sono operatori probelmatici attivi
             for operand in node.operands:
                 if operand.operator not in {'P', '!', 'O'}:
-                    #new_node.extend([operand.to_list()])
                     new_node.operands.extend([operand])
                 elif operand.operator in {'O'} and Fraction(operand.operands[0].lower) < Fraction(
                         operand.operands[0].upper):
-                    #sub_formula = copy.deepcopy(operand.operands[0].to_list())
                     sub_formula = copy.deepcopy(operand.operands[0])
-                    #indice = bisect.bisect_right(time_instants, Fraction(sub_formula[1]))  # trovo il primo numero maggiore dell'istante corrente di tempo
+                    # trovo il primo numero maggiore dell'istante corrente di tempo
                     indice = bisect.bisect_right(time_instants, Fraction(sub_formula.lower))
-                    #sub_formula[1] = str(time_instants[indice])
                     sub_formula.lower = str(time_instants[indice])
                     new_node.operands.extend([sub_formula])
-            #if len(new_node) == 2:  # se uno degli elementi iniziale è della forma OG[x,x],
+                # se uno degli elementi iniziale è della forma OG[x,x],
                 # cioè ha esaurito l'intervallo e viene eliminato, è possibile  che rimanga un solo elemento, ma preceduto dalla virgola anche se non dovrebbe
             if len(new_node.operands) == 1:
-                #return [Node(*new_node[1])]
                 return [new_node.operands[0]]
-            #elif new_node != [',']:
-                #return [Node(*new_node)]
             elif new_node.operands:
                 return [new_node]
             else:
