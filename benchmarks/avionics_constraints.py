@@ -129,7 +129,7 @@ req_cps =[
     ['G', '2000', T, ['R_pointing_error < 2']], # P5
     ['G', '1500', '2000', ['R_RWs_angular_momentum < 0.35']], # P6
     ['G', '2000', '2000', ['&&', ['R_pointing_error > 0'], ['R_pointing_error < R_delta']]], # P7 delta???
-    #['F', '2000', '7400', ], # P8 SPIKE
+    ['F', '2000', '7400', ['&&', ['R_pointing_error < R_k'], ['U', '2', '22', ['R_pointing_error >= R_k'], ['R_pointing_error < R_k']]]], # P8 SPIKE
     #[], # P9 OSCILLATION
     ['G', '0', T, ['&&', ['R_sat_init_angular_velocity_degree <= 3'], ['R_sat_init_angular_velocity_degree >= -3']]], # P10
     ['G', '2000', T, ['&&', ['R_sat_real_angular_velocity <= 1.5'], ['R_sat_real_angular_velocity >= -1.5']]], # P11
@@ -162,7 +162,7 @@ req_cps =[
     ['G', '0', T, ['->', ['R_currentADCSMode == 2'], ['->', ['R_RWs_command > 0'], ['F', '0', '900', ['R_RWs_angular_momentum < 0.25']]]]], # P38
     ['G', '0', T, ['->', ['R_currentADCSMode == 2'], ['F', '0', '10799', ['R_real_Omega - R_signal_target_Omega == 0']]]], # P39
     ['G', '0', T, ['->', ['B_not_Eclipse'], ['R_sun_angle < 45']]], # P40
-    #['G', '16200', T, ['->', ['R_pointing_error < 2'], ['SPIKE?']]], # P41 spike??
+    ['G', '16200', T, ['->', ['R_pointing_error < 2'], ['F', '0', '5400', ['&&', ['R_pointing_error < R_k2'], ['U', '0', '600', ['R_pointing_error >= R_k'], ['R_pointing_error < R_k2']]]]]], # P41 spike??
 
 ]
 
