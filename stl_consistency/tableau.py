@@ -362,6 +362,10 @@ def decompose(node, current_time, mode):
     :return: ritorna la lista decomposta (i.e. il successivo nodo del tree)
     """
     if node.operator != 'P':
+        # to test rejecting inconsistent nodes early (seems to perform worse in most cases)
+        # res = smt_check(node.to_list())
+        # if res == 'Rejected':
+        #     return [res]
         counter = 0
         if node.operator == '&&':
             return decompose_and(node, -1)
@@ -426,7 +430,7 @@ def decompose(node, current_time, mode):
                     res[0].current_time = node.current_time
                 return res
 
-    return None  # forse non serve
+    return None # node.operator == 'P'
 
 
 def decompose_G(node, formula, index):
@@ -750,7 +754,7 @@ def decompose_or(node, formula, index):
                 new_node.operands.append(or_operand)
             res.append(new_node)
             del new_node
-        #random.shuffle(res)
+        random.shuffle(res)
         return res
 
 def decompose_imply_classic(node, formula, index):
@@ -827,6 +831,33 @@ def decompose_imply_new(node, formula, index):
         new_node2.operands = node.operands
     return new_node1, new_node2
 
+def simplify_F(node):
+    '''
+    Simplify formula according to the rule
+    F[a,b] p && F[c,d] p <-> F[c,d] p whenever c >= a && d <= b
+    '''
+    if node.operator != ',':
+        return node
+    remove_indices = []
+    F_formulas = {}
+    for i, formula in enumerate(node.operands):
+        if formula.operator == 'F':
+            # We convert to string so that no spurious fields are taken into account by __hash__
+            # TODO Do something better and faster
+            operand = formula_to_string(formula[0].to_list())
+            if operand in F_formulas:
+                for j, F_formula in F_formulas[operand]:
+                    if int(F_formula.lower) >= int(formula.lower) and int(F_formula.upper) <= int(formula.upper):
+                        remove_indices.append(i)
+                    elif int(formula.lower) >= int(F_formula.lower) and int(formula.upper) <= int(F_formula.upper):
+                        remove_indices.append(j)
+                        # We could also remove (j, F_formula) from the set, but we would have to do it out of the loop
+            else:
+                F_formulas[operand] = {(i, formula)}
+    for i in remove_indices:
+        del node.operands[i]
+    return node
+
 
 def decompose_jump(node):
     '''
@@ -867,6 +898,7 @@ def decompose_jump(node):
             if len(new_node.operands) == 1:
                 return [new_node.operands[0]]
             elif new_node.operands:
+                simplify_F(new_node)
                 return [new_node]
             else:
                 return None
@@ -949,6 +981,7 @@ def decompose_jump(node):
             return [new_node[1]]
         else:
             node.operands = new_node[1:]
+            simplify_F(node)
             return [node]
     else:  # ho una formula con un solo operatore (quindi un O)
         if not flag and Fraction(node.operands[0].lower) < Fraction(node.operands[0].upper):
@@ -979,7 +1012,7 @@ def smt_check(node):
                 #else:
                     #print("Node is rejected because until was never satisfied in this branch")
                 return 'Rejected'
-            if node[i][0] not in {'O', 'F', 'G', 'U', ',', 'R', '->'}:
+            if node[i][0] not in {'O', 'F', 'G', 'U', ',', 'R', '->', '<->', '&&', '||'}:
                 new_node.extend(node[i])
                 if len(node[i]) == 1:
                     new_var = re.findall(r'\b[B|R]_[a-zA-Z]\w*\b', new_node[-1])
@@ -990,7 +1023,7 @@ def smt_check(node):
             if node[0] == 'O' and node[i][0] in 'F' and node[1][1] == node[1][2]:
                 #print("Node is rejected because finally was never satisfied in this branch")
                 return 'Rejected'
-            if node[0] not in {'O', 'F', 'G', 'U', ',', 'R', '->', '<->'}:
+            if node[0] not in {'O', 'F', 'G', 'U', ',', 'R', '->', '<->', '&&', '||'}:
                 new_node.extend(node[i])
                 new_var = re.findall(r'\b[B|R]_[a-zA-Z]\w*\b', new_node[-1])
                 variabili.extend(new_var)
