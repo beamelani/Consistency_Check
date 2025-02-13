@@ -129,8 +129,8 @@ req_cps =[
     ['G', '2000', T, ['R_pointing_error < 2']], # P5
     ['G', '1500', '2000', ['R_RWs_angular_momentum < 0.35']], # P6
     ['G', '2000', '2000', ['&&', ['R_pointing_error > 0'], ['R_pointing_error < R_delta']]], # P7 delta???
-    [], # P8 SPIKE
-    [], # P9 OSCILLATION
+    #['F', '2000', '7400', ], # P8 SPIKE
+    #[], # P9 OSCILLATION
     ['G', '0', T, ['&&', ['R_sat_init_angular_velocity_degree <= 3'], ['R_sat_init_angular_velocity_degree >= -3']]], # P10
     ['G', '2000', T, ['&&', ['R_sat_real_angular_velocity <= 1.5'], ['R_sat_real_angular_velocity >= -1.5']]], # P11
     ['G', '0', T, ['||', ['R_sat_target_attitude == 1'], ['R_sat_target_attitude == -1']]], # P12
@@ -142,13 +142,13 @@ req_cps =[
     ['G', '0', T, ['||', ['R_sun_direction_ECI == 1'], ['R_sun_direction_ECI == -1']]], # P18
     ['G', '2000', T, ['&&', ['R_sat_target_angular_velocity_safe_spin_mode <= 1.5'], ['R_sat_target_angular_velocity_safe_spin_mode >= -1.5']]], # P19
     ['G', '0', T, ['&&', ['R_RWs_torque <= 0.015'], ['R_RWs_torque >= -0.015']]], # P20
-    [], # P21 ???
+    #[], # P21 ???
     ['G', '2000', '2000', ['&&', ['R_q_real - R_q_estimate_attitude > 0'], ['R_q_real - R_q_estimate_attitude < R_delta']]], # P22
     ['G', '2000', '2000', ['&&', ['R_q_target_attitude - R_q_estimate > 0'], ['R_q_target_attitude - R_q_estimate < R_delta']]], # P23
     ['G', '0', T, ['&&', ['R_sat_estimated_angular_velocity - R_sat_real_angular_velocity > 0'], ['R_sat_estimated_angular_velocity - R_sat_real_angular_velocity < R_delta']]], # P24
     ['G', '0', T, ['&&', ['R_sat_angular_velocity_measured - R_sat_real_angular_velocity > 0'], ['R_sat_angular_velocity_measured - R_sat_real_angular_velocity < R_delta']]], # P25
-    [], # P26 derivative?
-    ['G', '0', T, ['->', ['R_not_Eclipse == 0'], ['R_sun_currents == 0']]], # P27 o sono bool??
+    #[], # P26 derivative?
+    ['G', '0', T, ['->', ['Not(B_not_Eclipse)'], ['Not(B_sun_currents)']]], # P27
     ['G', '0', T, ['->', ['B_pointing_error_under_15'], ['Not(B_pointing_error_above_20)']]], # P28
     ['G', '0', T, ['->', ['B_pointing_error_above_20'], ['Not(B_pointing_error_under_15']]], # P29
     ['G', '0', T, ['->', ['R_RWs_command == 0'], ['F', '0', '60', ['RWs_angular_velocity == 0']]]], # P30 monotonically decreasing come lo esprimo??
@@ -158,11 +158,11 @@ req_cps =[
     ['G', '0', T, ['->', ['R_currentADCSMode == 1'], ['R_control_error <= 15']]], # P34
     ['G', '0', T, ['->', ['R_currentADCSMode == 1'], ['->', ['R_RWs_command > 0'], ['F', '0', '180', ['R_pointing_error < 2']]]]], # P35
     ['G', '0', T, ['->', ['R_currentADCSMode == 1'], ['->', ['R_RWs_command > 0'], ['F', '0', '180', ['R_control_error < 0.5']]]]], # P36
-    ['G', '0', T, ['->', ['R_currentADCSMode == 1'], ['->', ['R_Not_Eclipse == 1'], ['F', '0', '900', ['R_knowledge_error < 1']]]]], # P37
+    ['G', '0', T, ['->', ['R_currentADCSMode == 1'], ['->', ['B_not_Eclipse'], ['F', '0', '900', ['R_knowledge_error < 1']]]]], # P37
     ['G', '0', T, ['->', ['R_currentADCSMode == 2'], ['->', ['R_RWs_command > 0'], ['F', '0', '900', ['R_RWs_angular_momentum < 0.25']]]]], # P38
     ['G', '0', T, ['->', ['R_currentADCSMode == 2'], ['F', '0', '10799', ['R_real_Omega - R_signal_target_Omega == 0']]]], # P39
-    ['G', '0', T, ['->', ['R_Not_Eclipse == 1'], ['R_sun_angle < 45']]], # P40
-    ['G', '16200', T, ['->', ['R_pointing_error < 2'], ['SPIKE?']]], # P41 spike??
+    ['G', '0', T, ['->', ['B_not_Eclipse'], ['R_sun_angle < 45']]], # P40
+    #['G', '16200', T, ['->', ['R_pointing_error < 2'], ['SPIKE?']]], # P41 spike??
 
 ]
 
