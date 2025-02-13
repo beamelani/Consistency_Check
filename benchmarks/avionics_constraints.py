@@ -162,7 +162,7 @@ req_cps =[
     ['G', '0', T, ['->', ['R_currentADCSMode == 2'], ['->', ['R_RWs_command > 0'], ['F', '0', '900', ['R_RWs_angular_momentum < 0.25']]]]], # P38
     ['G', '0', T, ['->', ['R_currentADCSMode == 2'], ['F', '0', '10799', ['R_real_Omega - R_signal_target_Omega == 0']]]], # P39
     ['G', '0', T, ['->', ['B_not_Eclipse'], ['R_sun_angle < 45']]], # P40
-    ['G', '16200', T, ['->', ['R_pointing_error < 2'], ['F', '0', '5400', ['&&', ['R_pointing_error < R_k2'], ['U', '0', '600', ['R_pointing_error >= R_k'], ['R_pointing_error < R_k2']]]]]], # P41 spike??
+    ['G', '16200', T, ['->', ['R_pointing_error < 2'], ['F', '0', '5400', ['&&', ['R_pointing_error < R_k2'], ['U', '0', '600', ['R_pointing_error >= R_k'], ['R_pointing_error < R_k2']]]]]] # P41
 
 ]
 
