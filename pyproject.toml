@@ -11,6 +11,7 @@ dependencies = [
     "pe>=0.5.0",
     "pydot>=3.0",
     "z3-solver>=4.13.0.0",
+    "wrapt-timeout-decorator>=1.5.1",
 ]
 requires-python = ">=3.11.*"
 readme = "README.md"

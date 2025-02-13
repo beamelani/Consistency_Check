@@ -77,7 +77,6 @@ import copy
 from z3 import *
 from fractions import Fraction
 from math import gcd, lcm
-from functools import reduce
 import bisect
 import concurrent.futures as fs
 from stl_consistency.node import Node

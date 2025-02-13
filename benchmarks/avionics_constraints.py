@@ -4,6 +4,7 @@ sys.path.append(os.getcwd())
 
 import time
 from itertools import combinations
+from wrapt_timeout_decorator import *
 
 from stl_consistency.parser import STLParser
 from stl_consistency.node import Node, formula_to_string
@@ -13,6 +14,18 @@ from stl_consistency.tableau import make_tableau, plot_tree
 
 import csv
 from tabulate import tabulate
+
+@timeout(dec_timeout='args[0]', dec_allow_eval=True, use_signals=False)
+def inner(timeout, f, *args, **kwargs):
+    return f(*args, **kwargs)
+
+def run_with_timeout(timeout, f, *args, **kwargs):
+    try:
+        return inner(timeout, f, *args, **kwargs)
+    except TimeoutError as e:
+        print(e)
+        return "timeout"
+
 
 # Benchmark: (avionics requirements)
 # 1) stabilire un time horizon (T)
@@ -211,7 +224,7 @@ def make_and(formulas):
 
 
 # Funzione per eseguire entrambi i test su un dataset
-def check_dataset(dataset_name, dataset, max_depth):
+def check_dataset(dataset_name, dataset, max_depth, timeout):
     # Formula
     formula = make_and(dataset)
     parser = STLParser()
@@ -219,12 +232,12 @@ def check_dataset(dataset_name, dataset, max_depth):
 
     # Prima prova: SMT
     start_t = time.perf_counter()
-    res_smt = smt_check_consistency(parsed_formula, 'sat', False)
+    res_smt = run_with_timeout(timeout, smt_check_consistency, parsed_formula, 'sat', False)
     elapsed_smt = time.perf_counter() - start_t
 
     # Seconda prova: Tableau
     start_t = time.perf_counter()
-    res_tableau = make_tableau(Node(*formula), max_depth, 'sat', False, False, False)
+    res_tableau = run_with_timeout(timeout, make_tableau, Node(*formula), max_depth, 'sat', False, False, False)
     elapsed_tableau = time.perf_counter() - start_t
 
     # Dizionario con i risultati
@@ -260,17 +273,19 @@ def pretty_print(results, ms, csvfile):
 # Esecuzione principale
 if __name__ == '__main__':
     datasets = {
+        "avionics": requirements_riscritti,
         "cars": cars,
         "thermostat": thermostat,
         "watertank": watertank,
-        #"railroad": railroad,
+        "railroad": railroad,
         "batteries": batteries
     }
     #datasets = [cars, thermostat, watertank, batteries]
     max_depth = 100000
+    timeout = 10 # in seconds
 
     #results = [check_dataset(ds, max_depth) for ds in datasets]
-    results = [check_dataset(name, data, max_depth) for name, data in datasets.items()]
+    results = [check_dataset(name, data, max_depth, timeout) for name, data in datasets.items()]
 
     print("Benchmark results:")
     pretty_print(results, ms=False, csvfile="results.csv")
