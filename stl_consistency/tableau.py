@@ -854,7 +854,7 @@ def simplify_F(node):
                         # We could also remove (j, F_formula) from the set, but we would have to do it out of the loop
             else:
                 F_formulas[operand] = {(i, formula)}
-    for i in remove_indices:
+    for i in sorted(remove_indices, reverse=True):
         del node.operands[i]
     return node
 
