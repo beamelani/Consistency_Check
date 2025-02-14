@@ -1211,6 +1211,7 @@ def add_children(node, depth, last_spawned, max_depth, current_time, mode, tree,
 
     if tree:
         node_label = node.to_label(counter)
+        print(node_label)
 
     node_copy = copy.deepcopy(node)
     current_time = extract_min_time(node_copy)
@@ -1239,8 +1240,6 @@ def add_children(node, depth, last_spawned, max_depth, current_time, mode, tree,
                 add_tree_child(tree, node_label, child)
         else:
             extract_min_time(child) # this function sets child's current_time attribute
-            if tree:
-                add_tree_child(tree, node_label, child)
             child_queue.append(child)
     
     if mode == 'complete':
@@ -1261,6 +1260,8 @@ def add_children(node, depth, last_spawned, max_depth, current_time, mode, tree,
             pool.shutdown(wait=True, cancel_futures=True)
     else:
         for child in child_queue:
+            if tree:
+                add_tree_child(tree, node_label, child)
             if add_children(child, depth + 1, last_spawned, max_depth, current_time, mode, tree, parallel, verbose):
                 if mode == 'complete':
                     complete_result = True
@@ -1289,7 +1290,9 @@ def build_decomposition_tree(root, max_depth, mode, build_tree, parallel, verbos
     if build_tree:
         counter = 0
         G = nx.DiGraph()
-        G.add_node(root.to_label(counter))
+        root_label = root.to_label(counter)
+        print(root_label)
+        G.add_node(root_label)
     else:
         G = None
 
@@ -1318,7 +1321,7 @@ def plot_tree(G):
 
 
 def make_tableau(formula, max_depth, mode, build_tree, parallel, verbose):
-    global number_of_implications, true_implications, counter
+    global number_of_implications, true_implications
     true_implications = set()
     formula = add_G_for_U(formula, formula.operator, False)
     assign_and_or_element(formula)
