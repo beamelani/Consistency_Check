@@ -142,7 +142,7 @@ req_cps =[
     ['G', '0', T, ['||', ['R_sun_direction_ECI == 1'], ['R_sun_direction_ECI == -1']]], # P18
     ['G', '2000', T, ['&&', ['R_sat_target_angular_velocity_safe_spin_mode <= 1.5'], ['R_sat_target_angular_velocity_safe_spin_mode >= -1.5']]], # P19
     ['G', '0', T, ['&&', ['R_RWs_torque <= 0.015'], ['R_RWs_torque >= -0.015']]], # P20
-    #[], # P21 ???
+    ['G', '0', T, ['R_sun_sensor_availability <= 3']], # P21 traduzioe non perfetta, ma good enough
     ['G', '2000', '2000', ['&&', ['R_q_real - R_q_estimate_attitude > 0'], ['R_q_real - R_q_estimate_attitude < R_delta']]], # P22
     ['G', '2000', '2000', ['&&', ['R_q_target_attitude - R_q_estimate > 0'], ['R_q_target_attitude - R_q_estimate < R_delta']]], # P23
     ['G', '0', T, ['&&', ['R_sat_estimated_angular_velocity - R_sat_real_angular_velocity > 0'], ['R_sat_estimated_angular_velocity - R_sat_real_angular_velocity < R_delta']]], # P24
