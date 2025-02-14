@@ -1284,6 +1284,7 @@ def build_decomposition_tree(root, max_depth, mode, build_tree, parallel, verbos
             False if the tableau has only rejected branches rooted at node,
             None if we reached max_dept without finding an accepting branch
     """
+    global counter
     time = extract_min_time(root)
     if build_tree:
         counter = 0
@@ -1317,7 +1318,7 @@ def plot_tree(G):
 
 
 def make_tableau(formula, max_depth, mode, build_tree, parallel, verbose):
-    global number_of_implications, true_implications
+    global number_of_implications, true_implications, counter
     true_implications = set()
     formula = add_G_for_U(formula, formula.operator, False)
     assign_and_or_element(formula)
