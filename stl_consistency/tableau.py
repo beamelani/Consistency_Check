@@ -207,9 +207,7 @@ def normalize_bounds(formula):
 def extract_time_instants(formula, flag):
     """
     :return: funzione che restituisce gli estremi di tutti gli intervalli della formula in un vettore ordinato
-    (non quelli degli op derivati)
-    Come fare per operatori annidati? Forse la funzione andrebbe richiamata ogni volta e non solo una, perché
-    si generano nuovi elementi
+    (non quelli degli op derivati, eccezione se op is_derived è estratto da -> o ||)
     """
     if flag:
         time_instants = []
@@ -220,6 +218,12 @@ def extract_time_instants(formula, flag):
                                          'R'] and not elem.is_derived:  # Controlla operatori temporali G (Globally), F (Finally) e U (Until)
                         time_instants.append(elem.lower)
                         time_instants.append(elem.upper)
+                    #caso in cui op is_derived è estratto da un -> che era dentro a un G o U o R (flag == True)
+                    #fai anche per caso ||
+                    elif elem.operator in ['G', 'F', 'U',
+                                         'R'] and elem.is_derived and not elem.id_implication == -1:
+                        time_instants.append(elem.lower)
+                        time_instants.append(elem.upper) #va fatto anche nel caso 'O' ??
                     elif elem.operator in ['O'] and not elem.operands[0].is_derived:
                         time_instants.append(elem.operands[0].lower)
                         time_instants.append(elem.operands[0].upper)
