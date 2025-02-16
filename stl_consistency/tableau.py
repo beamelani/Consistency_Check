@@ -1215,7 +1215,6 @@ def add_children(node, depth, last_spawned, max_depth, current_time, mode, tree,
 
     if tree:
         node_label = node.to_label(counter)
-        print(node_label)
 
     node_copy = copy.deepcopy(node)
     current_time = extract_min_time(node_copy)
@@ -1294,9 +1293,7 @@ def build_decomposition_tree(root, max_depth, mode, build_tree, parallel, verbos
     if build_tree:
         counter = 0
         G = nx.DiGraph()
-        root_label = root.to_label(counter)
-        print(root_label)
-        G.add_node(root_label)
+        G.add_node(root.to_label(counter))
     else:
         G = None
 
