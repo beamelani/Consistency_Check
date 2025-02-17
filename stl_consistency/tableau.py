@@ -219,9 +219,8 @@ def extract_time_instants(formula, flag):
                         time_instants.append(elem.lower)
                         time_instants.append(elem.upper)
                     #caso in cui op is_derived è estratto da un -> che era dentro a un G o U o R (flag == True)
-                    #fai anche per caso ||
                     elif elem.operator in ['G', 'F', 'U',
-                                         'R'] and elem.is_derived and not elem.id_implication == -1:
+                                         'R'] and elem.is_derived and (not elem.id_implication == -1 or not elem.or_element == -1):
                         time_instants.append(elem.lower)
                         time_instants.append(elem.upper) #va fatto anche nel caso 'O' ??
                     elif elem.operator in ['O'] and not elem.operands[0].is_derived:
@@ -462,11 +461,11 @@ def decompose_G(node, formula, index):
             return extract
         elif short and arg.operator in {'G'} and int(node.lower) > int(node.initial_time): #non aggiungo un altro G, ma allungo intervallo di quello già esistente
             for operand in formula.operands:
-                if operand.operator in {'G'} and operand.is_derived and operand.identifier == node.identifier:
+                if operand.operator in {'G'} and operand.is_derived and operand.identifier == node.identifier and operand.and_element == arg.and_element:
                     operand.upper = str(int(operand.upper) + 1)
                     if node.lower == node.upper:
                         operand.is_derived = False
-                elif operand.operator in {'O'} and operand.operands[0].operator in {'G'} and operand.operands[0].is_derived and operand.operands[0].identifier == node.identifier:
+                elif operand.operator in {'O'} and operand.operands[0].operator in {'G'} and operand.operands[0].is_derived and operand.operands[0].identifier == node.identifier and operand.operands[0].and_element == arg.and_element:
                     operand.operands[0].upper = str(int(operand.operands[0].upper) + 1)
                     if node.lower == node.upper:
                         operand.operands[0].is_derived = False
@@ -724,12 +723,11 @@ def decompose_and(node, index):
     else:
         new_node = copy.deepcopy(node)
         for operand in node.operands:
-            # if not isinstance(operand, str):
-            # decompose_and(operand)
             if node.operator == ',' and operand.operator in {'&&', ','}:
                 del new_node.operands[index]
                 for element in operand.operands:
                     new_node.operands.append(element)
+
         return [new_node]
 
 
@@ -742,15 +740,15 @@ def decompose_or(node, formula, index):
         res = []
         for or_operand in node.operands:
             new_node = copy.deepcopy(formula)
-            if or_operand.is_derived and or_operand.and_element > -1:
+            if or_operand.is_derived and or_operand.or_element > -1:
                 z = 0
                 for element in new_node.operands:
-                    if element.operator == 'G' and element.identifier == or_operand.identifier and element.and_element == or_operand.and_element:
+                    if element.operator == 'G' and element.identifier == or_operand.identifier and element.or_element == or_operand.or_element:
                         z += 1
-                        element.upper = str(int(element.upper) + 1)
-                    elif element.operator == 'O' and element.operands[0].operator == 'G' and element.operands[0].is_derived and element.operands[0].identifier == or_operand.identifier and element.operands[0].and_element == or_operand.and_element:
+                        element.upper = or_operand.upper#str(int(element.upper) + 1)
+                    elif element.operator == 'O' and element.operands[0].operator == 'G' and element.operands[0].is_derived and element.operands[0].identifier == or_operand.identifier and element.operands[0].or_element == or_operand.or_element:
                         z += 1
-                        element.operands[0].upper = str(int(element.operands[0].upper) + 1)
+                        element.operands[0].upper = or_operand.upper#str(int(element.operands[0].upper) + 1)
                 if z == 0: #se il G non era ancora mai stato estratto
                     new_node.operands.append(or_operand)
             else:
@@ -1185,10 +1183,14 @@ def assign_and_or_element(node):
     if not node.operands:
         return
 
-    if node.operator == 'G' and node.operands[0].operator in {'&&', '||'}:
+    if node.operator == 'G' and node.operands[0].operator in {'&&'}:
         # Scorre i figli e assegna and_element
         for index, operand in enumerate(node.operands[0].operands):
             operand.and_element = index
+    elif node.operator == 'G' and node.operands[0].operator in {'||'}:
+        # Scorre i figli e assegna and_element
+        for index, operand in enumerate(node.operands[0].operands):
+            operand.or_element = index
 
     # Ricorsione su tutti gli operandi
     for operand in node.operands:
