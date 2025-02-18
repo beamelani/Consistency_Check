@@ -118,6 +118,7 @@ class Node:
             self.lower = self.upper = -1
             self.operator = 'P'
             self.operands = [arith_expr_to_string([operator] + list(args))]
+            self.execution_time = -1
         elif isinstance(operator, str) and len(args) == 0:
             self.lower = self.upper = -1
             self.operator = 'P'

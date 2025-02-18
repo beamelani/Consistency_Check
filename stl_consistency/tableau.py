@@ -137,8 +137,16 @@ def extract_min_time(formula):
     :param formula:
     :return: estrae il min lower bound della formula per settare il current_time
     '''
-    if formula.operator in {'P', '!'}:
-        min_time = None
+    if formula.operator in {'P'}:
+        if not formula.execution_time == -1:
+            min_time = formula.execution_time
+        else:
+            min_time = None
+    elif formula.operator in {'!'}:
+        if formula.operands[0].operator == 'P' and not formula.operands[0].execution_time == -1:
+            min_time = formula.operands[0].execution_time
+        else:
+            min_time = None
     elif formula.operator in {'G', 'F', 'U', 'R'}:
         min_time = Fraction(formula.lower)
     elif formula.operator in {'O'}:
@@ -380,9 +388,9 @@ def decompose(node, current_time, mode):
                 return decompose_imply_new(node, node, -1)
         # Se il nodo iniziale ha solo un elemento (quindi non è un and o or di più sottoformule) lo decompongo con i 5 elif di seguito
         elif node.operator == 'G':
-            return decompose_G(node, node, -1)
+            return decompose_G(node, node, -1, current_time)
         elif node.operator == 'F':
-            return decompose_F(node, node, -1)
+            return decompose_F(node, node, -1, current_time)
         elif node.operator == 'U':
             return decompose_U(node.to_list(), node, -1)
         elif node.operator == 'R':
@@ -406,9 +414,9 @@ def decompose(node, current_time, mode):
                 if node.operands[j].operator == '||':
                     return decompose_or(node.operands[j], node, j)
                 elif node.operands[j].operator == 'G' and Fraction(node.operands[j].lower) == current_time:
-                    return decompose_G(node.operands[j], node, j)
+                    return decompose_G(node.operands[j], node, j, current_time)
                 elif node.operands[j].operator == 'F' and Fraction(node.operands[j].lower) == current_time:
-                    return decompose_F(node.operands[j], node, j)
+                    return decompose_F(node.operands[j], node, j, current_time)
                 elif node.operands[j].operator == 'U' and Fraction(node.operands[j].lower) == current_time:
                     return decompose_U(node.operands[j].to_list(), node, j)
                 elif node.operands[j].operator == 'R' and Fraction(node.operands[j].lower) == current_time:
@@ -435,7 +443,7 @@ def decompose(node, current_time, mode):
     return None # node.operator == 'P'
 
 
-def decompose_G(node, formula, index):
+def decompose_G(node, formula, index, current_time):
     """
     decompone G sia nei casi nested (aggiornando intervalli temporali degli operatori estratti) sia nei casi non nested
     """
@@ -446,8 +454,14 @@ def decompose_G(node, formula, index):
     if node.operator == 'G' and node.operands[0].operator not in {'P', '!'} and node.initial_time == '-1':
         set_initial_time(node)
     # Funzione interna ricorsiva per modificare l'argomento
+
     def modify_argument(arg, identifier, short):
-        if arg.operator in {'P', '!'}:
+        if arg.operator in {'P'}:
+            arg.execution_time = current_time
+            return arg
+        elif arg.operator in {'!'}:
+            if arg.operands[0].operator in {'P'}:
+                arg.operands[0].execution_time = current_time
             return arg
         elif arg.operator in {'U', 'R', 'F'} or (arg.operator in {'G', 'F'} and node.lower == node.initial_time) or (arg.operator in {'G', 'F'} and not short):
             # Modifica bounds sommando quelli del nodo G
@@ -522,12 +536,18 @@ def decompose_G(node, formula, index):
         return [formula]
 
 
-def decompose_F(node, formula, index):
+def decompose_F(node, formula, index, current_time):
     lower_bound = node.lower
     current_time = node.current_time
     # Funzione interna ricorsiva per modificare l'argomento
+
     def modify_argument(arg):
-        if arg.operator in {'P', '!'}:
+        if arg.operator in {'P'}:
+            arg.execution_time = current_time
+            return arg
+        elif arg.operator in {'!'}:
+            if arg.operands[0].operator in {'P'}:
+                arg.operands[0].execution_time = current_time
             return arg
         elif arg.operator in {'G', 'F', 'U', 'R'}:
             # Modifica bounds sommando quelli del nodo G
