@@ -474,23 +474,34 @@ def decompose_G(node, formula, index, current_time):
                 extract = add_G_for_U(extract, extract.operator, True)
             return extract
         elif short and arg.operator in {'G'} and int(node.lower) > int(node.initial_time): #non aggiungo un altro G, ma allungo intervallo di quello già esistente
+            G_counter = 0
             for operand in formula.operands:
                 if operand.operator in {'G'} and operand.is_derived and operand.identifier == node.identifier and operand.and_element == arg.and_element:
                     operand.upper = str(int(operand.upper) + 1)
+                    G_counter += 1
                     if node.lower == node.upper:
                         operand.is_derived = False
                 elif operand.operator in {'O'} and operand.operands[0].operator in {'G'} and operand.operands[0].is_derived and operand.operands[0].identifier == node.identifier and operand.operands[0].and_element == arg.and_element:
                     operand.operands[0].upper = str(int(operand.operands[0].upper) + 1)
+                    G_counter += 1
                     if node.lower == node.upper:
                         operand.operands[0].is_derived = False
-            return #non ritorno niente perché è bastato modificare il nodo esistente
-        #elif arg.operator in {'&&', ','}:
+            if G_counter == 0:
+                extract = copy.deepcopy(arg)
+                extract.lower = str(int(arg.lower) + int(lower_bound))
+                extract.upper = str(int(arg.upper) + int(lower_bound))
+                extract.is_derived = True
+                extract.identifier = identifier
+                return extract
+            else:
+                return #non ritorno niente perché è bastato modificare il nodo esistente
+        elif arg.operator in {'&&', ','}:
             # Applica la modifica ricorsivamente agli operandi
-            #new_operands = [modify_argument(op, identifier, True) for op in arg.operands]
-            #new_operands = [x for x in new_operands if x is not None]
-            #arg.operands = new_operands
-            #return arg
-        elif arg.operator in {'||', '->', '&&', ','}:
+            new_operands = [modify_argument(op, identifier, True) for op in arg.operands]
+            new_operands = [x for x in new_operands if x is not None]
+            arg.operands = new_operands
+            return arg
+        elif arg.operator in {'||', '->'}:
             new_operands = [modify_argument(op, identifier, False) for op in arg.operands]
             new_operands = [x for x in new_operands if x is not None]
             arg.operands = new_operands
