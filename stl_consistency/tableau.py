@@ -895,7 +895,7 @@ def decompose_jump(node):
                     sub_formula.lower = str(time_instants[indice])
                     new_node.operands.extend([sub_formula])
                 # se uno degli elementi iniziale è della forma OG[x,x],
-                # cioè ha esaurito l'intervallo e viene eliminato, è possibile  che rimanga un solo elemento, ma preceduto dalla virgola anche se non dovrebbe
+                # cioè ha esaurito l'intervallo e viene eliminato, è possibile che rimanga un solo elemento, ma preceduto dalla virgola anche se non dovrebbe
             if len(new_node.operands) == 1:
                 return [new_node.operands[0]]
             elif new_node.operands:
@@ -1244,7 +1244,6 @@ def add_children(node, depth, last_spawned, max_depth, current_time, mode, tree,
             if tree:
                 add_tree_child(tree, node_label, child)
         else:
-            extract_min_time(child) # this function sets child's current_time attribute
             child_queue.append(child)
     
     if mode == 'complete':
