@@ -457,7 +457,7 @@ def decompose_G(node, formula, index, current_time):
 
     def modify_argument(arg, identifier, short):
         if arg.operator in {'P'}:
-            arg.execution_time = current_time
+            arg.execution_time = current_time #in realtà nel G non serve perché rimane il OG, però potrebbe forse servire quando OG si cancella perche lb=ub
             return arg
         elif arg.operator in {'!'}:
             if arg.operands[0].operator in {'P'}:
@@ -484,13 +484,13 @@ def decompose_G(node, formula, index, current_time):
                     if node.lower == node.upper:
                         operand.operands[0].is_derived = False
             return #non ritorno niente perché è bastato modificare il nodo esistente
-        elif arg.operator in {'&&', ','}:
+        #elif arg.operator in {'&&', ','}:
             # Applica la modifica ricorsivamente agli operandi
-            new_operands = [modify_argument(op, identifier, True) for op in arg.operands]
-            new_operands = [x for x in new_operands if x is not None]
-            arg.operands = new_operands
-            return arg
-        elif arg.operator in {'||', '->'}:
+            #new_operands = [modify_argument(op, identifier, True) for op in arg.operands]
+            #new_operands = [x for x in new_operands if x is not None]
+            #arg.operands = new_operands
+            #return arg
+        elif arg.operator in {'||', '->', '&&', ','}:
             new_operands = [modify_argument(op, identifier, False) for op in arg.operands]
             new_operands = [x for x in new_operands if x is not None]
             arg.operands = new_operands
@@ -588,6 +588,7 @@ def decompose_U(node, formula, index):
     più cosa succede dopo (posso eliminare U da quel ramo. Mentre se succede p dovrò riportare che voglio avere pU[3,5]q all'ora all'istante successivo può succedere di nuovo p,
     oppure può succedere q e così via fino a 5, se a 5 è sempre successo p e mai q elimino il ramo perché U non è soddisfatto
     :return:
+    NB: nel ramo dove faccio q se P ha operator = 'P' devo aggiungere execution_time
     '''
     if node[3][0] in {'G', 'F', 'U', 'R'}:  # caso nested
         new_node = copy.deepcopy(node[3])
@@ -608,7 +609,7 @@ def decompose_U(node, formula, index):
     else:
         node_1 = Node(*[',', ['O', node], node[3]])
     if node[4][0] in {'G', 'F', 'U',
-                      'R'}:  # caso nested, in questo caso il salto non crea probelmi, non mi serve initial time
+                      'R'}:  # caso nested, in questo caso il salto non crea problemi, non mi serve initial time
         new_node2 = copy.deepcopy(node[4])
         new_node2[1] = str(Fraction(new_node2[1]) + Fraction(node[1]))
         new_node2[2] = str(Fraction(new_node2[2]) + Fraction(node[1]))
@@ -645,7 +646,7 @@ def decompose_R(node, formula, index):
     Quindi se p succede prima di a, allora q non è mai vero: quindi tra 0 e a ho che se succede p, allora non avrò mai q
     quindi se succede p, puoi cancellare il R dalla formula: quindi tra 0 a a ho p OR (pR[a,b]q)
     tra a e b ho q and O(pRq) OR p
-
+NB: nel ramo dove faccio p se P ha operator = 'P' devo aggiungere execution_time
     :param formula:
     :param index:
     :return:
