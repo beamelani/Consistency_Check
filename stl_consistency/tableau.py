@@ -787,7 +787,7 @@ def decompose_or(node, formula, index):
                 new_node.operands.append(or_operand)
             res.append(new_node)
             del new_node
-        random.shuffle(res)
+        #random.shuffle(res)
         return res
 
 def decompose_imply_classic(node, formula, index):
@@ -830,6 +830,17 @@ def decompose_imply_classic(node, formula, index):
         new_node2.operands = node.operands
         new_node1.operands[0].operands[0] = node.operands[0]
         new_node1 = push_negation(new_node1)
+    # euristica per ottimizzare, se nella formula ho già antecedente che deve essere vero
+    # resituisco prima nodo in cui antecedente è vero, altrimenti il contrario
+    if node.operands[0].operator == 'P':
+        for operand in formula.operands:
+            if node.operands[0][0] == operand[0]:
+                return new_node2, new_node1
+    elif node.operands[0].operator in {'&&', ',', '||'}:
+        for operand in formula.operands:
+            for element in node.operands[0].operands:
+                if element[0] == operand[0]:
+                    return new_node2, new_node1
     return new_node1, new_node2
 
 
