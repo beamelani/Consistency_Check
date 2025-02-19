@@ -101,6 +101,7 @@ class Node:
         self.id_implication = -1 # serve per identificare da quale el. dell'implicazione proviene un termine quando è stato estratto (mi serve se l'impl è annidata e ha elementi con G e devo quindi sapere quale el incrementare invece di estrarre)
         self.and_element = -1 # identifica univoc gli operandi di un && dentro a un G
         self.or_element = -1 # identifica univoc gli operandi di un || dentro a un G
+        self.execution_time = -1 # serve in nodi con operator = 'P'
         if operator in {'&&', '||', ',', '!', 'O', '->', '<->'}:
             self.lower = self.upper = -1
             self.operands = list(args)
@@ -118,7 +119,6 @@ class Node:
             self.lower = self.upper = -1
             self.operator = 'P'
             self.operands = [arith_expr_to_string([operator] + list(args))]
-            self.execution_time = -1
         elif isinstance(operator, str) and len(args) == 0:
             self.lower = self.upper = -1
             self.operator = 'P'
