@@ -15,6 +15,8 @@ from stl_consistency.tableau import make_tableau, plot_tree
 import csv
 from tabulate import tabulate
 
+import networkx as nx
+
 @timeout(dec_timeout='args[0]', dec_allow_eval=True, use_signals=False)
 def inner(timeout, f, *args, **kwargs):
     return f(*args, **kwargs)
@@ -105,7 +107,6 @@ mtl_requirements = [
     ['F', '0', t, ['&&', ['R_v >= R_v_hat'], ['G', '0', T, ['R_omega < R_omega_hat']]]],
     ['F', '0', '100', ['G', '0', '1', ['Not(R_Fuel_Flow_Rate == 0)']]],
     ['G', '0', T, ['->', ['B_lambda_OOB'], ['F', '0', '1', ['G', '0', '1', ['Not(B_lambda_OOB)']]]]]
-
 ]
 
 #Requisiti da: Powertrain Control Verification Benchmark
@@ -120,7 +121,7 @@ pcv = [
     # normal mode
     ['G', '0', T, ['->', ['B_normal_mode'], ['&&', ['R_a > 8.8'], ['R_a < 70']]]],
     ['G', t_s, T, ['->', ['B_normal_mode'], ['&&', ['R_mu > -0.05'], ['R_mu < 0.05']]]],
-    ['G', t_s, T, ['->', ['||', [['&&', ['R_theta == 8.8'], ['F', '0', epsilon, ['R_theta == R_a']]]], [['&&', ['R_theta == R_a'], ['F', '0', epsilon, ['R_theta == 8.8']]]]], ['G', eta, zeta_mezzi, ['&&', ['R_mu > - 0.02'], ['R_mu < 0.02']]]]],
+    ['G', t_s, T, ['->', ['||', [['&&', ['R_theta == 8.8'], ['F', '0', epsilon, ['R_theta == R_a']]]], [['&&', ['R_theta == R_a'], ['F', '0', epsilon, ['R_theta == 8.8']]]]], ['G', eta, zeta_mezzi, ['&&', ['R_mu > -0.02'], ['R_mu < 0.02']]]]],
     ['F', T, T, ['->', ['B_normal_mode'], ['R_xrms < 0.05']]],
     ['G', t_s, T, ['->', ['B_normal_mode'], ['R_mu > -0.1']]],
     ['G', t_s, T, ['->', ['B_normal_mode'], ['R_mu < 0.1']]],
@@ -129,11 +130,11 @@ pcv = [
     ['G', t_s, T, ['->', ['&&', ['B_power_mode'], ['F', '0', epsilon, ['B_normal_mode']]], ['G', eta, zeta_mezzi, [['&&', ['R_mu > -0.02'], ['R_mu < 0.02']]]]]],
     ['G', t_s, T, ['->', ['B_power_mode'], ['&&', ['R_mu_p > -0.2'], ['R_mu_p < 0.2']]]],
     # startup and sensor fail mode
-    ['G', '0', T, ['->', ['&&', ['||', ['B_startup_mode'], ['B_sensor_fail_mode']], ['||', [['&&', ['R_theta == 8.8'], ['F', '0', epsilon, ['R_theta == R_a']]]], [['&&', ['R_theta == R_a'], ['F', '0', epsilon, ['R_theta == 8.8']]]]]], ['G', eta, zeta_mezzi, [['&&', ['R_mu > - 0.1'], ['R_mu < 0.1']]]]]]
+    ['G', '0', T, ['->', ['&&', ['||', ['B_startup_mode'], ['B_sensor_fail_mode']], ['||', [['&&', ['R_theta == 8.8'], ['F', '0', epsilon, ['R_theta == R_a']]]], [['&&', ['R_theta == R_a'], ['F', '0', epsilon, ['R_theta == 8.8']]]]]], ['G', eta, zeta_mezzi, [['&&', ['R_mu > -0.1'], ['R_mu < 0.1']]]]]]
 ]
 
 #requisiti da Signal-Based Properties of Cyber-Physical Systems: Taxonomy and Logic-based Characterization
-T = '3000'
+T = '16200' # has to be >= 16200
 req_cps =[
     ['G', '0', T, ['||', ['R_currentADCSMode == 0'], ['R_currentADCSMode == 1'], ['R_currentADCSMode == 2']]], # P1 where 0 == NMC, 1== NMF, 2== SM
     # P2: non serve, basta definire il segnale come bool
@@ -209,6 +210,54 @@ railroad = [
     ['G', '10', '60', ['->', ['R_angle >= 80'], ['G', '20', '40', ['R_angle < 60']]]]
 ]
 
+# railroad = [
+#     ['G', '3', '50', ['F', '5', '20', ['B_a']]],
+#     ['G', '10', '60', ['->', ['B_a'], ['G', '20', '40', ['!', ['B_a']]]]]
+# ]
+
+# railroad = [
+#     ['G', '0', '5', ['F', '1', '2', ['B_a']]],
+#     ['G', '1', '6', ['->', ['B_a'], ['G', '2', '4', ['!', ['B_a']]]]]
+# ]
+
+railroad_merged = [
+    ['G', '3', '9', ['F', '5', '20', ['B_a']]],
+    ['G', '10', '50', ['||', ['&&', ['F', '5', '20', ['B_a']], ['!', ['B_a']]], ['&&', ['F', '5', '20', ['B_a']], ['G', '20', '40', ['!', ['B_a']]]]]],
+    ['G', '51', '60', ['||', ['!', ['B_a']], ['G', '20', '40', ['!', ['B_a']]]]]
+]
+
+# railroad = [
+#     ['G', '0', '3', ['F', '2', '6', ['B_a']]],
+#     ['G', '0', '3', ['G', '6', '8', ['!', ['B_a']]]]
+# ]
+
+test = [
+    ['G', '0', '20', ['||', ['&&', ['F', '0', '40', ['B_a']], ['G', '20', '60', ['!', ['B_a']]]], ['&&', ['F', '0', '40', ['B_a']], ['!', ['B_a']]]]]
+]
+
+test_false = [
+    ['G', '0', '30', ['||', ['&&', ['F', '0', '20', ['B_a']], ['!', ['B_a']]], ['&&', ['F', '0', '20', ['B_a']], ['G', '10', '60', ['!', ['B_a']]]]]]
+]
+
+test_bug = [
+    ['G', '0', '4', ['||', ['&&', ['F', '0', '2', ['B_a']], ['!', ['B_a']]], ['&&', ['F', '0', '2', ['B_a']], ['G', '2', '4', ['!', ['B_a']]]]]]
+]
+
+test2 = [
+    ['F', '0', '40', ['B_a']],
+    ['G', '20', '60', ['!', ['B_a']]]
+]
+
+test3 = [
+    ['G', '0', '20', ['F', '0', '40', ['B_a']]],
+    ['G', '20', '60', ['!', ['B_a']]]
+]
+
+test3_small = [
+    ['G', '0', '2', ['F', '0', '4', ['B_a']]],
+    ['G', '2', '6', ['!', ['B_a']]]
+]
+
 batteries = [
     ['G', '1', '20', ['F', '3', '14', ['R_d1 >= 1.4']]],
     ['F', '6', '30', ['->', ['&&', ['B_live1'], ['B_live2']], ['G', '7', '24', ['&&', ['B_live1'], ['B_live2']]]]],
@@ -238,7 +287,12 @@ def check_dataset(dataset_name, dataset, max_depth, timeout):
     # Seconda prova: Tableau
     start_t = time.perf_counter()
     res_tableau = run_with_timeout(timeout, make_tableau, Node(*formula), max_depth, 'sat', False, False, False)
+    #res_tableau = make_tableau(Node(*formula), max_depth, 'sat', True, False, False)
     elapsed_tableau = time.perf_counter() - start_t
+
+    #nx.drawing.nx_pydot.write_dot(res_tableau[0], './rr_bool_small.dot')
+    # print(nx.to_dict_of_dicts(res_tableau[0]))
+    #plot_tree(res_tableau[0])
 
     # Dizionario con i risultati
     return {
@@ -273,16 +327,27 @@ def pretty_print(results, ms, csvfile):
 # Esecuzione principale
 if __name__ == '__main__':
     datasets = {
-        "avionics": requirements_riscritti,
-        "cars": cars,
-        "thermostat": thermostat,
-        "watertank": watertank,
+        # "avionics": requirements_riscritti,
+        # "avionics_ranges": parameter_ranges,
+        #"automotive": mtl_requirements,
+        #"powertrain": pcv,
+        #"cps": req_cps,
+        # "cars": cars,
+        # "thermostat": thermostat,
+        # "watertank": watertank,
         "railroad": railroad,
-        "batteries": batteries
+        #"railroad_merged": railroad_merged,
+        #"test": test,
+        #"test_false": test_false,
+        #"test_bug": test_bug,
+        #"test2": test2,
+        #"test3": test3,
+        #"test3_small": test3_small,
+        #"batteries": batteries
     }
     #datasets = [cars, thermostat, watertank, batteries]
     max_depth = 100000
-    timeout = 10 # in seconds
+    timeout = 60 # in seconds
 
     #results = [check_dataset(ds, max_depth) for ds in datasets]
     results = [check_dataset(name, data, max_depth, timeout) for name, data in datasets.items()]

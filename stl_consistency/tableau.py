@@ -413,6 +413,11 @@ def decompose(node, current_time, mode):
                     return decompose_and(node, j)
                 if node.operands[j].operator == '||':
                     return decompose_or(node.operands[j], node, j)
+                elif node.operands[j].operator == '->':
+                    if mode == 'complete' or mode == 'sat':
+                        return decompose_imply_classic(node.operands[j], node, j)
+                    else:
+                        return decompose_imply_new(node.operands[j], node, j)
                 elif node.operands[j].operator == 'G' and Fraction(node.operands[j].lower) == current_time:
                     return decompose_G(node.operands[j], node, j, current_time)
                 elif node.operands[j].operator == 'F' and Fraction(node.operands[j].lower) == current_time:
@@ -421,11 +426,6 @@ def decompose(node, current_time, mode):
                     return decompose_U(node.operands[j].to_list(), node, j)
                 elif node.operands[j].operator == 'R' and Fraction(node.operands[j].lower) == current_time:
                     return decompose_R(node.operands[j].to_list(), node, j)
-                elif node.operands[j].operator == '->':
-                    if mode == 'complete' or mode == 'sat':
-                        return decompose_imply_classic(node.operands[j], node, j)
-                    else:
-                        return decompose_imply_new(node.operands[j], node, j)
                 else:  # se arrivo qui vuol dire che non sono entrata in nessun return e quindi non c'era nulla da decomporre
                     # perché l'elemento era già decomposto o non ancora attivo
                     counter += 1
@@ -1247,22 +1247,37 @@ def add_tree_child(G, parent_label, child):
     if isinstance(child, str):
         child_label = child + ' ' + str(counter)
     else:
-        child_label = child.to_label(counter)
+        child.counter = counter
+        child_label = child.to_label()
     G.add_node(child_label)
     G.add_edge(parent_label, child_label)
 
+def add_rejected(rejected_store, node):
+    # TODO also check if some other node implies this one
+    node.sort_operands()
+    rejected_store.append(node)
+
+def check_rejected(rejected_store, node, verbose):
+    node.sort_operands()
+    # TODO do something faster
+    for rejected in rejected_store:
+        if node.implies_quick(rejected):
+            if verbose:
+                print('Rejecting', node.to_list(), ' because it implies rejected node ', rejected.to_list())
+            return True
+    return False
+
 def add_children(node, depth, last_spawned, max_depth, current_time, mode, tree, parallel, verbose):
-    global counter
-    global true_implications
+    global counter, true_implications, rejected_store
 
     if depth >= max_depth:
         return None
 
     if tree:
-        node_label = node.to_label(counter)
+        node_label = node.to_label()
 
     node_copy = copy.deepcopy(node)
-    current_time = extract_min_time(node_copy)
+    current_time = node.current_time # extract_min_time(node_copy) should have been called by the parent
     children = decompose(node_copy, current_time, mode)
     if children is None:
         if verbose:
@@ -1283,11 +1298,16 @@ def add_children(node, depth, last_spawned, max_depth, current_time, mode, tree,
                 print(child)
     child_queue = []
     for child in children:
-        if child == 'Rejected':
-            if tree:
+        if child != 'Rejected':
+            extract_min_time(child) # updates the node's current_time, called here once and for all
+            if mode != 'sat' or child.current_time == current_time or not check_rejected(rejected_store, child, verbose):
+                child_queue.append(child)
+            elif tree and mode == 'sat':
                 add_tree_child(tree, node_label, child)
-        else:
-            child_queue.append(child)
+                node_label = child.to_label()
+                child = 'Rejected (memo)'
+        if tree:
+            add_tree_child(tree, node_label, child)
     
     if mode == 'complete':
         complete_result = False
@@ -1307,13 +1327,14 @@ def add_children(node, depth, last_spawned, max_depth, current_time, mode, tree,
             pool.shutdown(wait=True, cancel_futures=True)
     else:
         for child in child_queue:
-            if tree:
-                add_tree_child(tree, node_label, child)
             if add_children(child, depth + 1, last_spawned, max_depth, current_time, mode, tree, parallel, verbose):
                 if mode == 'complete':
                     complete_result = True
                 else: # mode in {'sat', 'strong_sat'}
                     return True
+            elif mode == 'sat' and child.current_time > current_time:
+                # TODO make more efficient data structure
+                rejected_store.append(child)
 
     if mode in {'sat', 'strong_sat'}:
         return False
@@ -1333,11 +1354,15 @@ def build_decomposition_tree(root, max_depth, mode, build_tree, parallel, verbos
             None if we reached max_dept without finding an accepting branch
     """
     global counter
+    global rejected_store
+    if mode == 'sat':
+        rejected_store = []
     time = extract_min_time(root)
     if build_tree:
         counter = 0
         G = nx.DiGraph()
-        G.add_node(root.to_label(counter))
+        root.counter = counter
+        G.add_node(root.to_label())
     else:
         G = None
 

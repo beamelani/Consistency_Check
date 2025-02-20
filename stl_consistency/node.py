@@ -156,12 +156,12 @@ class Node:
         else:
             raise ValueError('Unknown operator')
 
-    def to_label(self, counter):
+    def to_label(self):
         '''
         Use node.to_label(counter) to create a label for a graph node.
         The current time must be set before using this method with node.set_current_time()
         '''
-        return " ".join([formula_to_string(self.to_list()), str(self.current_time), str(counter)])
+        return " ".join([formula_to_string(self.to_list()), str(self.current_time), str(self.counter)])
 
     def __getitem__(self, i):
         '''
@@ -178,3 +178,41 @@ class Node:
         if self.operator != 'P':
             for op in self.operands:
                 op.flatten()
+
+    def operands_to_strings(self):
+        return [formula_to_string(op.to_list()) for op in self.operands]
+
+    def get_sort_key(self):
+        # TODO: replace operands_to_strings with a more efficient method
+        return (self.operator, self.operands_to_strings(), int(self.lower), int(self.upper))
+
+    def sort_operands(self):
+        self.operands.sort(key=Node.get_sort_key)
+    
+    def implies_quick(self, other):
+        '''
+        :return: True if we can quickly determine that self implies other, False otherwise
+        Assumes both nodes' operands have been sorted with sort_operands
+        '''
+        if self.operator != other.operator:
+            return False
+        match self.operator:
+            case ',':
+                j = 0
+                for i in range(len(other.operands)):
+                    while j < len(self.operands) and not self.operands[j].implies_quick(other.operands[i]):
+                        j += 1
+                    if j >= len(self.operands):
+                        # we broke the loop because no operand in self implies other.operands[i]
+                        return False
+                return True
+            case 'F': # TODO normalize times
+                return self.operands_to_strings() == other.operands_to_strings() and int(other.lower) - int(other.current_time) <= int(self.lower) - int(self.current_time) and int(other.upper) - int(other.current_time) >= int(self.upper) - int(self.current_time)
+            case 'G':
+                return self.operands_to_strings() == other.operands_to_strings() and int(self.lower) - int(self.current_time) <= int(other.lower) - int(other.current_time) and int(self.upper) - int(self.current_time) >= int(other.upper) - int(other.current_time)
+            case '!':
+                return self.operands[0].implies_quick(other.operands[0])
+            case 'P':
+                return self.operands[0] == other.operands[0]
+            # TODO: U, R, etc
+        return False
