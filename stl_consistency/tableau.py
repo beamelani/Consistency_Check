@@ -131,11 +131,10 @@ def push_negation(node):
         return new_node
 
 
-def extract_min_time(formula):
+def set_min_time(formula):
     '''
-
     :param formula:
-    :return: estrae il min lower bound della formula per settare il current_time
+    :return: estrae il min lower bound della formula e setta il current_time
     '''
     if formula.operator in {'P'}:
         if not formula.execution_time == -1:
@@ -148,13 +147,13 @@ def extract_min_time(formula):
         else:
             min_time = None
     elif formula.operator in {'G', 'F', 'U', 'R'}:
-        min_time = Fraction(formula.lower)
+        min_time = formula.lower
     elif formula.operator in {'O'}:
-        min_time = Fraction(formula.operands[0].lower)
+        min_time = formula.operands[0].lower
     elif formula.operator in {'&&', '||', ',', '->'}:
         times = []
         for op in formula.operands:
-            op_time = extract_min_time(op)
+            op_time = set_min_time(op)
             if op_time is not None:
                 times.append(op_time)
         min_time = min(times, default=None)
@@ -167,7 +166,6 @@ def calculate_time_quantum(formula):
     """
     Compute the maximum time length `quantum` such that all interval bounds are integer multiples of `quantum`.
     """
-
     def extract_bounds(formula):
         bounds = []
         if isinstance(formula, list):
@@ -222,13 +220,12 @@ def extract_time_instants(formula, flag):
         if formula.operator not in {'P'}:
             for elem in formula:
                 if elem.operator not in {'P'}:
-                    if elem.operator in ['G', 'F', 'U',
-                                         'R'] and not elem.is_derived:  # Controlla operatori temporali G (Globally), F (Finally) e U (Until)
+                    if elem.operator in ['G', 'F', 'U', 'R'] and not elem.is_derived:
+                        # Controlla operatori temporali G (Globally), F (Finally) e U (Until)
                         time_instants.append(elem.lower)
                         time_instants.append(elem.upper)
                     #caso in cui op is_derived è estratto da un -> che era dentro a un G o U o R (flag == True)
-                    elif elem.operator in ['G', 'F', 'U',
-                                         'R'] and elem.is_derived and (not elem.id_implication == -1 or not elem.or_element == -1):
+                    elif elem.operator in ['G', 'F', 'U', 'R'] and elem.is_derived and (not elem.id_implication == -1 or not elem.or_element == -1):
                         time_instants.append(elem.lower)
                         time_instants.append(elem.upper) #va fatto anche nel caso 'O' ??
                     elif elem.operator in ['O'] and not elem.operands[0].is_derived:
@@ -239,14 +236,13 @@ def extract_time_instants(formula, flag):
         if formula.operator not in {'P'}:
             for elem in formula:
                 if elem.operator not in {'P'}:
-                    if elem.operator in ['G', 'F', 'U',
-                                         'R']:  # Controlla operatori temporali G (Globally), F (Finally) e U (Until)
+                    if elem.operator in ['G', 'F', 'U', 'R']:  # Controlla operatori temporali G (Globally), F (Finally) e U (Until)
                         time_instants.append(elem.lower)
                         time_instants.append(elem.upper)
                     elif elem.operator in ['O']:
                         time_instants.append(elem.operands[0].lower)
                         time_instants.append(elem.operands[0].upper)
-    time_instants = [Fraction(x) for x in time_instants]
+    assert all(isinstance(t, int) for t in time_instants)
     time_instants = sorted(time_instants)
     return time_instants
 
@@ -418,13 +414,13 @@ def decompose(node, current_time, mode):
                         return decompose_imply_classic(node.operands[j], node, j)
                     else:
                         return decompose_imply_new(node.operands[j], node, j)
-                elif node.operands[j].operator == 'G' and Fraction(node.operands[j].lower) == current_time:
+                elif node.operands[j].operator == 'G' and node.operands[j].lower == current_time:
                     return decompose_G(node.operands[j], node, j, current_time)
-                elif node.operands[j].operator == 'F' and Fraction(node.operands[j].lower) == current_time:
+                elif node.operands[j].operator == 'F' and node.operands[j].lower == current_time:
                     return decompose_F(node.operands[j], node, j, current_time)
-                elif node.operands[j].operator == 'U' and Fraction(node.operands[j].lower) == current_time:
+                elif node.operands[j].operator == 'U' and node.operands[j].lower == current_time:
                     return decompose_U(node.operands[j].to_list(), node, j)
-                elif node.operands[j].operator == 'R' and Fraction(node.operands[j].lower) == current_time:
+                elif node.operands[j].operator == 'R' and node.operands[j].lower == current_time:
                     return decompose_R(node.operands[j].to_list(), node, j)
                 else:  # se arrivo qui vuol dire che non sono entrata in nessun return e quindi non c'era nulla da decomporre
                     # perché l'elemento era già decomposto o non ancora attivo
@@ -466,30 +462,30 @@ def decompose_G(node, formula, index, current_time):
         elif arg.operator in {'U', 'R', 'F'} or (arg.operator in {'G', 'F'} and node.lower == node.initial_time) or (arg.operator in {'G', 'F'} and not short):
             # Modifica bounds sommando quelli del nodo G
             extract = copy.deepcopy(arg)
-            extract.lower = str(int(arg.lower) + int(lower_bound))
-            extract.upper = str(int(arg.upper) + int(lower_bound))
+            extract.lower = arg.lower + lower_bound
+            extract.upper = arg.upper + lower_bound
             extract.is_derived = True
             extract.identifier = identifier
             if arg.operator in {'U', 'R'}:
                 extract = add_G_for_U(extract, extract.operator, True)
             return extract
-        elif short and arg.operator in {'G'} and int(node.lower) > int(node.initial_time): #non aggiungo un altro G, ma allungo intervallo di quello già esistente
+        elif short and arg.operator in {'G'} and node.lower > node.initial_time: #non aggiungo un altro G, ma allungo intervallo di quello già esistente
             G_counter = 0
             for operand in formula.operands:
                 if operand.operator in {'G'} and operand.is_derived and operand.identifier == node.identifier and operand.and_element == arg.and_element:
-                    operand.upper = str(int(operand.upper) + 1)
+                    operand.upper = operand.upper + 1
                     G_counter += 1
                     if node.lower == node.upper:
                         operand.is_derived = False
                 elif operand.operator in {'O'} and operand.operands[0].operator in {'G'} and operand.operands[0].is_derived and operand.operands[0].identifier == node.identifier and operand.operands[0].and_element == arg.and_element:
-                    operand.operands[0].upper = str(int(operand.operands[0].upper) + 1)
+                    operand.operands[0].upper = operand.operands[0].upper + 1
                     G_counter += 1
                     if node.lower == node.upper:
                         operand.operands[0].is_derived = False
             if G_counter == 0:
                 extract = copy.deepcopy(arg)
-                extract.lower = str(int(arg.lower) + int(lower_bound))
-                extract.upper = str(int(arg.upper) + int(lower_bound))
+                extract.lower = arg.lower + lower_bound
+                extract.upper = arg.upper + lower_bound
                 extract.is_derived = True
                 extract.identifier = identifier
                 return extract
@@ -563,8 +559,8 @@ def decompose_F(node, formula, index, current_time):
         elif arg.operator in {'G', 'F', 'U', 'R'}:
             # Modifica bounds sommando quelli del nodo G
             extract = copy.deepcopy(arg)
-            extract.lower = str(int(arg.lower) + int(lower_bound))
-            extract.upper = str(int(arg.upper) + int(lower_bound))
+            extract.lower = arg.lower + lower_bound
+            extract.upper = arg.upper + lower_bound
             extract.current_time = current_time
             if arg.operator in {'U', 'R'}:
                 extract = add_G_for_U(extract, extract.operator, True)
@@ -603,8 +599,8 @@ def decompose_U(node, formula, index):
     '''
     if node[3][0] in {'G', 'F', 'U', 'R'}:  # caso nested
         new_node = copy.deepcopy(node[3])
-        new_node[1] = str(Fraction(new_node[1]) + Fraction(node[1]))
-        new_node[2] = str(Fraction(new_node[2]) + Fraction(node[1]))
+        new_node[1] = new_node[1] + node[1]
+        new_node[2] = new_node[2] + node[1]
         node_1 = Node(*[',', ['O', node], new_node])
         node_1.operands[1].is_derived = True
         if node[3][0] in {'U', 'R'}:
@@ -622,8 +618,8 @@ def decompose_U(node, formula, index):
     if node[4][0] in {'G', 'F', 'U',
                       'R'}:  # caso nested, in questo caso il salto non crea problemi, non mi serve initial time
         new_node2 = copy.deepcopy(node[4])
-        new_node2[1] = str(Fraction(new_node2[1]) + Fraction(node[1]))
-        new_node2[2] = str(Fraction(new_node2[2]) + Fraction(node[1]))
+        new_node2[1] = new_node2[1] + node[1]
+        new_node2[2] = new_node2[2] + node[1]
         node_2 = Node(*new_node2)
         node_2_2 = Node(*[',', new_node2])
         if node[4][0] in {'U', 'R'}:
@@ -667,8 +663,8 @@ NB: nel ramo dove faccio p se P ha operator = 'P' devo aggiungere execution_time
             node_1 = Node(*node[3])
         else:
             node_1 = copy.deepcopy(node[3])
-            node_1[1] = str(int(node_1[1]) + int(node[1]))
-            node_1[2] = str(int(node_1[2]) + int(node[1]))
+            node_1[1] = node_1[1] + node[1]
+            node_1[2] = node_1[2] + node[1]
             node_1 = Node(*node_1)
             if node[3][0] in {'U', 'R'}:
                 node_1 = add_G_for_U(node_1, node[3][0], False)
@@ -677,8 +673,8 @@ NB: nel ramo dove faccio p se P ha operator = 'P' devo aggiungere execution_time
                 node_2 = Node(*node[4])
             else:  # QUI potresti togliere is_derived da tutti gli altri operatori generati dal R
                 new_node = copy.deepcopy(node[4])
-                new_node[1] = str(int(new_node[1]) + int(node[1]))
-                new_node[2] = str(int(new_node[2]) + int(node[1]))
+                new_node[1] = new_node[1] + node[1]
+                new_node[2] = new_node[2] + node[1]
                 node_2 = Node(*new_node)
                 if node[4][0] in {'U', 'R'}:
                     node_2 = add_G_for_U(node_2, node[4][0], False)
@@ -687,8 +683,8 @@ NB: nel ramo dove faccio p se P ha operator = 'P' devo aggiungere execution_time
                 node_2 = Node(*[',', ['O', node], node[4]])
             else:
                 new_node = copy.deepcopy(node[4])
-                new_node[1] = str(int(new_node[1]) + int(node[1]))
-                new_node[2] = str(int(new_node[2]) + int(node[1]))
+                new_node[1] = new_node[1] + node[1]
+                new_node[2] = new_node[2] + node[1]
                 node_2 = Node(*[',', ['O', node], new_node])
             node_2.operands[0].operands[0].initial_time = formula.initial_time
             node_2.operands[0].operands[0].identifier = formula.identifier
@@ -708,8 +704,8 @@ NB: nel ramo dove faccio p se P ha operator = 'P' devo aggiungere execution_time
             node_1 = Node(*[',', node[3]])
         else:
             node_1 = copy.deepcopy(node[3])
-            node_1[1] = str(int(node_1[1]) + int(node[1]))
-            node_1[2] = str(int(node_1[2]) + int(node[1]))
+            node_1[1] = node_1[1] + node[1]
+            node_1[2] = node_1[2] + node[1]
             node_1 = Node(*node[1])
             if node[3][0] in {'U', 'R'}:
                 node_1 = add_G_for_U(node_1, node[3][0], False)
@@ -718,8 +714,8 @@ NB: nel ramo dove faccio p se P ha operator = 'P' devo aggiungere execution_time
                 node_2 = Node(*[',', node[4]])
             else:
                 new_node = copy.deepcopy(node[4])
-                new_node[1] = str(int(new_node[1]) + int(node[1]))
-                new_node[2] = str(int(new_node[2]) + int(node[1]))
+                new_node[1] = new_node[1] + node[1]
+                new_node[2] = new_node[2] + node[1]
                 node_2 = Node(*[',', new_node])
                 if node[4][0] in {'U', 'R'}:
                     node_2 = add_G_for_U(node_2, ',', False)
@@ -728,8 +724,8 @@ NB: nel ramo dove faccio p se P ha operator = 'P' devo aggiungere execution_time
                 node_2 = Node(*[',', ['O', node], node[4]])
             else:
                 new_node = copy.deepcopy(node[4])
-                new_node[1] = str(int(new_node[1]) + int(node[1]))
-                new_node[2] = str(int(new_node[2]) + int(node[1]))
+                new_node[1] = new_node[1] + node[1]
+                new_node[2] = new_node[2] + node[1]
                 node_2 = Node(*[',', ['O', node], new_node])
                 if node[4][0] in {'U', 'R'}:
                     node_2 = add_G_for_U(node_2, ',', True)
@@ -802,7 +798,7 @@ def decompose_imply_classic(node, formula, index):
         # Cerca nodi 'G' derivati nel nuovo nodo
         for operand in new_node2.operands:
             if operand.operator == 'G' and operand.identifier == new_node.identifier and operand.is_derived and operand.id_implication == new_node.id_implication:
-                operand.upper = str(int(operand.upper)+1)
+                operand.upper = operand.upper+1
                 return None
         return new_node
     if index >= 0:
@@ -891,9 +887,9 @@ def simplify_F(node):
             operand = formula_to_string(formula[0].to_list())
             if operand in F_formulas:
                 for j, F_formula in F_formulas[operand]:
-                    if int(F_formula.lower) >= int(formula.lower) and int(F_formula.upper) <= int(formula.upper):
+                    if F_formula.lower >= formula.lower and F_formula.upper <= formula.upper:
                         remove_indices.append(i)
-                    elif int(formula.lower) >= int(F_formula.lower) and int(formula.upper) <= int(F_formula.upper):
+                    elif formula.lower >= F_formula.lower and formula.upper <= F_formula.upper:
                         remove_indices.append(j)
                         # We could also remove (j, F_formula) from the set, but we would have to do it out of the loop
             else:
@@ -930,12 +926,11 @@ def decompose_jump(node):
             for operand in node.operands:
                 if operand.operator not in {'P', '!', 'O'}:
                     new_node.operands.extend([operand])
-                elif operand.operator in {'O'} and Fraction(operand.operands[0].lower) < Fraction(
-                        operand.operands[0].upper):
+                elif operand.operator in {'O'} and operand.operands[0].lower < operand.operands[0].upper:
                     sub_formula = copy.deepcopy(operand.operands[0])
                     # trovo il primo numero maggiore dell'istante corrente di tempo
-                    indice = bisect.bisect_right(time_instants, Fraction(sub_formula.lower))
-                    sub_formula.lower = str(time_instants[indice])
+                    indice = bisect.bisect_right(time_instants, sub_formula.lower)
+                    sub_formula.lower = time_instants[indice]
                     new_node.operands.extend([sub_formula])
                 # se uno degli elementi iniziale è della forma OG[x,x],
                 # cioè ha esaurito l'intervallo e viene eliminato, è possibile che rimanga un solo elemento, ma preceduto dalla virgola anche se non dovrebbe
@@ -955,16 +950,15 @@ def decompose_jump(node):
                 # una volta calcolato il salto per ogni operatore problematico, faccio il minimo
                 # una volta stabilito il salto da effettuare faccio un altro ciclo negli operands e applico il salto ad ognuno
                 # controllando se ogni operatore è derivato da un nested o no (perché saltano in modo diverso)
-                if operand.operator in {'O'} and Fraction(operand.operands[0].lower) <= Fraction(
-                        operand.operands[0].upper) and not operand.operands[0].is_derived:
+                if operand.operator in {'O'} and operand.operands[0].lower <= operand.operands[0].upper and not operand.operands[0].is_derived:
                     if operand.operands[0].operator in {'G', 'U'} and operand.operands[0].operands[0].operator in {'G', 'F', 'U', 'R'}:
                         # se operatore interno è esaurito
-                        if Fraction(operand.operands[0].lower) >= Fraction(operand.operands[0].initial_time) + Fraction(operand.operands[0].operands[0].upper):
+                        if operand.operands[0].lower >= operand.operands[0].initial_time + operand.operands[0].operands[0].upper:
                             sub_formula = copy.deepcopy(operand.operands[0].to_list())
-                            indice = bisect.bisect_right(time_instants, Fraction(sub_formula[1]))  # trovo il primo numero maggiore dell'istante corrente di tempo
-                            jump.append(time_instants[indice] - Fraction(operand.operands[0].lower))  # il jump che devo fare è l'istante in cui devo arrivare- quello corrente
+                            indice = bisect.bisect_right(time_instants, sub_formula[1])  # trovo il primo numero maggiore dell'istante corrente di tempo
+                            jump.append(time_instants[indice] - operand.operands[0].lower)  # il jump che devo fare è l'istante in cui devo arrivare- quello corrente
                         else:  # se sono qui non posso saltare, devo andare avanti di 1 in 1
-                            jump.append(Fraction(1))
+                            jump.append(1)
                     elif operand.operands[0].operator in {'G', 'U'} and operand.operands[0].operands[0].operator in {'&&', '||', ',', '->'}:
                         max_upper = 0
                         # trovo il max tra gli upper bound degli op interni
@@ -972,53 +966,51 @@ def decompose_jump(node):
                         for arg in operand.operands[0].operands[0].operands:
                             if arg.operator in {'G', 'F', 'U', 'R'}:
                                 nested += 1
-                            if int(arg.upper) > max_upper:
-                                max_upper = int(arg.upper)
-                        if nested > 0 and Fraction(operand.operands[0].lower) >= Fraction(operand.operands[0].initial_time) + Fraction(max_upper):
+                            if arg.upper > max_upper:
+                                max_upper = arg.upper
+                        if nested > 0 and operand.operands[0].lower >= operand.operands[0].initial_time + max_upper:
                             sub_formula = copy.deepcopy(operand.operands[0].to_list())
-                            indice = bisect.bisect_right(time_instants, Fraction(sub_formula[1]))
-                            jump.append(time_instants[indice] - Fraction(operand.operands[0].lower))
+                            indice = bisect.bisect_right(time_instants, sub_formula[1])
+                            jump.append(time_instants[indice] - operand.operands[0].lower)
                         else:
-                            jump.append(Fraction(1))
+                            jump.append(1)
                     elif operand.operands[0].operator in {'R'} and operand.operands[0].operands[1].operator in {'G', 'F', 'U', 'R'}:
-                        if Fraction(operand.operands[0].lower) >= Fraction(operand.operands[0].initial_time) + Fraction(operand.operands[0].operands[1].upper):
+                        if operand.operands[0].lower >= operand.operands[0].initial_time + operand.operands[0].operands[1].upper:
                             sub_formula = copy.deepcopy(operand.operands[0].to_list())
-                            indice = bisect.bisect_right(time_instants, Fraction(sub_formula[1]))
-                            jump.append(time_instants[indice] - Fraction(operand.operands[0].lower))
+                            indice = bisect.bisect_right(time_instants, sub_formula[1])
+                            jump.append(time_instants[indice] - operand.operands[0].lower)
                         else:
-                            jump.append(Fraction(1))
+                            jump.append(1)
                     elif operand.operands[0].operator in {'R'} and operand.operands[0].operands[1].operator in {'&&', '||', ',', '->'}:
                         max_upper = 0
                         # trovo il max tra gli upper bound degli op interni
                         for arg in operand.operands[0].operands[1].operands:
-                            if int(arg.upper) > max_upper:
-                                max_upper = int(arg.upper)
-                        if Fraction(operand.operands[0].lower) >= Fraction(operand.operands[0].initial_time) + Fraction(max_upper):
+                            if arg.upper > max_upper:
+                                max_upper = arg.upper
+                        if operand.operands[0].lower >= operand.operands[0].initial_time + max_upper:
                             sub_formula = copy.deepcopy(operand.operands[0].to_list())
-                            indice = bisect.bisect_right(time_instants, Fraction(sub_formula[1]))
-                            jump.append(time_instants[indice] - Fraction(operand.operands[0].lower))
+                            indice = bisect.bisect_right(time_instants, sub_formula[1])
+                            jump.append(time_instants[indice] - operand.operands[0].lower)
                         else:
-                            jump.append(Fraction(1))
+                            jump.append(1)
             jump = min(jump)
             for operand in node.operands:
-                if operand.operator in {'F', 'G', 'U', 'R'} and (jump == Fraction(1) or not operand.is_derived):
+                if operand.operator in {'F', 'G', 'U', 'R'} and (jump == 1 or not operand.is_derived):
                     new_node.extend([operand])
-                elif operand.operator in {'O'} and Fraction(operand.operands[0].lower) < Fraction(
-                        operand.operands[0].upper):
-                    if jump == Fraction(1):
-                        sub_formula = copy.deepcopy(
-                            operand.operands[0])  # node[i][1] dovrebbe essere l'argomenti di 'O'
-                        sub_formula.lower = str(Fraction(sub_formula.lower) + jump)
+                elif operand.operator in {'O'} and operand.operands[0].lower < operand.operands[0].upper:
+                    if jump == 1:
+                        sub_formula = copy.deepcopy(operand.operands[0])  # node[i][1] dovrebbe essere l'argomenti di 'O'
+                        sub_formula.lower = sub_formula.lower + jump
                         new_node.extend([sub_formula])
                     else:
                         if operand.operands[0].is_derived:  # per questi devo aggiungere jump ad entrambi gli estremi dell'intervallo
                             sub_formula = copy.deepcopy(operand.operands[0])
-                            sub_formula.lower = str(Fraction(sub_formula.lower) + jump)
-                            sub_formula.upper = str(Fraction(sub_formula.upper) + jump)
+                            sub_formula.lower = sub_formula.lower + jump
+                            sub_formula.upper = sub_formula.upper + jump
                             new_node.extend([sub_formula])
                         else:
                             sub_formula = copy.deepcopy(operand.operands[0])
-                            sub_formula.lower = str(Fraction(sub_formula.lower) + jump)
+                            sub_formula.lower = sub_formula.lower + jump
                             new_node.extend([sub_formula])
         if new_node[0] == ',' and len(new_node) == 2:  # se uno degli elementi iniziale è della forma OG[x,x],
             # cioè ha esaurito l'intervallo e viene eliminato, è possibile  che rimanga un solo elemento, ma preceduto dalla virgola anche se non dovrebbe
@@ -1028,11 +1020,9 @@ def decompose_jump(node):
             simplify_F(node)
             return [node]
     else:  # ho una formula con un solo operatore (quindi un O)
-        if not flag and Fraction(node.operands[0].lower) < Fraction(node.operands[0].upper):
-            sub_formula = copy.deepcopy(
-                node.operands[0].to_list())  # node.operands[0] dovrebbe essere l'argomenti di 'O'
-            sub_formula[1] = sub_formula[
-                2]  # se ho una formula con un solo elemento posso già saltare all'ultimo istante di tempo
+        if not flag and node.operands[0].lower < node.operands[0].upper:
+            sub_formula = copy.deepcopy(node.operands[0].to_list())  # node.operands[0] dovrebbe essere l'argomenti di 'O'
+            sub_formula[1] = sub_formula[2]  # se ho una formula con un solo elemento posso già saltare all'ultimo istante di tempo
             new_node.extend(sub_formula)
             return [Node(*new_node)]
         else:
@@ -1278,6 +1268,7 @@ def add_children(node, depth, last_spawned, max_depth, current_time, mode, tree,
 
     node_copy = copy.deepcopy(node)
     current_time = node.current_time # extract_min_time(node_copy) should have been called by the parent
+    assert current_time is None or isinstance(current_time, int)
     children = decompose(node_copy, current_time, mode)
     if children is None:
         if verbose:
@@ -1299,7 +1290,7 @@ def add_children(node, depth, last_spawned, max_depth, current_time, mode, tree,
     child_queue = []
     for child in children:
         if child != 'Rejected':
-            extract_min_time(child) # updates the node's current_time, called here once and for all
+            set_min_time(child) # updates the node's current_time, called here once and for all
             if mode != 'sat' or child.current_time == current_time or not check_rejected(rejected_store, child, verbose):
                 child_queue.append(child)
             elif tree and mode == 'sat':
@@ -1357,7 +1348,7 @@ def build_decomposition_tree(root, max_depth, mode, build_tree, parallel, verbos
     global rejected_store
     if mode == 'sat':
         rejected_store = []
-    time = extract_min_time(root)
+    time = set_min_time(root)
     if build_tree:
         counter = 0
         G = nx.DiGraph()

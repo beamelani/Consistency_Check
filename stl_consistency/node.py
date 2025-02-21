@@ -108,8 +108,8 @@ class Node:
             if operator in {'&&', ','}:
                 self.satisfied_implications = []
         elif operator in {'G', 'F', 'U', 'R'}:
-            self.lower = args[0]
-            self.upper = args[1]
+            self.lower = int(args[0])
+            self.upper = int(args[1])
             self.operands = list(args[2:])
             if operator == 'G':
                 self.counter_F = 0 #needed in case you have GF and need to keep track of when F is satisfied
@@ -180,15 +180,16 @@ class Node:
                 op.flatten()
 
     def operands_to_strings(self):
-        return [formula_to_string(op.to_list()) for op in self.operands]
+        return [op if isinstance(op, str) else formula_to_string(op.to_list()) for op in self.operands]
 
     def get_sort_key(self):
+        assert isinstance(self.lower, int) and isinstance(self.upper, int)
         return (
             # We put ops that generate just one child first so they are decomposed first
             'A' + self.operator if self.operator in {'&&', ',', 'G'} else self.operator,
             # TODO: replace operands_to_strings with a more efficient method
             self.operands_to_strings(),
-            int(self.lower), int(self.upper)
+            self.lower, self.upper
         )
 
     def sort_operands(self):
@@ -212,9 +213,9 @@ class Node:
                         return False
                 return True
             case 'F': # TODO normalize times
-                return self.operands_to_strings() == other.operands_to_strings() and int(other.lower) - int(other.current_time) <= int(self.lower) - int(self.current_time) and int(other.upper) - int(other.current_time) >= int(self.upper) - int(self.current_time)
+                return self.operands_to_strings() == other.operands_to_strings() and other.lower - other.current_time <= self.lower - self.current_time and other.upper - other.current_time >= self.upper - self.current_time
             case 'G':
-                return self.operands_to_strings() == other.operands_to_strings() and int(self.lower) - int(self.current_time) <= int(other.lower) - int(other.current_time) and int(self.upper) - int(self.current_time) >= int(other.upper) - int(other.current_time)
+                return self.operands_to_strings() == other.operands_to_strings() and self.lower - self.current_time <= other.lower - other.current_time and self.upper - self.current_time >= other.upper - other.current_time
             case '!':
                 return self.operands[0].implies_quick(other.operands[0])
             case 'P':
