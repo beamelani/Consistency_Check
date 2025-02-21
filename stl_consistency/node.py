@@ -179,16 +179,12 @@ class Node:
             for op in self.operands:
                 op.flatten()
 
-    def operands_to_strings(self):
-        return [op if isinstance(op, str) else formula_to_string(op.to_list()) for op in self.operands]
-
     def get_sort_key(self):
         assert isinstance(self.lower, int) and isinstance(self.upper, int)
         return (
             # We put ops that generate just one child first so they are decomposed first
             'A' + self.operator if self.operator in {'&&', ',', 'G'} else self.operator,
-            # TODO: replace operands_to_strings with a more efficient method
-            self.operands_to_strings(),
+            [op.to_list() for op in self.operands] if self.operator != 'P' else self.operands[0],
             self.lower, self.upper
         )
 
@@ -213,9 +209,9 @@ class Node:
                         return False
                 return True
             case 'F': # TODO normalize times
-                return self.operands_to_strings() == other.operands_to_strings() and other.lower - other.current_time <= self.lower - self.current_time and other.upper - other.current_time >= self.upper - self.current_time
+                return self.operands[0].to_list() == other.operands[0].to_list() and other.lower - other.current_time <= self.lower - self.current_time and other.upper - other.current_time >= self.upper - self.current_time
             case 'G':
-                return self.operands_to_strings() == other.operands_to_strings() and self.lower - self.current_time <= other.lower - other.current_time and self.upper - self.current_time >= other.upper - other.current_time
+                return self.operands[0].to_list() == other.operands[0].to_list() and self.lower - self.current_time <= other.lower - other.current_time and self.upper - self.current_time >= other.upper - other.current_time
             case '!':
                 return self.operands[0].implies_quick(other.operands[0])
             case 'P':
