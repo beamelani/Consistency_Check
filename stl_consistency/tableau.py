@@ -1253,7 +1253,7 @@ def add_tree_child(G, parent_label, child):
     G.add_edge(parent_label, child_label)
 
 def add_rejected(rejected_store, node):
-    # TODO also check if some other node implies this one
+    # Note: checking if some other node implies this one seems not to be useful
     node.sort_operands()
     rejected_store.append(node)
 
@@ -1332,7 +1332,7 @@ def add_children(node, depth, last_spawned, max_depth, current_time, mode, tree,
                     complete_result = True
                 else: # mode in {'sat', 'strong_sat'}
                     return True
-            elif mode == 'sat' and child.current_time > current_time:
+            elif mode == 'sat' and child.current_time is not None and child.current_time > current_time:
                 # TODO make more efficient data structure
                 rejected_store.append(child)
 
