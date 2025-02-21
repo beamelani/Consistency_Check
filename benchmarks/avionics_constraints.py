@@ -226,38 +226,6 @@ railroad_merged = [
     ['G', '51', '60', ['||', ['!', ['B_a']], ['G', '20', '40', ['!', ['B_a']]]]]
 ]
 
-# railroad = [
-#     ['G', '0', '3', ['F', '2', '6', ['B_a']]],
-#     ['G', '0', '3', ['G', '6', '8', ['!', ['B_a']]]]
-# ]
-
-test = [
-    ['G', '0', '20', ['||', ['&&', ['F', '0', '40', ['B_a']], ['G', '20', '60', ['!', ['B_a']]]], ['&&', ['F', '0', '40', ['B_a']], ['!', ['B_a']]]]]
-]
-
-test_false = [
-    ['G', '0', '30', ['||', ['&&', ['F', '0', '20', ['B_a']], ['!', ['B_a']]], ['&&', ['F', '0', '20', ['B_a']], ['G', '10', '60', ['!', ['B_a']]]]]]
-]
-
-test_bug = [
-    ['G', '0', '4', ['||', ['&&', ['F', '0', '2', ['B_a']], ['!', ['B_a']]], ['&&', ['F', '0', '2', ['B_a']], ['G', '2', '4', ['!', ['B_a']]]]]]
-]
-
-test2 = [
-    ['F', '0', '40', ['B_a']],
-    ['G', '20', '60', ['!', ['B_a']]]
-]
-
-test3 = [
-    ['G', '0', '20', ['F', '0', '40', ['B_a']]],
-    ['G', '20', '60', ['!', ['B_a']]]
-]
-
-test3_small = [
-    ['G', '0', '2', ['F', '0', '4', ['B_a']]],
-    ['G', '2', '6', ['!', ['B_a']]]
-]
-
 batteries = [
     ['G', '1', '20', ['F', '3', '14', ['R_d1 >= 1.4']]],
     ['F', '6', '30', ['->', ['&&', ['B_live1'], ['B_live2']], ['G', '7', '24', ['&&', ['B_live1'], ['B_live2']]]]],
@@ -287,12 +255,10 @@ def check_dataset(dataset_name, dataset, max_depth, timeout):
     # Seconda prova: Tableau
     start_t = time.perf_counter()
     res_tableau = run_with_timeout(timeout, make_tableau, Node(*formula), max_depth, 'sat', False, False, False)
-    #res_tableau = make_tableau(Node(*formula), max_depth, 'sat', True, False, False)
+    # res_tableau = make_tableau(Node(*formula), max_depth, 'sat', False, False, False)
     elapsed_tableau = time.perf_counter() - start_t
 
-    #nx.drawing.nx_pydot.write_dot(res_tableau[0], './rr_bool_small.dot')
-    # print(nx.to_dict_of_dicts(res_tableau[0]))
-    #plot_tree(res_tableau[0])
+    # nx.drawing.nx_pydot.write_dot(res_tableau[0], './rr_bool_small.dot')
 
     # Dizionario con i risultati
     return {
@@ -329,21 +295,15 @@ if __name__ == '__main__':
     datasets = {
         # "avionics": requirements_riscritti,
         # "avionics_ranges": parameter_ranges,
-        #"automotive": mtl_requirements,
-        #"powertrain": pcv,
-        #"cps": req_cps,
-        # "cars": cars,
-        # "thermostat": thermostat,
-        # "watertank": watertank,
+        # "automotive": mtl_requirements,
+        # "powertrain": pcv,
+        # "cps": req_cps,
+        "cars": cars,
+        "thermostat": thermostat,
+        "watertank": watertank,
         "railroad": railroad,
-        #"railroad_merged": railroad_merged,
-        #"test": test,
-        #"test_false": test_false,
-        #"test_bug": test_bug,
-        #"test2": test2,
-        #"test3": test3,
-        #"test3_small": test3_small,
-        #"batteries": batteries
+        "railroad_merged": railroad_merged,
+        "batteries": batteries
     }
     #datasets = [cars, thermostat, watertank, batteries]
     max_depth = 100000
