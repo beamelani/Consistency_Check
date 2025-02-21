@@ -183,8 +183,13 @@ class Node:
         return [formula_to_string(op.to_list()) for op in self.operands]
 
     def get_sort_key(self):
-        # TODO: replace operands_to_strings with a more efficient method
-        return (self.operator, self.operands_to_strings(), int(self.lower), int(self.upper))
+        return (
+            # We put ops that generate just one child first so they are decomposed first
+            'A' + self.operator if self.operator in {'&&', ',', 'G'} else self.operator,
+            # TODO: replace operands_to_strings with a more efficient method
+            self.operands_to_strings(),
+            int(self.lower), int(self.upper)
+        )
 
     def sort_operands(self):
         self.operands.sort(key=Node.get_sort_key)
