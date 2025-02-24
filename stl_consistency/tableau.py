@@ -392,7 +392,7 @@ def decompose(node, current_time, mode):
             return decompose_U(node.to_list(), node, -1)
         elif node.operator == 'R':
             return decompose_R(node.to_list(), node, -1)
-        elif node[0] == '!':
+        elif node.operator == '!':
             counter += 1
         # Jump
         elif node.operator == 'O':  # se c'è un solo elemento non servono altre condizioni
@@ -1010,9 +1010,7 @@ def simplify_F(node):
     F_formulas = {}
     for i, formula in enumerate(node.operands):
         if formula.operator == 'F':
-            # We convert to string so that no spurious fields are taken into account by __hash__
-            # TODO Do something better and faster
-            operand = formula_to_string(formula[0].to_list())
+            operand = formula[0]
             if operand in F_formulas:
                 for j, F_formula in F_formulas[operand]:
                     if F_formula.lower >= formula.lower and F_formula.upper <= formula.upper:

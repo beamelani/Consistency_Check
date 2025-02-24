@@ -179,6 +179,18 @@ class Node:
             for op in self.operands:
                 op.flatten()
 
+    def __hash__(self):
+        '''
+        Node: only hashes formula content!
+        '''
+        return hash((self.operator, self.lower, self.upper, tuple(self.operands)))
+
+    def __eq__(self, other):
+        '''
+        Note: only checks formula equality!
+        '''
+        return isinstance(other, Node) and (self.operator, self.lower, self.upper, self.operands) == (other.operator, other.lower, other.upper, other.operands)
+
     def __lt__(self, other):
         return (self.operator, self.lower, self.upper, self.operands) < (other.operator, other.lower, other.upper, other.operands)
     
@@ -221,7 +233,8 @@ class Node:
                 j = 0
                 for i in range(len(other.operands)):
                     not_implies = order = True
-                    while j < len(self.operands) and not_implies and order:
+                    len_operands = len(self.operands)
+                    while j < len_operands and not_implies and order:
                         if self.operands[j].implies_quick(other.operands[i]):
                             not_implies = False
                             break
@@ -234,10 +247,9 @@ class Node:
                         return False
                 return True
             case 'F': # TODO normalize times
-                # TODO implement __eq__ to avoid to_list
-                return self.operands[0].to_list() == other.operands[0].to_list() and other.lower - other.current_time <= self.lower - self.current_time and other.upper - other.current_time >= self.upper - self.current_time
+                return self.operands[0] == other.operands[0] and other.lower - other.current_time <= self.lower - self.current_time and other.upper - other.current_time >= self.upper - self.current_time
             case 'G':
-                return self.operands[0].to_list() == other.operands[0].to_list() and self.lower - self.current_time <= other.lower - other.current_time and self.upper - self.current_time >= other.upper - other.current_time
+                return self.operands[0] == other.operands[0] and self.lower - self.current_time <= other.lower - other.current_time and self.upper - self.current_time >= other.upper - other.current_time
             case '!':
                 return self.operands[0].implies_quick(other.operands[0])
             case 'P':
