@@ -108,8 +108,8 @@ class Node:
             if operator in {'&&', ','}:
                 self.satisfied_implications = []
         elif operator in {'G', 'F', 'U', 'R'}:
-            self.lower = args[0]
-            self.upper = args[1]
+            self.lower = int(args[0])
+            self.upper = int(args[1])
             self.operands = list(args[2:])
             if operator == 'G':
                 self.counter_F = 0 #needed in case you have GF and need to keep track of when F is satisfied
@@ -156,12 +156,12 @@ class Node:
         else:
             raise ValueError('Unknown operator')
 
-    def to_label(self, counter):
+    def to_label(self):
         '''
         Use node.to_label(counter) to create a label for a graph node.
         The current time must be set before using this method with node.set_current_time()
         '''
-        return " ".join([formula_to_string(self.to_list()), str(self.current_time), str(counter)])
+        return " ".join([formula_to_string(self.to_list()), str(self.current_time), str(self.counter)])
 
     def __getitem__(self, i):
         '''
@@ -178,3 +178,43 @@ class Node:
         if self.operator != 'P':
             for op in self.operands:
                 op.flatten()
+
+    def get_sort_key(self):
+        assert isinstance(self.lower, int) and isinstance(self.upper, int)
+        return (
+            # We put ops that generate just one child first so they are decomposed first
+            'A' + self.operator if self.operator in {'&&', ',', 'G'} else self.operator,
+            [op.to_list() for op in self.operands] if self.operator != 'P' else self.operands[0],
+            self.lower, self.upper
+        )
+
+    def sort_operands(self):
+        self.operands.sort(key=Node.get_sort_key)
+    
+    def implies_quick(self, other):
+        '''
+        :return: True if we can quickly determine that self implies other, False otherwise
+        Assumes both nodes' operands have been sorted with sort_operands
+        '''
+        if self.operator != other.operator:
+            return False
+        match self.operator:
+            case ',':
+                j = 0
+                for i in range(len(other.operands)):
+                    while j < len(self.operands) and not self.operands[j].implies_quick(other.operands[i]):
+                        j += 1
+                    if j >= len(self.operands):
+                        # we broke the loop because no operand in self implies other.operands[i]
+                        return False
+                return True
+            case 'F': # TODO normalize times
+                return self.operands[0].to_list() == other.operands[0].to_list() and other.lower - other.current_time <= self.lower - self.current_time and other.upper - other.current_time >= self.upper - self.current_time
+            case 'G':
+                return self.operands[0].to_list() == other.operands[0].to_list() and self.lower - self.current_time <= other.lower - other.current_time and self.upper - self.current_time >= other.upper - other.current_time
+            case '!':
+                return self.operands[0].implies_quick(other.operands[0])
+            case 'P':
+                return self.operands[0] == other.operands[0]
+            # TODO: U, R, etc
+        return False
