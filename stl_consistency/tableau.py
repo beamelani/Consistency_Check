@@ -578,8 +578,10 @@ def decompose_all_G_nodes(formula, current_time):
         elif arg.operator in {'U', 'R', 'F'} or (arg.operator in {'G', 'F'} and node.lower == node.initial_time) or (arg.operator in {'G', 'F'} and not short):
             # Modifica bounds sommando quelli del nodo G
             extract = copy.deepcopy(arg)
-            extract.lower = str(int(arg.lower) + int(lower_bound))
-            extract.upper = str(int(arg.upper) + int(lower_bound))
+            #extract.lower = str(int(arg.lower) + int(lower_bound))
+            #extract.upper = str(int(arg.upper) + int(lower_bound))
+            extract.lower = arg.lower + lower_bound
+            extract.upper = arg.upper + lower_bound
             extract.is_derived = True
             extract.identifier = identifier
             if arg.operator in {'U', 'R'}:
@@ -589,19 +591,23 @@ def decompose_all_G_nodes(formula, current_time):
             G_counter = 0
             for operand in formula.operands:
                 if operand.operator in {'G'} and operand.is_derived and operand.identifier == node.identifier and operand.and_element == arg.and_element:
-                    operand.upper = str(int(operand.upper) + 1)
+                    #operand.upper = str(int(operand.upper) + 1)
+                    operand.upper = operand.upper + 1
                     G_counter += 1
                     if node.lower == node.upper:
                         operand.is_derived = False
                 elif operand.operator in {'O'} and operand.operands[0].operator in {'G'} and operand.operands[0].is_derived and operand.operands[0].identifier == node.identifier and operand.operands[0].and_element == arg.and_element:
-                    operand.operands[0].upper = str(int(operand.operands[0].upper) + 1)
+                    #operand.operands[0].upper = str(int(operand.operands[0].upper) + 1)
+                    operand.operands[0].upper = operand.operands[0].upper + 1
                     G_counter += 1
                     if node.lower == node.upper:
                         operand.operands[0].is_derived = False
             if G_counter == 0:
                 extract = copy.deepcopy(arg)
-                extract.lower = str(int(arg.lower) + int(lower_bound))
-                extract.upper = str(int(arg.upper) + int(lower_bound))
+                #extract.lower = str(int(arg.lower) + int(lower_bound))
+                #extract.upper = str(int(arg.upper) + int(lower_bound))
+                extract.lower = arg.lower + lower_bound
+                extract.upper = arg.upper + lower_bound
                 extract.is_derived = True
                 extract.identifier = identifier
                 return extract
@@ -880,6 +886,21 @@ def decompose_and(node, index):
 
 
 def decompose_or(node, formula, index):
+    # Funzione di ordinamento basata sulla complessità
+    def complexity_score(node):
+        """Calcola un punteggio di complessità per ordinare i nodi."""
+        # 1. Priorità ai nodi con operatore 'P'
+        if node.operator == 'P':
+            return 0
+        # 2. Operatori temporali: Ordinati per orizzonte temporale (upper - lower)
+        elif node.operator in {'G', 'F', 'U', 'R'}:
+            return 1 + (int(node.upper) - int(node.lower))
+        # 3. Altri operatori (&&, ||, ->, ecc.) Ordinati per numero di operandi
+        else:
+            return 100 + len(node.operands)  # Numero alto per metterli dopo i precedenti
+
+    # Ordino i nodi secondo l’euristica
+    node.operands.sort(key=complexity_score)
     if not formula:
         return node  # basta questo perché se lo restituisci senza parentesi ogni operand di || viene identificato come un nodo
     else:
@@ -903,7 +924,6 @@ def decompose_or(node, formula, index):
                 new_node.operands.append(or_operand)
             res.append(new_node)
             del new_node
-        random.shuffle(res)
         return res
 
 def decompose_imply_classic(node, formula, index):
