@@ -179,17 +179,35 @@ class Node:
             for op in self.operands:
                 op.flatten()
 
-    def get_sort_key(self):
-        assert isinstance(self.lower, int) and isinstance(self.upper, int)
+    def __lt__(self, other):
+        return (self.operator, self.lower, self.upper, self.operands) < (other.operator, other.lower, other.upper, other.operands)
+    
+    def __le__(self, other):
+        return (self.operator, self.lower, self.upper, self.operands) <= (other.operator, other.lower, other.upper, other.operands)
+
+    def __gt__(self, other):
+        return (self.operator, self.lower, self.upper, self.operands) > (other.operator, other.lower, other.upper, other.operands)
+    
+    def __ge__(self, other):
+        return (self.operator, self.lower, self.upper, self.operands) >= (other.operator, other.lower, other.upper, other.operands)
+
+    def get_imply_sort_key(self):
         return (
             # We put ops that generate just one child first so they are decomposed first
             'A' + self.operator if self.operator in {'&&', ',', 'G'} else self.operator,
-            [op.to_list() for op in self.operands] if self.operator != 'P' else self.operands[0],
-            self.lower, self.upper
+            self.operands,
+            self.lower - (self.current_time if self.current_time else 0),
+            self.upper - (self.current_time if self.current_time else 0)
+        )
+
+    def get_imply_search_key(self):
+        return (
+            'A' + self.operator if self.operator in {'&&', ',', 'G'} else self.operator,
+            self.operands
         )
 
     def sort_operands(self):
-        self.operands.sort(key=Node.get_sort_key)
+        self.operands.sort(key=Node.get_imply_sort_key)
     
     def implies_quick(self, other):
         '''
@@ -202,13 +220,21 @@ class Node:
             case ',':
                 j = 0
                 for i in range(len(other.operands)):
-                    while j < len(self.operands) and not self.operands[j].implies_quick(other.operands[i]):
+                    not_implies = order = True
+                    while j < len(self.operands) and not_implies and order:
+                        if self.operands[j].implies_quick(other.operands[i]):
+                            not_implies = False
+                            break
+                        if other.operands[i].get_imply_search_key() < self.operands[j].get_imply_search_key():
+                            order = False
+                            break
                         j += 1
-                    if j >= len(self.operands):
-                        # we broke the loop because no operand in self implies other.operands[i]
+                    if not_implies: # j >= len(self.operands) or not order:
+                        # we break the loop because no operand in self implies other.operands[i]
                         return False
                 return True
             case 'F': # TODO normalize times
+                # TODO implement __eq__ to avoid to_list
                 return self.operands[0].to_list() == other.operands[0].to_list() and other.lower - other.current_time <= self.lower - self.current_time and other.upper - other.current_time >= self.upper - self.current_time
             case 'G':
                 return self.operands[0].to_list() == other.operands[0].to_list() and self.lower - self.current_time <= other.lower - other.current_time and self.upper - self.current_time >= other.upper - other.current_time

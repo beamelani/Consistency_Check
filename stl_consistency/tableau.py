@@ -1385,16 +1385,18 @@ def add_tree_child(G, parent_label, child):
 def add_rejected(rejected_store, node):
     # Note: checking if some other node implies this one seems not to be useful
     node.sort_operands()
-    rejected_store.append(node)
+    bisect.insort_left(rejected_store, node, key=Node.get_imply_sort_key)
 
 def check_rejected(rejected_store, node, verbose):
     node.sort_operands()
-    # TODO do something faster
-    for rejected in rejected_store:
+    i = bisect.bisect_left(rejected_store, node.get_imply_search_key(), key=Node.get_imply_search_key)
+    for rejected in rejected_store[i:]:
         if node.implies_quick(rejected):
             if verbose:
                 print('Rejecting', node.to_list(), ' because it implies rejected node ', rejected.to_list())
             return True
+        if rejected.operator == node.operator == ',' and node.operands[-1].get_imply_search_key() < rejected.operands[0].get_imply_search_key():
+            return False
     return False
 
 def add_children(node, depth, last_spawned, max_depth, current_time, mode, tree, parallel, verbose):
