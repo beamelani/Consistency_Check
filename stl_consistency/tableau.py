@@ -410,7 +410,6 @@ def decompose(node, current_time, mode):
                     return decompose_and(node, j)
                 if node.operands[j].operator == '||':
                     return decompose_or(node.operands[j], node, j)
-#<<<<<<< HEAD
                 elif node.operands[j].operator == 'G' and Fraction(node.operands[j].lower) == current_time:
                     #return decompose_G(node.operands[j], node, j, current_time)
                     return decompose_all_G_nodes(node, current_time)
@@ -420,22 +419,11 @@ def decompose(node, current_time, mode):
                     return decompose_U(node.operands[j].to_list(), node, j)
                 elif node.operands[j].operator == 'R' and Fraction(node.operands[j].lower) == current_time:
                     return decompose_R(node.operands[j].to_list(), node, j)
-#=======
-#>>>>>>> origin/main
                 elif node.operands[j].operator == '->':
                     if mode == 'complete' or mode == 'sat':
                         return decompose_imply_classic(node.operands[j], node, j)
                     else:
                         return decompose_imply_new(node.operands[j], node, j)
-                elif node.operands[j].operator == 'G' and node.operands[j].lower == current_time:
-                    #return decompose_G(node.operands[j], node, j, current_time)
-                    return decompose_all_G_nodes(node, current_time)
-                elif node.operands[j].operator == 'F' and node.operands[j].lower == current_time:
-                    return decompose_F(node.operands[j], node, j, current_time)
-                elif node.operands[j].operator == 'U' and node.operands[j].lower == current_time:
-                    return decompose_U(node.operands[j].to_list(), node, j)
-                elif node.operands[j].operator == 'R' and node.operands[j].lower == current_time:
-                    return decompose_R(node.operands[j].to_list(), node, j)
                 else:  # se arrivo qui vuol dire che non sono entrata in nessun return e quindi non c'era nulla da decomporre
                     # perché l'elemento era già decomposto o non ancora attivo
                     counter += 1
