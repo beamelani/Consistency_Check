@@ -874,18 +874,44 @@ def decompose_and(node, index):
 
 
 def decompose_or(node, formula, index):
-    # Funzione di ordinamento basata sulla complessità
+
     def complexity_score(node):
-        """Calcola un punteggio di complessità per ordinare i nodi."""
-        # 1. Priorità ai nodi con operatore 'P'
+        """Calcola un punteggio di complessità per ordinare i nodi, penalizzando gli annidamenti temporali."""
+        # 1. Operatori con solo 'P' → Migliori
         if node.operator == 'P':
             return 0
-        # 2. Operatori temporali: Ordinati per orizzonte temporale (upper - lower)
-        elif node.operator in {'G', 'F', 'U', 'R'}:
-            return 1 + (int(node.upper) - int(node.lower))
-        # 3. Altri operatori (&&, ||, ->, ecc.) Ordinati per numero di operandi
-        else:
-            return 100 + len(node.operands)  # Numero alto per metterli dopo i precedenti
+        if node.operator in {'&&', ','} and all(op.operator == 'P' for op in node.operands):
+            return 1
+        if node.operator == '->' and all(op.operator == 'P' for op in node.operands):
+            return 2
+        if node.operator == '||' and all(op.operator == 'P' for op in node.operands):
+            return 3
+
+        # 2. Operatori temporali senza annidamenti complessi
+        if node.operator in {'G', 'F', 'U', 'R'}:
+            # Penalizzo in base all'orizzonte temporale
+            score = 10 + (int(node.upper) - int(node.lower))
+
+            # Penalizzazione extra se l'operando è un altro temporale
+            if node.operator == 'G' and node.operands[0].operator in {'G', 'F', 'U', 'R'}:
+                score += 20  # G annidato → peggior caso
+            elif node.operator == 'U' and node.operands[0].operator in {'G', 'F', 'U', 'R'}:
+                score += 15  # U con temporale nel primo operand → peggio
+            elif node.operator == 'R' and node.operands[1].operator in {'G', 'F', 'U', 'R'}:
+                score += 15  # R con temporale nel secondo operand → peggio
+
+            return score
+
+        # 3. Operatori logici misti (nessun solo P)
+        if node.operator == '->':
+            return 30 + len(node.operands)
+        elif node.operator == '&&':
+            return 40 + len(node.operands)
+        elif node.operator == '||':
+            return 50 + len(node.operands)
+        elif node.operator == ',':
+            return 60 + len(node.operands)
+
 
     # Ordino i nodi secondo l’euristica
     node.operands.sort(key=complexity_score)
