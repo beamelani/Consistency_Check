@@ -91,7 +91,13 @@ def arith_expr_to_string(expr):
 
 
 class Node:
-    def __init__(self, operator, *args):
+    def __init__(self, *args):
+        if len(args) == 0:
+            return # We create an empty object to be filled later
+        operator = args[0]
+        args = args[1:]
+
+        # If you add more fields, remember to update shallow_copy
         self.current_time = None
         self.initial_time = '-1' # the initial time of the outer operator of a nested operator
         self.is_derived = False  # tells if a temporal operand is derived from the decomposition of a nested temporal operand
@@ -142,6 +148,33 @@ class Node:
 
     def upper_bound(self):
         return self.upper
+
+    def replace_operand(self, index, new_operand, *more_new_operands):
+        '''
+        Replaces the operand at the given index with the new operand(s),
+        appending operands other than the first to the end.
+        '''
+        self.operands[index] = new_operand
+        self.operands.extend(more_new_operands)
+
+    def shallow_copy(self):
+        new = Node()
+        new.current_time = self.current_time
+        new.initial_time = self.initial_time
+        new.is_derived = self.is_derived
+        new.identifier = self.identifier
+        new.implications = self.implications
+        new.operator = self.operator
+        new.id_implication = self.id_implication
+        new.and_element = self.and_element
+        new.or_element = self.or_element
+        new.execution_time = self.execution_time
+        new.lower = self.lower
+        new.upper = self.upper
+        new.operands = self.operands.copy()
+        if self.operator == 'G': # Do we need to copy this?
+                new.counter_F = self.counter_F
+        return new
 
     def to_list(self):
         '''
