@@ -767,12 +767,13 @@ NB: nel ramo dove faccio p se P ha operator = 'P' devo aggiungere execution_time
 
 def decompose_and(node, index):
     assert index >= 0
-    new_node = copy.deepcopy(node)
+    new_node = Node(',')
     for operand in node.operands:
         if node.operator == ',' and operand.operator in {'&&', ','}:
-            del new_node.operands[index]
             for element in operand.operands:
                 new_node.operands.append(element)
+        else:
+            new_node.operands.append(operand)
 
     return [new_node]
 
