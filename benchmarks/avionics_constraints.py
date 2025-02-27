@@ -256,8 +256,8 @@ def check_dataset(dataset_name, dataset, max_depth, timeout):
 
     # Seconda prova: Tableau
     start_t = time.perf_counter()
-    res_tableau = run_with_timeout(timeout, make_tableau, Node(*formula), max_depth, 'sat', False, False, False)
-    #res_tableau = make_tableau(Node(*formula), max_depth, 'sat', False, False, False)
+    res_tableau = run_with_timeout(timeout, make_tableau, Node(*parsed_formula), max_depth, 'sat', False, False, False)
+    #res_tableau = make_tableau(Node(*parsed_formula), max_depth, 'sat', False, False, False)
     elapsed_tableau = time.perf_counter() - start_t
 
     # nx.drawing.nx_pydot.write_dot(res_tableau[0], './rr_bool_small.dot')

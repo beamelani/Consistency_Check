@@ -73,13 +73,13 @@ import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
 import random
 import copy
-from z3 import *
+import z3
 from fractions import Fraction
 from math import gcd, lcm
 import bisect
 import concurrent.futures as fs
 from stl_consistency.node import Node
-
+from stl_consistency.parser import STLParser
 
 def push_negation(node):
     if node.operator == '!':
@@ -967,78 +967,81 @@ def decompose_jump(node):
             simplify_F(new_node)
         return [new_node]
 
+def real_expr_to_z3(z3_variables, expr):
+    if isinstance(expr, str):
+        if STLParser.is_float(expr):
+            return float(expr)
+        if expr not in z3_variables:
+            z3_variables[expr] = z3.Real(expr)
+        return z3_variables[expr]
+
+    assert isinstance(expr, list) and len(expr) == 3
+    lhs = real_expr_to_z3(z3_variables, expr[1])
+    rhs = real_expr_to_z3(z3_variables, expr[2])
+    match expr[0]:
+        case '+':
+            return lhs + rhs
+        case '-':
+            return lhs - rhs
+    raise ValueError(f"Operatore non gestito: {expr[0]}")
+
+def real_term_to_z3(z3_variables, comp, lhs, rhs):
+    lhs = real_expr_to_z3(z3_variables, lhs)
+    rhs = real_expr_to_z3(z3_variables, rhs)
+    match comp:
+        case '<':
+            return lhs < rhs
+        case '<=':
+            return lhs <= rhs
+        case '>':
+            return lhs > rhs
+        case '>=':
+            return lhs >= rhs
+        case '==':
+            return lhs == rhs
+        case '!=':
+            return lhs != rhs
 
 def local_consistency_check(node):
     '''
     :return: True if node is consistent, False otherwise
     '''
-    assert node.operator == ','
-    terms = []
-    variables = []
+    global z3_variables
+    solver = z3.Solver()
     for operand in node.operands:
         if operand.operator == 'O' and operand[0].operator in {'F', 'U'} and operand[0].lower == operand[0].upper:
             return False
         if operand.operator == 'P':
-            terms.append(operand)
-            new_var = re.findall(r'\b[B|R]_[a-zA-Z]\w*\b', terms[-1][0])
-            variables.extend(new_var)
+            if operand[0] in {'<', '<=', '>', '>=', '==', '!='}:
+                solver.add(real_term_to_z3(z3_variables, *operand.operands))
+            else: # Boolean variable
+                prop = operand[0]
+                if prop == 'B_false':
+                    return False # we have false in the upper level of a node
+                elif prop == 'B_true':
+                    continue # if we have true in the upper level of a node we can just ignore it
+                
+                if prop not in z3_variables:
+                    z3_variables[prop] = z3.Bool(prop)
+
+                solver.add(z3_variables[prop])
         elif operand.operator == '!':
-            terms.append(operand)
-            new_var = re.findall(r'\b[B|R]_[a-zA-Z]\w*\b', terms[-1][0][0])
-            variables.extend(new_var)
+            if operand[0][0] in {'<', '<=', '>', '>=', '==', '!='}:
+                solver.add(z3.Not(real_term_to_z3(z3_variables, *operand[0].operands)))
+            else: # Boolean variable
+                prop = operand[0][0]
+                if prop == 'B_true':
+                    return False # we have !true in the upper level of a node
+                elif prop == 'B_false':
+                    continue # if we have !false in the upper level of a node we can just ignore it
+                
+                if prop not in z3_variables:
+                    z3_variables[prop] = z3.Bool(prop)
 
-    z3_variables = {}
-    for var in variables:
-        if var not in z3_variables:
-            if var[0] == 'B':
-                if var[2:].lower() in {'true', 'false'}:
-                    z3_variables[var] = var[2:].lower() == 'true'
-                else:
-                    z3_variables[var] = Bool(var)
-            else:
-                z3_variables[var] = Real(var)
+                solver.add(z3.Not(z3_variables[prop]))
 
-    constraints = []
-    for t in terms:
-        if t.operator == '!':
-            esp_z3 = 'Not(' + t[0][0] + ')'
-        else:
-            assert t.operator == 'P'
-            esp_z3 = t[0]
-
-        for var in z3_variables:  # inserire la variabile nel vincolo
-            esp_z3 = re.sub(rf'\b{var}\b', f'z3_variables["{var}"]', esp_z3)
-        constraints.append(eval(esp_z3))
-
-    solver = Solver()
-    # aggiungi vincoli al solver
-    solver.add(constraints)
     # Verifica se vincoli sono sat
-    return solver.check() == sat
-
-
-def modify_node(node):
-    '''
-    :return: dopo aver definito le variabili per smt check, posso togliere B_ e R_ dalla formula per poi definire i
-    vincoli
-    '''
-
-    def flatten(lst):
-        flat_list = []
-        for item in lst:
-            # if isinstance(item, list):
-            #     flat_list.extend(flatten(item))  # Ricorsione per appiattire anche liste più profonde
-            # else:
-            #     flat_list.append(item)
-            if item.operator == 'P':
-                flat_list.append(item.operands[0])
-            elif item.operator == '!':
-                flat_list.extend(['!', item.operands[0][0]])
-        return flat_list
-
-    node = flatten(node)
-    new_node = [re.sub(r'\b[B|R]_', '', expr) for expr in node]
-    return new_node
+    return solver.check() == z3.sat
 
 
 def set_initial_time(formula):
@@ -1273,6 +1276,9 @@ def build_decomposition_tree(root, max_depth, mode, build_tree, parallel, verbos
     """
     global counter
     global rejected_store
+    global z3_variables
+    z3_variables = {}
+
     if mode == 'sat':
         rejected_store = []
     time = set_min_time(root)
