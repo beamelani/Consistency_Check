@@ -20,6 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
 ## TODO: adapt for class representation
 def formula_to_string(formula):
     """
@@ -158,7 +159,9 @@ class Node:
         new.lower = self.lower
         new.upper = self.upper
         new.operands = self.operands.copy()
-        if self.operator == 'G': # Do we need to copy this?
+        if hasattr(self, 'satisfied_implications'):
+            new.satisfied_implications = self.satisfied_implications.copy()
+        if hasattr(self, 'counter_F'):
                 new.counter_F = self.counter_F
         return new
 
