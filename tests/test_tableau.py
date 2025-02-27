@@ -49,6 +49,15 @@ class TestTableau(unittest.TestCase):
     def test_globally0(self):
         self.make_test("G[2,5] (R_x > 5 || R_x < 0)", 10, True)
         
+    def test_globally_add(self):
+        self.make_test("G[2,5] (R_x + R_y > 5 && R_x - R_y < 0)", 10, True)
+
+    def test_globally_add_many(self):
+        self.make_test("G[2,5] (R_x + R_y - R_z + R_x > 5 && R_x - R_y < 0)", 10, True)
+    
+    def test_release(self):
+        self.make_test("(R_x == 10) R[1,6] (R_x < 10)", 10, True)
+
 
 if __name__ == '__main__':
     unittest.main()

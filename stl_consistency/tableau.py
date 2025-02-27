@@ -396,14 +396,13 @@ def decompose(node, current_time, mode):
 
     if counter == len(node.operands):
         # fai qui il check accept/reject, se rigetti non serve nemmeno fare il jump
-        res = smt_check(node.to_list())
-        if res == 'Rejected':
-            return [res]
-        else:
+        if local_consistency_check(node):
             res = decompose_jump(node)
             if res:
                 res[0].current_time = node.current_time
             return res
+        else:
+            return ['Rejected']
 
     return None
 
@@ -969,68 +968,53 @@ def decompose_jump(node):
         return [new_node]
 
 
-def smt_check(node):
-    """
-    :return: restituisce il nodo di partenza se è accepted,  'Rejected' se il nodo è rejected
-    """
-    new_node = []
-    variabili_z3 = {}
-    variabili = []
-    vincoli = []
-    for i in range(len(node)):
-        if node[0] == ',':
-            if node[i][0] == 'O' and node[i][1][0] in {'F', 'U'} and node[i][1][1] == node[i][1][2]:
-                #if node[i][1][0] in 'F':
-                    #print("Node is rejected because finally was never satisfied in this branch")
-                #else:
-                    #print("Node is rejected because until was never satisfied in this branch")
-                return 'Rejected'
-            if node[i][0] not in {'O', 'F', 'G', 'U', ',', 'R', '->', '<->', '&&', '||'}:
-                new_node.extend(node[i])
-                if len(node[i]) == 1:
-                    new_var = re.findall(r'\b[B|R]_[a-zA-Z]\w*\b', new_node[-1])
-                else:
-                    new_var = re.findall(r'\b[B|R]_[a-zA-Z]\w*\b', new_node[-1][0])
-                variabili.extend(new_var)
-        else:  # caso con un solo elemento (succede se ho un ramo con solo un finally)
-            if node[0] == 'O' and node[i][0] in 'F' and node[1][1] == node[1][2]:
-                #print("Node is rejected because finally was never satisfied in this branch")
-                return 'Rejected'
-            if node[0] not in {'O', 'F', 'G', 'U', ',', 'R', '->', '<->', '&&', '||'}:
-                new_node.extend(node[i])
-                new_var = re.findall(r'\b[B|R]_[a-zA-Z]\w*\b', new_node[-1])
-                variabili.extend(new_var)
-    for var in variabili:
-        if var not in variabili_z3:
+def local_consistency_check(node):
+    '''
+    :return: True if node is consistent, False otherwise
+    '''
+    assert node.operator == ','
+    terms = []
+    variables = []
+    for operand in node.operands:
+        if operand.operator == 'O' and operand[0].operator in {'F', 'U'} and operand[0].lower == operand[0].upper:
+            return False
+        if operand.operator == 'P':
+            terms.append(operand)
+            new_var = re.findall(r'\b[B|R]_[a-zA-Z]\w*\b', terms[-1][0])
+            variables.extend(new_var)
+        elif operand.operator == '!':
+            terms.append(operand)
+            new_var = re.findall(r'\b[B|R]_[a-zA-Z]\w*\b', terms[-1][0][0])
+            variables.extend(new_var)
+
+    z3_variables = {}
+    for var in variables:
+        if var not in z3_variables:
             if var[0] == 'B':
-                var = var[2:]
-                if var in {'true', 'false'}:
-                    variabili_z3[var] = var == 'true'
+                if var[2:].lower() in {'true', 'false'}:
+                    z3_variables[var] = var[2:].lower() == 'true'
                 else:
-                    variabili_z3[var] = Bool(var)
+                    z3_variables[var] = Bool(var)
             else:
-                var = var[2:]
-                variabili_z3[var] = Real(var)
-    new_node = modify_node(new_node)  # tolgo B_ e R_ che non servono più
-    for i in range(len(new_node)):
-        if new_node[i] == '!':
-            #new_node[i + 1] = 'Not(' + new_node[i + 1][0] + ')' #sbagliato, se la var è active new_node[i + 1][0] tira fuori solo la a
-            new_node[i + 1] = 'Not(' + new_node[i + 1] + ')'
+                z3_variables[var] = Real(var)
+
+    constraints = []
+    for t in terms:
+        if t.operator == '!':
+            esp_z3 = 'Not(' + t[0][0] + ')'
         else:
-            esp_z3 = new_node[i]
-            for var in variabili_z3:  # inserire la variabile nel vincolo
-                esp_z3 = re.sub(rf'\b{var}\b', f'variabili_z3["{var}"]', esp_z3)
-            vincoli.append(eval(esp_z3))
+            assert t.operator == 'P'
+            esp_z3 = t[0]
+
+        for var in z3_variables:  # inserire la variabile nel vincolo
+            esp_z3 = re.sub(rf'\b{var}\b', f'z3_variables["{var}"]', esp_z3)
+        constraints.append(eval(esp_z3))
+
     solver = Solver()
     # aggiungi vincoli al solver
-    solver.add(vincoli)
+    solver.add(constraints)
     # Verifica se vincoli sono sat
-    if solver.check() == sat:
-        #print("Node is accepted, expressions are consistent")
-        return node
-    else:
-        #print("Node is rejected, expressions are inconsistent")
-        return 'Rejected'
+    return solver.check() == sat
 
 
 def modify_node(node):
@@ -1042,10 +1026,14 @@ def modify_node(node):
     def flatten(lst):
         flat_list = []
         for item in lst:
-            if isinstance(item, list):
-                flat_list.extend(flatten(item))  # Ricorsione per appiattire anche liste più profonde
-            else:
-                flat_list.append(item)
+            # if isinstance(item, list):
+            #     flat_list.extend(flatten(item))  # Ricorsione per appiattire anche liste più profonde
+            # else:
+            #     flat_list.append(item)
+            if item.operator == 'P':
+                flat_list.append(item.operands[0])
+            elif item.operator == '!':
+                flat_list.extend(['!', item.operands[0][0]])
         return flat_list
 
     node = flatten(node)
