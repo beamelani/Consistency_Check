@@ -125,7 +125,7 @@ def push_negation(node):
     elif node.operator == 'P':
         return node
     else:  # Any non-negated operator
-        new_node = node.shallow_copy()
+        new_node = node.shallow_copy() #che fine fa l'attributo satified_implications?
         new_node.operands = [push_negation(op) for op in node.operands]
         return new_node
 
@@ -374,7 +374,6 @@ def decompose(node, current_time, mode):
         elif node.operands[j].operator == '||':
             return decompose_or(node, j)
         elif node.operands[j].operator == 'G' and node.operands[j].lower == current_time:
-            #return decompose_G(node.operands[j], node, j, current_time)
             return decompose_all_G_nodes(node, current_time)
         elif node.operands[j].operator == 'F' and node.operands[j].lower == current_time:
             return decompose_F(node, j)
@@ -389,7 +388,7 @@ def decompose(node, current_time, mode):
                 return decompose_imply_classic(node, j)
             else:
                 node = copy.deepcopy(node)
-                return decompose_imply_new(node.operands[j], node, j)
+                return decompose_imply_new(node, j)
         else:  # se arrivo qui vuol dire che non sono entrata in nessun return e quindi non c'era nulla da decomporre
             # perché l'elemento era già decomposto o non ancora attivo
             counter += 1
@@ -802,13 +801,14 @@ def decompose_imply_classic(node, index):
                     return new_node2, new_node1
     return new_node1, new_node2
 
+'''
 
 def decompose_imply_new(node, formula, index):
-    '''
-    :return: decompone p->q come not(p) OR (p and q). Se ci sono più -> in and, viene rigettato il nodo in cui tutti
-    gli antecedenti sono negati. Se c'è un solo -> viene rigettato il nodo con antecedente negato
-    NB: non so se qui si può introdurre la semplificazione per creare meno elementi (verifica che satisfied implications venga comnque correttamente aggiornato)
-    '''
+    
+    #:return: decompone p->q come not(p) OR (p and q). Se ci sono più -> in and, viene rigettato il nodo in cui tutti
+    #gli antecedenti sono negati. Se c'è un solo -> viene rigettato il nodo con antecedente negato
+    #NB: non so se qui si può introdurre la semplificazione per creare meno elementi (verifica che satisfied implications venga comnque correttamente aggiornato)
+    
     assert index >= 0 and formula is not None
     if len(formula.operands) > 1:
         if formula.implications is None: #non so perché a volte sia None, in attesa di trovare il problema uso questa soluzione
@@ -834,6 +834,44 @@ def decompose_imply_new(node, formula, index):
         new_node2 = Node(',')
         new_node2.operands = node.operands
     return new_node1, new_node2
+
+'''
+
+
+def decompose_imply_new(node, index):
+    '''
+    :return: decompone p->q come not(p) OR (p and q). Se ci sono più -> in and, viene rigettato il nodo in cui tutti
+    gli antecedenti sono negati. Se c'è un solo -> viene rigettato il nodo con antecedente negato
+    NB: non so se qui si può introdurre la semplificazione per creare meno elementi (verifica che satisfied implications venga comnque correttamente aggiornato)
+    '''
+
+    imply_formula = node[index]
+    lhs = imply_formula.operands[0]  # antecedente
+    rhs = imply_formula.operands[1]  # conseguente
+
+    assert index >= 0 and node is not None
+    if len(node.operands) > 1:
+        if node.implications is None:  # non so perché a volte sia None, in attesa di trovare il problema uso questa soluzione
+            node = count_implications(node)
+        new_node2 = node.shallow_copy()
+        new_lhs, new_rhs = lhs, rhs
+        new_node2.replace_operand(index, *(x for x in [new_lhs, new_rhs] if x is not None))
+        new_node1 = node.shallow_copy()
+        new_node2.satisfied_implications.append(node.operands[index].identifier)
+        if node.implications > 1:  # quando sono a 1 significa che quello che sto negando ora è l'ultimo e quindi li ho negati tutti
+            new_node1.replace_operand(index, push_negation(Node('!', lhs)))
+            new_node1.implications -= 1  # decremento di 1 ogni volta che passo dal ramo che nega l'antecedente per poter sapere quando li ho negati tutti
+            new_node1 = push_negation(new_node1)
+        else:
+            new_node1 = 'Rejected'
+    else:  # se l'imply non è in and con nulla posso direttamente rigettare il ramo negato
+        new_node1 = 'Rejected'
+        new_node2 = Node(',')
+        new_node2.operands = imply_formula.operands
+    # qui conviene restituire prima il ramo in cui antecedente è vero, perché tanto finché non sono tutti veri almeno
+    #una volta non posso interrompere l'esplorazione
+    return new_node2, new_node1
+
 
 def simplify_F(node):
     '''
@@ -875,6 +913,7 @@ def decompose_jump(node):
     time_instants = extract_time_instants(node, flag)
     if not flag:  # non ci sono operatori probelmatici attivi
         new_node = Node(',')
+        new_node.satisfied_implications = node.satisfied_implications #altrimenti perdi info
         for operand in node.operands:
             if operand.operator not in {'P', '!', 'O'}:
                 new_node.operands.append(operand)
