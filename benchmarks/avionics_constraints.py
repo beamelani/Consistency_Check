@@ -15,8 +15,6 @@ from stl_consistency.tableau import make_tableau, plot_tree
 import csv
 from tabulate import tabulate
 
-import networkx as nx
-
 @timeout(dec_timeout='args[0]', dec_allow_eval=True, use_signals=False)
 def inner(timeout, f, *args, **kwargs):
     return f(*args, **kwargs)
@@ -49,7 +47,7 @@ requirements = [
     ['G', '0', T, ['->', ['B_active'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]],
     ['G', '0', T, ['->', ['B_inactive'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]],
     ['G', '0', T, ['->', ['B_X_over'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]],
-    ['G', '0', T, ['->', ['&&', ['B_X_over'], ['B_active']], ['F', '0', '5', ['B_LME_cr']]]],
+    ['G', '0', T, ['->', ['&&', ['B_X_over'], ['B_active']], ['F', '0', '5', ['R_LME_cr']]]],
     ['G', '0', T, ['->', ['B_active'], ['F', '0', '1', ['R_Y_pushbutton == 1']]]],
     ['G', '0', T, ['->', ['B_armed'], ['F', '0', '1', ['R_Y_pushbutton == 2']]]],
     ['G', '0', T, ['->', ['R_airspeed < R_Vmin'], ['F', '0', '5', ['B_LS_amr']]]],
@@ -57,11 +55,11 @@ requirements = [
 
 requirements_riscritti = [
     ['G', '0', T, ['||', ['R_function_status == 0'], ['R_function_status == 1'], ['R_function_status == 2']]], #where 0 == inactive, 1==armed, 2==active
-    ['G', '0', T, ['->', ['&&', ['R_function_status == 0'], ['R_n_s == 1'],  ['R_X_c-R_X_b <= 5'], ['R_X_c-R_X_b>= -5'], ['G', '0', '5', ['R_airspeed>= R_Vmin']], ['Not(B_X_over)'], ['B_X_Activation_Request']], ['F', '0', '2', ['R_function_status == 2']]]],
-    ['G', '0', T, ['->', ['&&', ['R_function_status == 2'], ['||', ['!', ['R_n_s == 1']], ['F', '0', '10', ['B_X_ch']], ['G', '0', '5', ['R_airspeed < R_Vmin']],  ['Not(B_r_actuation)'], ['Not(B_X_Activation_Request)']]], ['F', '0', '2', ['R_function_status == 0']]]],
-    ['G', '0', T, ['->', ['&&', ['R_function_status == 1'], ['||', ['!', ['R_n_s ==1']], ['F', '0', '5', ['B_X_ch']], ['Not(B_X_Activation_Request)'], ['Not(B_r_actuation)']]], ['F', '0', '2', ['R_function_status == 0']]]],
-    ['G', '0', T, ['->', ['&&', ['R_function_status == 0'], ['R_n_s ==1'], ['||', ['R_X_c - R_X_b >5'], ['R_X_c - R_X_b <-5']], ['B_X_Activation_Request']], ['F', '0', '2', ['R_function_status == 1']]]],
-    ['G', '0', T, ['->', ['&&', ['R_function_status == 1'], ['Not(B_X_over)'], ['R_X_c - R_X_b <=5'], ['R_X_c - R_X_b >=-5'], ['G', '0', '5', ['R_airspeed >= R_Vmin']]], ['F', '0', '2', ['R_function_status == 2']]]],
+    ['G', '0', T, ['->', ['&&', ['R_function_status == 0'], ['R_n_s == 1'],  ['R_X_c-R_X_b <= 5'], ['R_X_c-R_X_b>= -5'], ['G', '0', '5', ['R_airspeed>= R_Vmin']], ['Not(B_X_over)'], ['B_X_Activation_Request']], ['F', '1', '2', ['R_function_status == 2']]]],
+    ['G', '0', T, ['->', ['&&', ['R_function_status == 2'], ['||', ['!', ['R_n_s == 1']], ['F', '0', '10', ['B_X_ch']], ['G', '0', '5', ['R_airspeed < R_Vmin']],  ['Not(B_r_actuation)'], ['Not(B_X_Activation_Request)']]], ['F', '1', '2', ['R_function_status == 0']]]],
+    ['G', '0', T, ['->', ['&&', ['R_function_status == 1'], ['||', ['!', ['R_n_s ==1']], ['F', '0', '5', ['B_X_ch']], ['Not(B_X_Activation_Request)'], ['Not(B_r_actuation)']]], ['F', '1', '2', ['R_function_status == 0']]]],
+    ['G', '0', T, ['->', ['&&', ['R_function_status == 0'], ['R_n_s ==1'], ['||', ['R_X_c - R_X_b >5'], ['R_X_c - R_X_b <-5']], ['B_X_Activation_Request']], ['F', '1', '2', ['R_function_status == 1']]]],
+    ['G', '0', T, ['->', ['&&', ['R_function_status == 1'], ['Not(B_X_over)'], ['R_X_c - R_X_b <=5'], ['R_X_c - R_X_b >=-5'], ['G', '0', '5', ['R_airspeed >= R_Vmin']]], ['F', '1', '2', ['R_function_status == 2']]]],
     ['G', '0', T, ['->', ['R_function_status == 2'], ['||', ['R_function_active_status == 0'], ['R_function_active_status == 1'], ['R_function_active_status == 2']]]],
     ['G', '0', T, ['->', ['&&', ['R_function_active_status == 0'], ['Not(B_X_over)'], ['R_Delta_T_Error_reference < R_T_Error'], ['R_Delta_T_Error_reference > 0 - R_T_Error']], ['F', '0', '1', ['R_function_active_status == 1']]]],
     ['G', '0', T, ['->', ['&&', ['R_function_active_status == 1'], ['Not(B_X_over)'], ['R_T_Error < 3'], ['R_T_Error  > -3'],  ['R_Roll_attitude < 0.8'], ['R_Roll_attitude > -0.8'],  ['R_X_deviation < 0.5'], ['R_X_deviation > -0.5'], ['R_dalfadt < 0.002'], ['R_dalfadt > -0.002'], ['Not(B_h_on)'], ['Not(B_f_on)']], ['F', '0', '1', ['R_function_active_status == 2']]]],
@@ -72,7 +70,7 @@ requirements_riscritti = [
     ['G', '0', T, ['->', ['R_function_status == 2'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]],
     ['G', '0', T, ['->', ['R_function_status == 0'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]],
     ['G', '0', T, ['->', ['B_X_over'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]],
-    ['G', '0', T, ['->', ['&&', ['B_X_over'], ['R_function_status == 2']], ['F', '0', '5', ['B_LME_cr']]]],
+    ['G', '0', T, ['->', ['&&', ['B_X_over'], ['R_function_status == 2']], ['F', '0', '5', ['R_LME_cr']]]],
     ['G', '0', T, ['->', ['R_function_status == 2'], ['F', '0', '1', ['R_Y_pushbutton == 1']]]],
     ['G', '0', T, ['->', ['R_function_status == 1'], ['F', '0', '1', ['R_Y_pushbutton == 2']]]],
     ['G', '0', T, ['->', ['R_airspeed < R_Vmin'], ['F', '0', '5', ['B_LS_amr']]]],
@@ -92,7 +90,7 @@ parameter_ranges = [
     ['G', '0', T, ['||', ['R_Y_pushbutton == 0'], ['R_Y_pushbutton == 1'], ['R_Y_pushbutton == 2']]],
 ]
 
-
+'''
 #Requisiti da: Benchmarks for Temporal Logic Requirements for Automotive Systems
 t = '10' #alcuni requisiti sono da 0 a un tempo t
 T = '100' #quando il requisito ha unboundend operators
@@ -107,6 +105,7 @@ mtl_requirements = [
     ['F', '0', t, ['&&', ['R_v >= R_v_hat'], ['G', '0', T, ['R_omega < R_omega_hat']]]],
     ['F', '0', '100', ['G', '0', '1', ['Not(R_Fuel_Flow_Rate == 0)']]],
     ['G', '0', T, ['->', ['B_lambda_OOB'], ['F', '0', '1', ['G', '0', '1', ['Not(B_lambda_OOB)']]]]]
+
 ]
 
 #Requisiti da: Powertrain Control Verification Benchmark
@@ -121,7 +120,7 @@ pcv = [
     # normal mode
     ['G', '0', T, ['->', ['B_normal_mode'], ['&&', ['R_a > 8.8'], ['R_a < 70']]]],
     ['G', t_s, T, ['->', ['B_normal_mode'], ['&&', ['R_mu > -0.05'], ['R_mu < 0.05']]]],
-    ['G', t_s, T, ['->', ['||', [['&&', ['R_theta == 8.8'], ['F', '0', epsilon, ['R_theta == R_a']]]], [['&&', ['R_theta == R_a'], ['F', '0', epsilon, ['R_theta == 8.8']]]]], ['G', eta, zeta_mezzi, ['&&', ['R_mu > -0.02'], ['R_mu < 0.02']]]]],
+    ['G', t_s, T, ['->', ['||', [['&&', ['R_theta == 8.8'], ['F', '0', epsilon, ['R_theta == R_a']]]], [['&&', ['R_theta == R_a'], ['F', '0', epsilon, ['R_theta == 8.8']]]]], ['G', eta, zeta_mezzi, ['&&', ['R_mu > - 0.02'], ['R_mu < 0.02']]]]],
     ['F', T, T, ['->', ['B_normal_mode'], ['R_xrms < 0.05']]],
     ['G', t_s, T, ['->', ['B_normal_mode'], ['R_mu > -0.1']]],
     ['G', t_s, T, ['->', ['B_normal_mode'], ['R_mu < 0.1']]],
@@ -130,11 +129,11 @@ pcv = [
     ['G', t_s, T, ['->', ['&&', ['B_power_mode'], ['F', '0', epsilon, ['B_normal_mode']]], ['G', eta, zeta_mezzi, [['&&', ['R_mu > -0.02'], ['R_mu < 0.02']]]]]],
     ['G', t_s, T, ['->', ['B_power_mode'], ['&&', ['R_mu_p > -0.2'], ['R_mu_p < 0.2']]]],
     # startup and sensor fail mode
-    ['G', '0', T, ['->', ['&&', ['||', ['B_startup_mode'], ['B_sensor_fail_mode']], ['||', [['&&', ['R_theta == 8.8'], ['F', '0', epsilon, ['R_theta == R_a']]]], [['&&', ['R_theta == R_a'], ['F', '0', epsilon, ['R_theta == 8.8']]]]]], ['G', eta, zeta_mezzi, [['&&', ['R_mu > -0.1'], ['R_mu < 0.1']]]]]]
+    ['G', '0', T, ['->', ['&&', ['||', ['B_startup_mode'], ['B_sensor_fail_mode']], ['||', [['&&', ['R_theta == 8.8'], ['F', '0', epsilon, ['R_theta == R_a']]]], [['&&', ['R_theta == R_a'], ['F', '0', epsilon, ['R_theta == 8.8']]]]]], ['G', eta, zeta_mezzi, [['&&', ['R_mu > - 0.1'], ['R_mu < 0.1']]]]]]
 ]
 
 #requisiti da Signal-Based Properties of Cyber-Physical Systems: Taxonomy and Logic-based Characterization
-T = '16200' # has to be >= 16200
+T = '3000'
 req_cps =[
     ['G', '0', T, ['||', ['R_currentADCSMode == 0'], ['R_currentADCSMode == 1'], ['R_currentADCSMode == 2']]], # P1 where 0 == NMC, 1== NMF, 2== SM
     # P2: non serve, basta definire il segnale come bool
@@ -179,7 +178,7 @@ req_cps =[
     ['G', '16200', T, ['->', ['R_pointing_error < 2'], ['F', '0', '5400', ['&&', ['R_pointing_error < R_k2'], ['U', '0', '600', ['R_pointing_error >= R_k'], ['R_pointing_error < R_k2']]]]]] # P41
 
 ]
-
+'''
 #Requisiti da Bounded Model Checking of STL Properties using Syntactic Separation
 cars = [
     ['G', '0', '100', ['R_dist > 0.1']],
@@ -208,22 +207,6 @@ railroad = [
     ['G', '20', '40', ['->', ['R_angle >= 80'], ['F', '1', '20', ['R_pos <= 0']]]],
     ['G', '3', '50', ['F', '5', '20', ['R_angle >= 80']]],
     ['G', '10', '60', ['->', ['R_angle >= 80'], ['G', '20', '40', ['R_angle < 60']]]]
-]
-
-# railroad = [
-#     ['G', '3', '50', ['F', '5', '20', ['B_a']]],
-#     ['G', '10', '60', ['->', ['B_a'], ['G', '20', '40', ['!', ['B_a']]]]]
-# ]
-
-# railroad = [
-#     ['G', '0', '5', ['F', '1', '2', ['B_a']]],
-#     ['G', '1', '6', ['->', ['B_a'], ['G', '2', '4', ['!', ['B_a']]]]]
-# ]
-
-railroad_merged = [
-    ['G', '3', '9', ['F', '5', '20', ['B_a']]],
-    ['G', '10', '50', ['||', ['&&', ['F', '5', '20', ['B_a']], ['!', ['B_a']]], ['&&', ['F', '5', '20', ['B_a']], ['G', '20', '40', ['!', ['B_a']]]]]],
-    ['G', '51', '60', ['||', ['!', ['B_a']], ['G', '20', '40', ['!', ['B_a']]]]]
 ]
 
 batteries = [
@@ -255,10 +238,7 @@ def check_dataset(dataset_name, dataset, max_depth, timeout):
     # Seconda prova: Tableau
     start_t = time.perf_counter()
     res_tableau = run_with_timeout(timeout, make_tableau, Node(*formula), max_depth, 'sat', False, False, False)
-    # res_tableau = make_tableau(Node(*formula), max_depth, 'sat', False, False, False)
     elapsed_tableau = time.perf_counter() - start_t
-
-    # nx.drawing.nx_pydot.write_dot(res_tableau[0], './rr_bool_small.dot')
 
     # Dizionario con i risultati
     return {
@@ -293,27 +273,23 @@ def pretty_print(results, ms, csvfile):
 # Esecuzione principale
 if __name__ == '__main__':
     datasets = {
-        # "avionics": requirements_riscritti,
-        # "avionics_ranges": parameter_ranges,
-        # "automotive": mtl_requirements,
-        # "powertrain": pcv,
-        # "cps": req_cps,
-        "cars": cars,
-        "thermostat": thermostat,
-        "watertank": watertank,
+        #"avionics": requirements_riscritti,
+        #"cars": cars,
+        #"thermostat": thermostat,
+        #"watertank": watertank,
         "railroad": railroad,
-        "railroad_merged": railroad_merged,
-        "batteries": batteries
+        #"batteries": batteries
     }
     #datasets = [cars, thermostat, watertank, batteries]
     max_depth = 100000
-    timeout = 60 # in seconds
+    timeout = 100 # in seconds
 
     #results = [check_dataset(ds, max_depth) for ds in datasets]
     results = [check_dataset(name, data, max_depth, timeout) for name, data in datasets.items()]
 
     print("Benchmark results:")
     pretty_print(results, ms=False, csvfile="results.csv")
+
 
 '''
 
