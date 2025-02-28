@@ -1214,7 +1214,9 @@ def add_tree_child(G, parent_label, child):
 def add_rejected(rejected_store, node):
     # Note: checking if some other node implies this one seems not to be useful
     node.sort_operands()
-    bisect.insort_left(rejected_store, node, key=Node.get_imply_sort_key)
+    rejected_store.append(node)
+    # We should use bisect.insort_left to keep the list sorted, but it seems to be slower for some benchmarks
+    # bisect.insort_left(rejected_store, node, key=Node.get_imply_sort_key)
 
 def check_rejected(rejected_store, node, verbose):
     node.sort_operands()
@@ -1294,7 +1296,7 @@ def add_children(node, depth, last_spawned, max_depth, current_time, mode, tree,
                 else: # mode in {'sat', 'strong_sat'}
                     return True
             elif mode == 'sat' and child.current_time is not None and child.current_time > current_time:
-                rejected_store.append(child)
+                add_rejected(rejected_store, child)
 
     if mode in {'sat', 'strong_sat'}:
         return False
