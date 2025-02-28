@@ -1061,8 +1061,9 @@ def real_term_to_z3(z3_variables, node):
             res = lhs != rhs
         case _:
             raise ValueError(f"Unknown operator: {comp}")
-        
-    z3_variables[node.real_expr_id] = res
+    
+    if node.real_expr_id is not None:
+        z3_variables[node.real_expr_id] = res
     return res
 
 def local_consistency_check(tableau_data, node):

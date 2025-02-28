@@ -109,6 +109,7 @@ class Node:
             if operator == 'G':
                 self.counter_F = 0 #needed in case you have GF and need to keep track of when F is satisfied
         elif operator in {'<', '<=', '>', '>=', '==', '!='}:
+            self.real_expr_id = None
             self.lower = self.upper = -1
             self.operator = 'P'
             self.operands = [operator] + list(args)
@@ -162,7 +163,7 @@ class Node:
         if hasattr(self, 'satisfied_implications'):
             new.satisfied_implications = self.satisfied_implications.copy()
         if hasattr(self, 'counter_F'):
-                new.counter_F = self.counter_F
+            new.counter_F = self.counter_F
         if hasattr(self, 'real_expr_id'):
             new.real_expr_id = self.real_expr_id
         return new
