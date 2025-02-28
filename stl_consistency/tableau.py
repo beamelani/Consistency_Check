@@ -272,6 +272,22 @@ def assign_identifier(formula):
             counter += 1
     return formula
 
+# TODO Can we merge this with assign_identifier?
+def assign_real_expr_id(node):
+    id_counter = 0
+
+    def do_assign(node):
+        nonlocal id_counter
+        if node.operator == 'P' and len(node.operands) > 1:
+            node.real_expr_id = id_counter
+            id_counter += 1
+        elif node.operator != 'P':
+            for operand in node.operands:
+                do_assign(operand)
+
+    do_assign(node)
+
+
 def has_temporal_operator(node):
     '''
     :param node: Node containing a formula
@@ -1023,22 +1039,31 @@ def real_expr_to_z3(z3_variables, expr):
             return lhs - rhs
     raise ValueError(f"Operatore non gestito: {expr[0]}")
 
-def real_term_to_z3(z3_variables, comp, lhs, rhs):
+def real_term_to_z3(z3_variables, node):
+    if node.real_expr_id in z3_variables:
+        return z3_variables[node.real_expr_id]
+
+    comp, lhs, rhs = node.operands
     lhs = real_expr_to_z3(z3_variables, lhs)
     rhs = real_expr_to_z3(z3_variables, rhs)
     match comp:
         case '<':
-            return lhs < rhs
+            res = lhs < rhs
         case '<=':
-            return lhs <= rhs
+            res = lhs <= rhs
         case '>':
-            return lhs > rhs
+            res = lhs > rhs
         case '>=':
-            return lhs >= rhs
+            res = lhs >= rhs
         case '==':
-            return lhs == rhs
+            res = lhs == rhs
         case '!=':
-            return lhs != rhs
+            res = lhs != rhs
+        case _:
+            raise ValueError(f"Unknown operator: {comp}")
+        
+    z3_variables[node.real_expr_id] = res
+    return res
 
 def local_consistency_check(tableau_data, node):
     '''
@@ -1050,7 +1075,7 @@ def local_consistency_check(tableau_data, node):
             return False
         if operand.operator == 'P':
             if operand[0] in {'<', '<=', '>', '>=', '==', '!='}:
-                solver.add(real_term_to_z3(tableau_data.z3_variables, *operand.operands))
+                solver.add(real_term_to_z3(tableau_data.z3_variables, operand))
             else: # Boolean variable
                 prop = operand[0]
                 if prop == 'B_false':
@@ -1064,7 +1089,7 @@ def local_consistency_check(tableau_data, node):
                 solver.add(tableau_data.z3_variables[prop])
         elif operand.operator == '!':
             if operand[0][0] in {'<', '<=', '>', '>=', '==', '!='}:
-                solver.add(z3.Not(real_term_to_z3(tableau_data.z3_variables, *operand[0].operands)))
+                solver.add(z3.Not(real_term_to_z3(tableau_data.z3_variables, operand[0])))
             else: # Boolean variable
                 prop = operand[0][0]
                 if prop == 'B_true':
@@ -1366,6 +1391,7 @@ def make_tableau(formula, max_depth, mode, build_tree, parallel, verbose):
     formula = add_G_for_U(formula, formula.operator, False)
     assign_and_or_element(formula)
     formula = assign_identifier(formula)
+    assign_real_expr_id(formula)
     formula = count_implications(formula)
     set_initial_time(formula)
     formula = push_negation(formula)

@@ -163,6 +163,8 @@ class Node:
             new.satisfied_implications = self.satisfied_implications.copy()
         if hasattr(self, 'counter_F'):
                 new.counter_F = self.counter_F
+        if hasattr(self, 'real_expr_id'):
+            new.real_expr_id = self.real_expr_id
         return new
 
     def to_list(self):
