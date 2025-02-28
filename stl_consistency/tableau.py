@@ -854,10 +854,9 @@ def decompose_imply_new(node, index):
         if node.implications is None:  # non so perché a volte sia None, in attesa di trovare il problema uso questa soluzione
             node = count_implications(node)
         new_node2 = node.shallow_copy()
-        new_lhs, new_rhs = lhs, rhs
-        new_node2.replace_operand(index, *(x for x in [new_lhs, new_rhs] if x is not None))
-        new_node1 = node.shallow_copy()
+        new_node2.replace_operand(index, lhs, rhs)
         new_node2.satisfied_implications.append(node.operands[index].identifier)
+        new_node1 = node.shallow_copy()
         if node.implications > 1:  # quando sono a 1 significa che quello che sto negando ora è l'ultimo e quindi li ho negati tutti
             new_node1.replace_operand(index, push_negation(Node('!', lhs)))
             new_node1.implications -= 1  # decremento di 1 ogni volta che passo dal ramo che nega l'antecedente per poter sapere quando li ho negati tutti
