@@ -1069,13 +1069,14 @@ def local_consistency_check(tableau_data, node):
     '''
     :return: True if node is consistent, False otherwise
     '''
-    solver = z3.Solver()
+    constraints = []
     for operand in node.operands:
         if operand.operator == 'O' and operand[0].operator in {'F', 'U'} and operand[0].lower == operand[0].upper:
             return False
         if operand.operator == 'P':
             if operand[0] in {'<', '<=', '>', '>=', '==', '!='}:
-                solver.add(real_term_to_z3(tableau_data.z3_variables, operand))
+                constraints.append(real_term_to_z3(tableau_data.z3_variables, operand))
+                #solver.add(real_term_to_z3(tableau_data.z3_variables, operand))
             else: # Boolean variable
                 prop = operand[0]
                 if prop == 'B_false':
@@ -1086,10 +1087,12 @@ def local_consistency_check(tableau_data, node):
                 if prop not in tableau_data.z3_variables:
                     tableau_data.z3_variables[prop] = z3.Bool(prop)
 
-                solver.add(tableau_data.z3_variables[prop])
+                constraints.append(tableau_data.z3_variables[prop])
+                #solver.add(tableau_data.z3_variables[prop])
         elif operand.operator == '!':
             if operand[0][0] in {'<', '<=', '>', '>=', '==', '!='}:
-                solver.add(z3.Not(real_term_to_z3(tableau_data.z3_variables, operand[0])))
+                #solver.add(z3.Not(real_term_to_z3(tableau_data.z3_variables, operand[0])))
+                constraints.append(z3.Not(real_term_to_z3(tableau_data.z3_variables, operand[0])))
             else: # Boolean variable
                 prop = operand[0][0]
                 if prop == 'B_true':
@@ -1100,8 +1103,11 @@ def local_consistency_check(tableau_data, node):
                 if prop not in tableau_data.z3_variables:
                     tableau_data.z3_variables[prop] = z3.Bool(prop)
 
-                solver.add(z3.Not(tableau_data.z3_variables[prop]))
+                #solver.add(z3.Not(tableau_data.z3_variables[prop]))
+                constraints.append(z3.Not(tableau_data.z3_variables[prop]))
 
+    solver = z3.Solver()
+    solver.add(constraints)
     # Verifica se vincoli sono sat
     return solver.check() == z3.sat
 
