@@ -360,7 +360,7 @@ def formula_to_string(formula):
 
 
 
-def decompose(node, current_time, mode):
+def decompose(tableau_data, node, current_time):
     """
     :param node: nodo da decomporre che ha operatore ','
     :param current_time: istante di tempo attuale, per capire quali operatori sono attivi e quali no
@@ -384,7 +384,7 @@ def decompose(node, current_time, mode):
             node = copy.deepcopy(node)
             return decompose_R(node.operands[j].to_list(), node, j)
         elif node.operands[j].operator == '->':
-            if mode == 'complete' or mode == 'sat':
+            if tableau_data.mode == 'complete' or tableau_data.mode == 'sat':
                 return decompose_imply_classic(node, j)
             else:
                 node = copy.deepcopy(node)
@@ -395,7 +395,7 @@ def decompose(node, current_time, mode):
 
     if counter == len(node.operands):
         # fai qui il check accept/reject, se rigetti non serve nemmeno fare il jump
-        if local_consistency_check(node):
+        if local_consistency_check(tableau_data, node):
             res = decompose_jump(node)
             if res:
                 res[0].current_time = node.current_time
@@ -1040,18 +1040,17 @@ def real_term_to_z3(z3_variables, comp, lhs, rhs):
         case '!=':
             return lhs != rhs
 
-def local_consistency_check(node):
+def local_consistency_check(tableau_data, node):
     '''
     :return: True if node is consistent, False otherwise
     '''
-    global z3_variables
     solver = z3.Solver()
     for operand in node.operands:
         if operand.operator == 'O' and operand[0].operator in {'F', 'U'} and operand[0].lower == operand[0].upper:
             return False
         if operand.operator == 'P':
             if operand[0] in {'<', '<=', '>', '>=', '==', '!='}:
-                solver.add(real_term_to_z3(z3_variables, *operand.operands))
+                solver.add(real_term_to_z3(tableau_data.z3_variables, *operand.operands))
             else: # Boolean variable
                 prop = operand[0]
                 if prop == 'B_false':
@@ -1059,13 +1058,13 @@ def local_consistency_check(node):
                 elif prop == 'B_true':
                     continue # if we have true in the upper level of a node we can just ignore it
                 
-                if prop not in z3_variables:
-                    z3_variables[prop] = z3.Bool(prop)
+                if prop not in tableau_data.z3_variables:
+                    tableau_data.z3_variables[prop] = z3.Bool(prop)
 
-                solver.add(z3_variables[prop])
+                solver.add(tableau_data.z3_variables[prop])
         elif operand.operator == '!':
             if operand[0][0] in {'<', '<=', '>', '>=', '==', '!='}:
-                solver.add(z3.Not(real_term_to_z3(z3_variables, *operand[0].operands)))
+                solver.add(z3.Not(real_term_to_z3(tableau_data.z3_variables, *operand[0].operands)))
             else: # Boolean variable
                 prop = operand[0][0]
                 if prop == 'B_true':
@@ -1073,10 +1072,10 @@ def local_consistency_check(node):
                 elif prop == 'B_false':
                     continue # if we have !false in the upper level of a node we can just ignore it
                 
-                if prop not in z3_variables:
-                    z3_variables[prop] = z3.Bool(prop)
+                if prop not in tableau_data.z3_variables:
+                    tableau_data.z3_variables[prop] = z3.Bool(prop)
 
-                solver.add(z3.Not(z3_variables[prop]))
+                solver.add(z3.Not(tableau_data.z3_variables[prop]))
 
     # Verifica se vincoli sono sat
     return solver.check() == z3.sat
@@ -1199,60 +1198,59 @@ def assign_and_or_element(node):
             assign_and_or_element(operand)
 
 
-def add_tree_child(G, parent_label, child):
-    global counter
-    counter += 1
+def add_tree_child(tableau_data, G, parent_label, child):
+    tableau_data.counter += 1
     if isinstance(child, str):
-        child_label = child + ' ' + str(counter)
+        child_label = child + ' ' + str(tableau_data.counter)
     else:
-        child.counter = counter
+        child.counter = tableau_data.counter
         child_label = child.to_label()
     G.add_node(child_label)
     G.add_edge(parent_label, child_label)
 
-def add_rejected(rejected_store, node):
+def add_rejected(tableau_data, node):
     # Note: checking if some other node implies this one seems not to be useful
     node.sort_operands()
-    rejected_store.append(node)
+    tableau_data.rejected_store.append(node)
     # We should use bisect.insort_left to keep the list sorted, but it seems to be slower for some benchmarks
     # bisect.insort_left(rejected_store, node, key=Node.get_imply_sort_key)
 
-def check_rejected(rejected_store, node, verbose):
+def check_rejected(tableau_data, node):
     node.sort_operands()
-    i = bisect.bisect_left(rejected_store, node.get_imply_search_key(), key=Node.get_imply_search_key)
-    for rejected in rejected_store[i:]:
+    i = bisect.bisect_left(tableau_data.rejected_store, node.get_imply_search_key(), key=Node.get_imply_search_key)
+    for rejected in tableau_data.rejected_store[i:]:
         if node.implies_quick(rejected):
-            if verbose:
+            if tableau_data.verbose:
                 print('Rejecting', node.to_list(), ' because it implies rejected node ', rejected.to_list())
             return True
         if rejected.operator == node.operator == ',' and node.operands[-1].get_imply_search_key() < rejected.operands[0].get_imply_search_key():
             return False
     return False
 
-def add_children(node, depth, last_spawned, max_depth, current_time, mode, tree, parallel, verbose):
-    global counter, true_implications, rejected_store
+def add_children(tableau_data, node, depth, last_spawned, max_depth, current_time):
+    mode = tableau_data.mode
 
     if depth >= max_depth:
         return None
 
-    if tree:
+    if tableau_data.tree:
         node_label = node.to_label()
 
     current_time = node.current_time # extract_min_time(node_copy) should have been called by the parent
     assert current_time is None or isinstance(current_time, int)
-    children = decompose(node, current_time, mode)
+    children = decompose(tableau_data, node, current_time)
     if children is None:
-        if verbose:
+        if tableau_data.verbose:
             print('No more children in this branch')
         if mode in {'sat', 'complete'}:
             return True
         else: # mode == 'strong_sat':
-            true_implications.update(node.satisfied_implications)
-            if len(true_implications) == number_of_implications:
+            tableau_data.true_implications.update(node.satisfied_implications)
+            if len(tableau_data.true_implications) == tableau_data.number_of_implications:
                 return True
             else:
                 return False
-    if verbose:
+    if tableau_data.verbose:
         for child in children:
             if not isinstance(child, str):
                 print(child.to_list())
@@ -1262,24 +1260,24 @@ def add_children(node, depth, last_spawned, max_depth, current_time, mode, tree,
     for child in children:
         if child != 'Rejected':
             set_min_time(child) # updates the node's current_time, called here once and for all
-            if mode != 'sat' or child.current_time == current_time or not check_rejected(rejected_store, child, verbose):
+            if mode != 'sat' or child.current_time == current_time or not check_rejected(tableau_data, child):
                 child_queue.append(child)
-            elif tree and mode == 'sat':
-                add_tree_child(tree, node_label, child)
+            elif tableau_data.tree and mode == 'sat':
+                add_tree_child(tableau_data.tree, node_label, child)
                 node_label = child.to_label()
                 child = 'Rejected (memo)'
-        if tree:
-            add_tree_child(tree, node_label, child)
+        if tableau_data.tree:
+            add_tree_child(tableau_data.tree, node_label, child)
     
     if mode == 'complete':
         complete_result = False
-    if parallel and mode == 'sat' and depth - last_spawned > 30 and len(child_queue) > 1: # add 'strong_sat'
+    if tableau_data.parallel and mode == 'sat' and depth - last_spawned > 30 and len(child_queue) > 1: # add 'strong_sat'
         # print("spawning", node.to_list())
         # print("children: ", str([child.to_list() for child in child_queue]))
 
         pool = fs.ProcessPoolExecutor(max_workers=2)
         try:
-            futures = [pool.submit(add_children, child, depth + 1, depth, max_depth, current_time, mode, tree, parallel, verbose) for child in child_queue]
+            futures = [pool.submit(add_children, tableau_data, child, depth + 1, depth, max_depth, current_time) for child in child_queue]
             for fut in fs.as_completed(futures):
                 if fut.result():
                     return True
@@ -1289,20 +1287,20 @@ def add_children(node, depth, last_spawned, max_depth, current_time, mode, tree,
             pool.shutdown(wait=True, cancel_futures=True)
     else:
         for child in child_queue:
-            if add_children(child, depth + 1, last_spawned, max_depth, current_time, mode, tree, parallel, verbose):
+            if add_children(tableau_data, child, depth + 1, last_spawned, max_depth, current_time):
                 if mode == 'complete':
                     complete_result = True
                 else: # mode in {'sat', 'strong_sat'}
                     return True
             elif mode == 'sat' and child.current_time is not None and child.current_time > current_time:
-                add_rejected(rejected_store, child)
+                add_rejected(tableau_data, child)
 
     if mode in {'sat', 'strong_sat'}:
         return False
     else: # mode == 'complete'
         return complete_result
 
-def build_decomposition_tree(root, max_depth, mode, build_tree, parallel, verbose):
+def build_decomposition_tree(tableau_data, root, max_depth):
     """
     : return:
         if mode in {'sat', 'complete'}:
@@ -1314,35 +1312,42 @@ def build_decomposition_tree(root, max_depth, mode, build_tree, parallel, verbos
             False if the tableau has only rejected branches rooted at node,
             None if we reached max_dept without finding an accepting branch
     """
-    global counter
-    global rejected_store
-    global z3_variables
-    z3_variables = {}
-
-    if mode == 'sat':
-        rejected_store = []
     time = set_min_time(root)
-    if build_tree:
-        counter = 0
-        G = nx.DiGraph()
-        root.counter = counter
-        G.add_node(root.to_label())
-    else:
-        G = None
+    if tableau_data.build_tree:
+        root.counter = tableau_data.counter
+        tableau_data.tree.add_node(root.to_label())
 
-    if verbose:
+    if tableau_data.verbose:
         print(root.to_list())
 
-    res = add_children(root, 0, 0, max_depth, time, mode, G, parallel, verbose)
+    res = add_children(tableau_data, root, 0, 0, max_depth, time)
 
-    if res and mode in {'sat', 'strong_sat'} and verbose:
+    if res and tableau_data.mode in {'sat', 'strong_sat'} and tableau_data.verbose:
         print("The requirement set is consistent")
-    elif not res and mode in {'sat', 'strong_sat'}:
+    elif not res and tableau_data.mode in {'sat', 'strong_sat'}:
         print("The requirement set is not consistent")
-    if build_tree:
-        return G, res
+    if tableau_data.build_tree:
+        return tableau_data.tree, res
     else:
         return res
+
+class TableauData:
+
+    def __init__(self, formula, mode, build_tree, parallel, verbose):
+        self.true_implications = set()
+        self.number_of_implications = formula.implications
+        self.build_tree = build_tree
+        self.mode = mode
+        self.parallel = parallel
+        self.verbose = verbose
+        if build_tree:
+            self.counter = 0
+            self.tree = nx.DiGraph()
+        else:
+            self.tree = None
+        if mode == 'sat':
+            self.rejected_store = []
+        self.z3_variables = {}
 
 
 def plot_tree(G):
@@ -1355,9 +1360,6 @@ def plot_tree(G):
 
 
 def make_tableau(formula, max_depth, mode, build_tree, parallel, verbose):
-    global number_of_implications, true_implications
-    true_implications = set()
-
     if formula.operator != ',':
         formula = Node(',', formula)
 
@@ -1365,11 +1367,12 @@ def make_tableau(formula, max_depth, mode, build_tree, parallel, verbose):
     assign_and_or_element(formula)
     formula = assign_identifier(formula)
     formula = count_implications(formula)
-    number_of_implications = formula.implications
     set_initial_time(formula)
     formula = push_negation(formula)
     # formula = normalize_bounds(formula)
-    return build_decomposition_tree(formula, max_depth, mode, build_tree, parallel, verbose)
+
+    tableau_data = TableauData(formula, mode, build_tree, parallel, verbose)
+    return build_decomposition_tree(tableau_data, formula, max_depth)
 
 
 '''
