@@ -232,8 +232,8 @@ class Node:
             # We put ops that generate just one child first so they are decomposed first
             'A' + self.operator if self.operator in {'&&', ',', 'G'} else self.operator,
             self.operands,
-            self.lower - (self.current_time if self.current_time else 0),
-            self.upper - (self.current_time if self.current_time else 0)
+            self.lower - self.current_time,
+            self.upper - self.current_time
         )
 
     def get_imply_search_key(self):
@@ -244,39 +244,42 @@ class Node:
 
     def sort_operands(self):
         self.operands.sort(key=Node.get_imply_sort_key)
-    
+
+    def implies_quick_inner(self, other):
+        if self.operator != other.operator:
+            return False
+        match self.operator:
+            case 'F':
+                return self.operands[0] == other.operands[0] and other.lower - other.current_time <= self.lower - self.current_time and other.upper - other.current_time >= self.upper - self.current_time
+            case 'G':
+                return self.operands[0] == other.operands[0] and self.lower - self.current_time <= other.lower - other.current_time and self.upper - self.current_time >= other.upper - other.current_time
+            case 'P':
+                return self.operands[0] == other.operands[0]
+            case '!':
+                return self.operands[0].implies_quick(other.operands[0])
+            # TODO: U, R, etc
+        return False
+
     def implies_quick(self, other):
         '''
         :return: True if we can quickly determine that self implies other, False otherwise
         Assumes both nodes' operands have been sorted with sort_operands
         '''
-        if self.operator != other.operator:
-            return False
-        match self.operator:
-            case ',':
-                j = 0
-                for i in range(len(other.operands)):
-                    not_implies = order = True
-                    len_operands = len(self.operands)
-                    while j < len_operands and not_implies and order:
-                        if self.operands[j].implies_quick(other.operands[i]):
-                            not_implies = False
-                            break
-                        if other.operands[i].get_imply_search_key() < self.operands[j].get_imply_search_key():
-                            order = False
-                            break
-                        j += 1
-                    if not_implies: # j >= len(self.operands) or not order:
-                        # we break the loop because no operand in self implies other.operands[i]
-                        return False
-                return True
-            case 'F': # TODO normalize times
-                return self.operands[0] == other.operands[0] and other.lower - other.current_time <= self.lower - self.current_time and other.upper - other.current_time >= self.upper - self.current_time
-            case 'G':
-                return self.operands[0] == other.operands[0] and self.lower - self.current_time <= other.lower - other.current_time and self.upper - self.current_time >= other.upper - other.current_time
-            case '!':
-                return self.operands[0].implies_quick(other.operands[0])
-            case 'P':
-                return self.operands[0] == other.operands[0]
-            # TODO: U, R, etc
-        return False
+        assert self.operator == other.operator == ','
+        j = 0
+        len_operands = len(self.operands)
+        for i in range(len(other.operands)):
+            not_implies = order = True
+            while j < len_operands and not_implies and order:
+                if self.operands[j].implies_quick_inner(other.operands[i]):
+                    not_implies = False
+                    break
+                if other.operands[i].get_imply_search_key() < self.operands[j].get_imply_search_key():
+                    order = False
+                    break
+                j += 1
+            if not_implies: # j >= len(self.operands) or not order:
+                # we break the loop because no operand in self implies other.operands[i]
+                return False
+        return True
+
