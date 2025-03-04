@@ -84,7 +84,7 @@ from stl_consistency.parser import STLParser
 def push_negation(node):
     if node.operator == '!':
         operand = node[0]
-        new_node = node.shallow_copy()
+        new_node = operand.shallow_copy()
         if operand.operator == 'P':
             return node
         elif operand.operator == ',' or operand.operator == '&&':
@@ -97,8 +97,7 @@ def push_negation(node):
             new_node.operator = ','
             new_node.operands = [operand[0], push_negation(Node('!', operand[1]))]
         elif operand.operator == '!':
-            new_node.operator = operand[0].operator
-            new_node.operands = operand[0].operands
+            pass
         elif operand.operator == 'O':
             new_node.operator = operand.operator
             new_node.operands = [push_negation(Node('!', operand[0]))]
@@ -125,7 +124,7 @@ def push_negation(node):
     elif node.operator == 'P':
         return node
     else:  # Any non-negated operator
-        new_node = node.shallow_copy() #che fine fa l'attributo satified_implications?
+        new_node = node.shallow_copy()
         new_node.operands = [push_negation(op) for op in node.operands]
         return new_node
 
