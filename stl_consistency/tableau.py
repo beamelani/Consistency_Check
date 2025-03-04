@@ -1017,13 +1017,14 @@ def real_expr_to_z3(z3_variables, expr):
             return lhs - rhs
     raise ValueError(f"Operatore non gestito: {expr[0]}")
 
-def real_term_to_z3(z3_variables, node):
-    if node.real_expr_id in z3_variables:
-        return z3_variables[node.real_expr_id]
+def real_term_to_z3(tableau_data, node, negated):
+    z3_expr_cache = tableau_data.z3_negated_exprs if negated else tableau_data.z3_positive_exprs
+    if node.real_expr_id in z3_expr_cache:
+        return z3_expr_cache[node.real_expr_id]
 
     comp, lhs, rhs = node.operands
-    lhs = real_expr_to_z3(z3_variables, lhs)
-    rhs = real_expr_to_z3(z3_variables, rhs)
+    lhs = real_expr_to_z3(tableau_data.z3_variables, lhs)
+    rhs = real_expr_to_z3(tableau_data.z3_variables, rhs)
     match comp:
         case '<':
             res = lhs < rhs
@@ -1040,8 +1041,11 @@ def real_term_to_z3(z3_variables, node):
         case _:
             raise ValueError(f"Unknown operator: {comp}")
     
+    if negated:
+        res = z3.Not(res)
+
     if node.real_expr_id is not None:
-        z3_variables[node.real_expr_id] = res
+        z3_expr_cache[node.real_expr_id] = res
     return res
 
 def local_consistency_check(tableau_data, node):
@@ -1054,8 +1058,7 @@ def local_consistency_check(tableau_data, node):
             return False
         if operand.operator == 'P':
             if operand[0] in {'<', '<=', '>', '>=', '==', '!='}:
-                constraints.append(real_term_to_z3(tableau_data.z3_variables, operand))
-                #solver.add(real_term_to_z3(tableau_data.z3_variables, operand))
+                constraints.append(real_term_to_z3(tableau_data, operand, False))
             else: # Boolean variable
                 prop = operand[0]
                 if prop == 'B_false':
@@ -1067,11 +1070,9 @@ def local_consistency_check(tableau_data, node):
                     tableau_data.z3_variables[prop] = z3.Bool(prop)
 
                 constraints.append(tableau_data.z3_variables[prop])
-                #solver.add(tableau_data.z3_variables[prop])
         elif operand.operator == '!':
             if operand[0][0] in {'<', '<=', '>', '>=', '==', '!='}:
-                #solver.add(z3.Not(real_term_to_z3(tableau_data.z3_variables, operand[0])))
-                constraints.append(z3.Not(real_term_to_z3(tableau_data.z3_variables, operand[0])))
+                constraints.append(real_term_to_z3(tableau_data, operand[0], True))
             else: # Boolean variable
                 prop = operand[0][0]
                 if prop == 'B_true':
@@ -1082,11 +1083,14 @@ def local_consistency_check(tableau_data, node):
                 if prop not in tableau_data.z3_variables:
                     tableau_data.z3_variables[prop] = z3.Bool(prop)
 
-                #solver.add(z3.Not(tableau_data.z3_variables[prop]))
-                constraints.append(z3.Not(tableau_data.z3_variables[prop]))
+                if prop not in tableau_data.z3_negated_exprs:
+                    tableau_data.z3_negated_exprs[prop] = z3.Not(tableau_data.z3_variables[prop])
+
+                constraints.append(tableau_data.z3_negated_exprs[prop])
 
     solver = z3.Solver()
-    solver.add(constraints)
+    solver.assert_exprs(constraints)
+    #print(str(solver))
     # Verifica se vincoli sono sat
     return solver.check() == z3.sat
 
@@ -1358,6 +1362,8 @@ class TableauData:
         if mode == 'sat':
             self.rejected_store = []
         self.z3_variables = {}
+        self.z3_positive_exprs = {}
+        self.z3_negated_exprs = {}
 
 
 def plot_tree(G):
