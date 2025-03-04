@@ -817,41 +817,6 @@ def decompose_imply_classic(node, index):
                     return new_node2, new_node1
     return new_node1, new_node2
 
-'''
-
-def decompose_imply_new(node, formula, index):
-    
-    #:return: decompone p->q come not(p) OR (p and q). Se ci sono più -> in and, viene rigettato il nodo in cui tutti
-    #gli antecedenti sono negati. Se c'è un solo -> viene rigettato il nodo con antecedente negato
-    #NB: non so se qui si può introdurre la semplificazione per creare meno elementi (verifica che satisfied implications venga comnque correttamente aggiornato)
-    
-    assert index >= 0 and formula is not None
-    if len(formula.operands) > 1:
-        if formula.implications is None: #non so perché a volte sia None, in attesa di trovare il problema uso questa soluzione
-            formula = count_implications(formula)
-        node_2 = Node(',')
-        node_2.operands = copy.deepcopy(node.operands)
-        new_node1 = copy.deepcopy(formula)
-        new_node2 = copy.deepcopy(formula)
-        del new_node1.operands[index]
-        del new_node2.operands[index]
-        new_node2.satisfied_implications.append(formula.operands[index].identifier)
-        new_node2.operands.extend(node_2.operands)
-        if formula.implications > 1:  # quando sono a 1 significa che quello che sto negando ora è l'ultimo e quindi li ho negati tutti
-            node_1 = Node(',', ['!', ['B_p']])
-            node_1.operands[0].operands[0] = node.operands[0]
-            new_node1.operands.extend(node_1.operands)
-            new_node1.implications -= 1  # decremento di 1 ogni volta che passo dal ramo che nega l'antecedente per poter sapere quando li ho negati tutti
-            new_node1 = push_negation(new_node1)
-        else:
-            new_node1 = 'Rejected'
-    else:  # se l'imply non è in and con nulla posso direttamente rigettare il ramo negato
-        new_node1 = 'Rejected'
-        new_node2 = Node(',')
-        new_node2.operands = node.operands
-    return new_node1, new_node2
-
-'''
 
 
 def decompose_imply_new(node, index):
@@ -927,6 +892,7 @@ def decompose_jump(node):
     flag = flagging(node)
     time_instants = extract_time_instants(node, flag)
     if not flag:  # non ci sono operatori probelmatici attivi
+        '''
         new_node = Node(',')
         new_node.satisfied_implications = node.satisfied_implications #altrimenti perdi info
         for operand in node.operands:
@@ -942,6 +908,25 @@ def decompose_jump(node):
             if len(new_node.operands) > 1:
                 simplify_F(new_node)
             return [new_node]
+        else:
+            return None
+        '''
+        #provo a fare togliendo dal nodo originale, invece di crearne uno nuovo
+        new_operands = []
+        for operand in node.operands:
+            if operand.operator not in {'P', '!', 'O'}:
+                new_operands.append(operand)
+            elif operand.operator == 'O' and operand.operands[0].lower < operand.operands[0].upper:
+                sub_formula = operand.operands[0].shallow_copy()
+                # trovo il primo numero maggiore dell'istante corrente di tempo
+                indice = bisect.bisect_right(time_instants, sub_formula.lower)
+                sub_formula.lower = time_instants[indice]
+                new_operands.append(sub_formula)
+        node.operands = new_operands
+        if node.operands:
+            if len(node.operands) > 1:
+                simplify_F(node)
+            return [node]
         else:
             return None
     else:  # caso con operatori problematici, uso direttamente i nodi per non perdere info su is_derived e initial_time
@@ -1295,11 +1280,11 @@ def add_children(tableau_data, node, depth, last_spawned, max_depth, current_tim
             if mode != 'sat' or child.current_time == current_time or not check_rejected(tableau_data, child):
                 child_queue.append(child)
             elif tableau_data.tree and mode == 'sat':
-                add_tree_child(tableau_data.tree, node_label, child)
+                add_tree_child(tableau_data, tableau_data.tree, node_label, child)
                 node_label = child.to_label()
                 child = 'Rejected (memo)'
         if tableau_data.tree:
-            add_tree_child(tableau_data.tree, node_label, child)
+            add_tree_child(tableau_data, tableau_data.tree, node_label, child)
     
     if mode == 'complete':
         complete_result = False
