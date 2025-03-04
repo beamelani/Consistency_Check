@@ -14,6 +14,7 @@ from stl_consistency.tableau import make_tableau, plot_tree
 
 import csv
 from tabulate import tabulate
+import networkx as nx
 
 @timeout(dec_timeout='args[0]', dec_allow_eval=True, use_signals=False)
 def inner(timeout, f, *args, **kwargs):
@@ -67,13 +68,13 @@ requirements_riscritti = [
     ['G', '0', T, ['->', ['&&', ['R_function_status == 2'], ['!', ['B_X_over']]], ['F', '0', '5', ['R_LME_cr == 1']]]],
     ['G', '0', T, ['->', ['R_function_status == 0'], ['F', '0', '5', ['R_LME_cr == 0']]]],
     ['G', '0', T, ['->', ['R_function_status == 1'], ['F', '0', '5', ['R_LMA_cr == 1']]]],
-    ['G', '0', T, ['->', ['R_function_status == 2'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]],
-    ['G', '0', T, ['->', ['R_function_status == 0'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]],
-    ['G', '0', T, ['->', ['B_X_over'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]],
-    ['G', '0', T, ['->', ['&&', ['B_X_over'], ['R_function_status == 2']], ['F', '0', '5', ['R_LME_cr == 1']]]],
-    ['G', '0', T, ['->', ['R_function_status == 2'], ['F', '0', '1', ['R_Y_pushbutton == 1']]]],
-    ['G', '0', T, ['->', ['R_function_status == 1'], ['F', '0', '1', ['R_Y_pushbutton == 2']]]],
-    ['G', '0', T, ['->', ['R_airspeed < R_Vmin'], ['F', '0', '5', ['B_LS_amr']]]],
+    # ['G', '0', T, ['->', ['R_function_status == 2'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]],
+    # ['G', '0', T, ['->', ['R_function_status == 0'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]],
+    # ['G', '0', T, ['->', ['B_X_over'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]],
+    # ['G', '0', T, ['->', ['&&', ['B_X_over'], ['R_function_status == 2']], ['F', '0', '5', ['R_LME_cr == 1']]]],
+    # ['G', '0', T, ['->', ['R_function_status == 2'], ['F', '0', '1', ['R_Y_pushbutton == 1']]]],
+    # ['G', '0', T, ['->', ['R_function_status == 1'], ['F', '0', '1', ['R_Y_pushbutton == 2']]]],
+    # ['G', '0', T, ['->', ['R_airspeed < R_Vmin'], ['F', '0', '5', ['B_LS_amr']]]],
 ]
 
 parameter_ranges = [
@@ -219,10 +220,10 @@ batteries = [
 
 # Test stuff (do not remove pls!)
 
-# railroad = [
-#     ['G', '3', '50', ['F', '5', '20', ['B_a']]],
-#     ['G', '10', '60', ['->', ['B_a'], ['G', '20', '40', ['!', ['B_a']]]]]
-# ]
+railroad = [
+    ['G', '3', '50', ['F', '5', '20', ['B_a']]],
+    ['G', '10', '60', ['->', ['B_a'], ['G', '20', '40', ['!', ['B_a']]]]]
+]
 
 # railroad = [
 #     ['G', '0', '5', ['F', '1', '2', ['B_a']]],
@@ -251,7 +252,7 @@ def check_dataset(dataset_name, dataset, max_depth, timeout):
 
     # Prima prova: SMT
     start_t = time.perf_counter()
-    res_smt = run_with_timeout(timeout, smt_check_consistency, parsed_formula, 'sat', False)
+    res_smt = False #run_with_timeout(timeout, smt_check_consistency, parsed_formula, 'sat', False)
     elapsed_smt = time.perf_counter() - start_t
 
     # Seconda prova: Tableau
@@ -260,7 +261,7 @@ def check_dataset(dataset_name, dataset, max_depth, timeout):
     #res_tableau = make_tableau(Node(*parsed_formula), max_depth, 'sat', False, False, False)
     elapsed_tableau = time.perf_counter() - start_t
 
-    # nx.drawing.nx_pydot.write_dot(res_tableau[0], './rr_bool_small.dot')
+    #nx.drawing.nx_pydot.write_dot(res_tableau[0], './rr_bug.dot')
 
     # Dizionario con i risultati
     return {
@@ -296,16 +297,16 @@ def pretty_print(results, ms, csvfile):
 if __name__ == '__main__':
     datasets = {
         "avionics": requirements_riscritti,
-        "cars": cars,
-        "thermostat": thermostat,
-        "watertank": watertank,
+        # "cars": cars,
+        # "thermostat": thermostat,
+        # "watertank": watertank,
         "railroad": railroad,
-        "batteries": batteries,
-        "railroad_merged": railroad_merged
+        # "batteries": batteries,
+        # "railroad_merged": railroad_merged
     }
     #datasets = [cars, thermostat, watertank, batteries]
     max_depth = 100000
-    timeout = 100 # in seconds
+    timeout = 60 # in seconds
 
     #results = [check_dataset(ds, max_depth) for ds in datasets]
     results = [check_dataset(name, data, max_depth, timeout) for name, data in datasets.items()]

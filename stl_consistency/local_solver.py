@@ -1,0 +1,122 @@
+# MIT License
+#
+# Copyright (c) 2025 Michele Chiari
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+import z3
+from stl_consistency.parser import STLParser
+
+class LocalSolver:
+
+    def __init__(self):
+        self.solver = z3.Solver()
+        self.z3_variables = {}
+        self.z3_ast_cache = {} # contains entries of the form (negated, key) -> z3_ast
+        self.current_assertions = set() # contains entries of the form (negated, key) keeping track of current assertions in solver
+        self.assertion_stack = [] # contains entries of the form [(negated, key)]
+         # Cache for result of self.solver.check(). To be invalidated after every self.solver.assert_exprs
+        self.check_result = None
+
+    def add_boolean_constraint(self, negated, prop):
+        if prop not in self.z3_variables:
+                self.z3_variables[prop] = z3.Bool(prop)
+
+        entry = (negated, prop)
+        if entry not in self.current_assertions:
+            self.current_assertions.add(entry)
+            self.assertion_stack[-1].append(entry)
+            if entry not in self.z3_ast_cache:
+                    self.z3_ast_cache[entry] = z3.Not(self.z3_variables[prop]) if negated else self.z3_variables[prop]
+            self.solver.assert_exprs(self.z3_ast_cache[entry])
+            self.check_result = None
+
+    def add_real_constraint(self, negated, node):
+        assert node.real_expr_id is not None
+        entry = (negated, node.real_expr_id)
+        if entry not in self.current_assertions:
+            self.current_assertions.add(entry)
+            self.assertion_stack[-1].append(entry)
+            if entry not in self.z3_ast_cache:
+                    z3_ast = self.real_term_to_z3(node)
+                    self.z3_ast_cache[entry] = z3.Not(z3_ast) if negated else z3_ast
+            self.solver.assert_exprs(self.z3_ast_cache[entry])
+            self.check_result = None
+
+    def check(self):
+        if self.check_result is None:
+            self.check_result = self.solver.check() == z3.sat
+        return self.check_result
+
+    def push(self):
+        self.assertion_stack.append([])
+        self.solver.push()
+
+    def pop(self):
+        if self.assertion_stack:
+            old_assertions = self.assertion_stack.pop()
+            for ass in old_assertions:
+                self.current_assertions.remove(ass)
+            self.solver.pop()
+            if len(old_assertions) > 0:
+                self.check_result = None
+
+    def reset(self):
+        self.assertion_stack = []
+        self.current_assertions = set()
+        self.check_result = None
+        self.solver.reset()
+
+    def real_term_to_z3(self, node):
+        comp, lhs, rhs = node.operands
+        lhs = self.real_expr_to_z3(lhs)
+        rhs = self.real_expr_to_z3(rhs)
+        match comp:
+            case '<':
+                return lhs < rhs
+            case '<=':
+                return lhs <= rhs
+            case '>':
+                return lhs > rhs
+            case '>=':
+                return lhs >= rhs
+            case '==':
+                return lhs == rhs
+            case '!=':
+                return lhs != rhs
+            case _:
+                raise ValueError(f"Unknown operator: {comp}")
+
+    def real_expr_to_z3(self, expr):
+        if isinstance(expr, str):
+            if STLParser.is_float(expr):
+                return float(expr)
+            if expr not in self.z3_variables:
+                self.z3_variables[expr] = z3.Real(expr)
+            return self.z3_variables[expr]
+
+        assert isinstance(expr, list) and len(expr) == 3
+        lhs = self.real_expr_to_z3(expr[1])
+        rhs = self.real_expr_to_z3(expr[2])
+        match expr[0]:
+            case '+':
+                return lhs + rhs
+            case '-':
+                return lhs - rhs
+        raise ValueError(f"Operatore non gestito: {expr[0]}")
