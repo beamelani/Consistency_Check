@@ -385,7 +385,7 @@ def decompose(tableau_data, node, current_time):
     # fai qui il check accept/reject, se rigetti non serve andare avanti
     if not local_consistency_check(tableau_data, node):
         return ['Rejected']
-    counter = 0
+
     for j in range(len(node.operands)):
         if node.operands[j].operator in {'&&', ','}:
             return decompose_and(node)
@@ -407,17 +407,12 @@ def decompose(tableau_data, node, current_time):
             else:
                 node = copy.deepcopy(node)
                 return decompose_imply_new(node, j)
-        else:  # se arrivo qui vuol dire che non sono entrata in nessun return e quindi non c'era nulla da decomporre
-            # perché l'elemento era già decomposto o non ancora attivo
-            counter += 1
 
-    if counter == len(node.operands):
-        res = decompose_jump(node)
-        if res:
-            res[0].current_time = node.current_time
-        return res
-
-    return None
+    # se arrivo qui vuol dire che non sono entrata in nessun return e quindi non c'era nulla da decomporre
+    res = decompose_jump(node)
+    if res:
+        res[0].current_time = node.current_time
+    return res
 
 
 def decompose_all_G_nodes(outer_node, current_time):
