@@ -382,6 +382,9 @@ def decompose(tableau_data, node, current_time):
     :return: ritorna la lista decomposta (i.e. il successivo nodo del tree)
     """
     assert node.operator == ','
+    # fai qui il check accept/reject, se rigetti non serve andare avanti
+    if not local_consistency_check(tableau_data, node):
+        return ['Rejected']
     counter = 0
     for j in range(len(node.operands)):
         if node.operands[j].operator in {'&&', ','}:
@@ -409,14 +412,10 @@ def decompose(tableau_data, node, current_time):
             counter += 1
 
     if counter == len(node.operands):
-        # fai qui il check accept/reject, se rigetti non serve nemmeno fare il jump
-        if local_consistency_check(tableau_data, node):
-            res = decompose_jump(node)
-            if res:
-                res[0].current_time = node.current_time
-            return res
-        else:
-            return ['Rejected']
+        res = decompose_jump(node)
+        if res:
+            res[0].current_time = node.current_time
+        return res
 
     return None
 
