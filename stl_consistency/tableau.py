@@ -376,7 +376,7 @@ def formula_to_string(formula):
 
 
 
-def decompose(tableau_data, node, current_time):
+def decompose(tableau_data, local_solver, node, current_time):
     """
     :param node: nodo da decomporre che ha operatore ','
     :param current_time: istante di tempo attuale, per capire quali operatori sono attivi e quali no
@@ -384,7 +384,7 @@ def decompose(tableau_data, node, current_time):
     """
     assert node.operator == ','
     # fai qui il check accept/reject, se rigetti non serve andare avanti
-    if not local_consistency_check(tableau_data, node):
+    if not local_consistency_check(local_solver, node):
         return ['Rejected']
 
     for j in range(len(node.operands)):
@@ -413,7 +413,6 @@ def decompose(tableau_data, node, current_time):
     res = decompose_jump(node)
     if res:
         res[0].current_time = node.current_time
-    tableau_data.local_solver.reset()
     return res
 
 
@@ -1098,7 +1097,7 @@ def local_consistency_check_old(tableau_data, node):
     return solver.check() == z3.sat
 
 
-def local_consistency_check(tableau_data, node):
+def local_consistency_check(local_solver, node):
     '''
     :return: True if node is consistent, False otherwise
     '''
@@ -1108,28 +1107,28 @@ def local_consistency_check(tableau_data, node):
             return False
         if operand.operator == 'P':
             if operand[0] in {'<', '<=', '>', '>=', '==', '!='}:
-                tableau_data.local_solver.add_real_constraint(False, operand)
+                local_solver.add_real_constraint(False, operand)
             else: # Boolean variable
                 prop = operand[0]
                 if prop == 'B_false':
                     return False # we have false in the upper level of a node
                 elif prop == 'B_true':
                     continue # if we have true in the upper level of a node we can just ignore it
-                tableau_data.local_solver.add_boolean_constraint(False, prop)
+                local_solver.add_boolean_constraint(False, prop)
         elif operand.operator == '!':
             if operand[0][0] in {'<', '<=', '>', '>=', '==', '!='}:
-                tableau_data.local_solver.add_real_constraint(True, operand[0])
+                local_solver.add_real_constraint(True, operand[0])
             else: # Boolean variable
                 prop = operand[0][0]
                 if prop == 'B_true':
                     return False # we have !true in the upper level of a node
                 elif prop == 'B_false':
                     continue # if we have !false in the upper level of a node we can just ignore it
-                tableau_data.local_solver.add_boolean_constraint(True, prop)
+                local_solver.add_boolean_constraint(True, prop)
 
     # res = tableau_data.local_solver.check()
     # assert res == local_consistency_check_old(tableau_data, node)
-    return tableau_data.local_solver.check()
+    return local_solver.check()
 
 
 def set_initial_time(formula):
@@ -1278,7 +1277,7 @@ def check_rejected(tableau_data, node):
             return False
     return False
 
-def add_children(tableau_data, node, depth, last_spawned, max_depth, current_time):
+def add_children(tableau_data, local_solver, node, depth, last_spawned, max_depth, current_time):
     mode = tableau_data.mode
 
     if depth >= max_depth:
@@ -1289,10 +1288,10 @@ def add_children(tableau_data, node, depth, last_spawned, max_depth, current_tim
 
     current_time = node.current_time # extract_min_time(node_copy) should have been called by the parent
     assert current_time is None or isinstance(current_time, int)
-    tableau_data.local_solver.push()
-    children = decompose(tableau_data, node, current_time)
+    local_solver.push()
+    children = decompose(tableau_data, local_solver, node, current_time)
     if children is None:
-        tableau_data.local_solver.pop()
+        local_solver.pop()
         if tableau_data.verbose:
             print('No more children in this branch')
         if mode in {'sat', 'complete'}:
@@ -1330,10 +1329,15 @@ def add_children(tableau_data, node, depth, last_spawned, max_depth, current_tim
 
         pool = fs.ProcessPoolExecutor(max_workers=2)
         try:
-            futures = [pool.submit(add_children, tableau_data, child, depth + 1, depth, max_depth, current_time) for child in child_queue]
+            futures = [pool.submit(
+                add_children,
+                tableau_data,
+                local_solver if child.current_time == current_time else LocalSolver(),
+                child, depth + 1, depth, max_depth, current_time
+            ) for child in child_queue]
             for fut in fs.as_completed(futures):
                 if fut.result():
-                    tableau_data.local_solver.pop()
+                    local_solver.pop()
                     return True
         finally:
             # We wait for running subtask to finish, otherwise they remain hanging.
@@ -1341,16 +1345,18 @@ def add_children(tableau_data, node, depth, last_spawned, max_depth, current_tim
             pool.shutdown(wait=True, cancel_futures=True)
     else:
         for child in child_queue:
-            if add_children(tableau_data, child, depth + 1, last_spawned, max_depth, current_time):
+            # If the child comes from a temporal jump, we need a new, empty solver
+            child_solver = local_solver if child.current_time == current_time else LocalSolver()
+            if add_children(tableau_data, child_solver, child, depth + 1, last_spawned, max_depth, current_time):
                 if mode == 'complete':
                     complete_result = True
                 else: # mode in {'sat', 'strong_sat'}
-                    tableau_data.local_solver.pop()
+                    local_solver.pop()
                     return True
             elif mode == 'sat' and child.current_time is not None and child.current_time > current_time:
                 add_rejected(tableau_data, child)
 
-    tableau_data.local_solver.pop()
+    local_solver.pop()
 
     if mode in {'sat', 'strong_sat'}:
         return False
@@ -1377,7 +1383,9 @@ def build_decomposition_tree(tableau_data, root, max_depth):
     if tableau_data.verbose:
         print(root.to_list())
 
-    res = add_children(tableau_data, root, 0, 0, max_depth, time)
+    local_solver = LocalSolver()
+
+    res = add_children(tableau_data, local_solver, root, 0, 0, max_depth, time)
 
     if res and tableau_data.mode in {'sat', 'strong_sat'} and tableau_data.verbose:
         print("The requirement set is consistent")
@@ -1404,7 +1412,7 @@ class TableauData:
             self.tree = None
         if mode == 'sat':
             self.rejected_store = []
-        self.local_solver = LocalSolver()
+        #self.local_solver = LocalSolver()
         # self.z3_variables = {}
         # self.z3_positive_exprs = {}
         # self.z3_negated_exprs = {}
