@@ -275,12 +275,19 @@ def assign_identifier(formula):
 # TODO Can we merge this with assign_identifier?
 def assign_real_expr_id(node):
     id_counter = 0
+    # We use a list instead of a set because lists (node.operands) are unhashable
+    already_assigned = []
 
     def do_assign(node):
         nonlocal id_counter
         if node.operator == 'P' and len(node.operands) > 1:
-            node.real_expr_id = id_counter
-            id_counter += 1
+            prev_id = next(filter(lambda expr_id: expr_id[0] == node.operands, already_assigned), None)
+            if prev_id:
+                node.real_expr_id = prev_id[1]
+            else:
+                node.real_expr_id = id_counter
+                already_assigned.append((node.operands, id_counter))
+                id_counter += 1
         elif node.operator != 'P':
             for operand in node.operands:
                 do_assign(operand)
