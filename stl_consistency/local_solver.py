@@ -32,7 +32,7 @@ class LocalSolver:
         self.current_assertions = set() # contains entries of the form (negated, key) keeping track of current assertions in solver
         self.assertion_stack = [] # contains entries of the form [(negated, key)]
          # Cache for result of self.solver.check(). To be invalidated after every self.solver.assert_exprs
-        self.check_result = None
+        self.check_result = True
 
     def add_boolean_constraint(self, negated, prop):
         if prop not in self.z3_variables:
@@ -45,7 +45,11 @@ class LocalSolver:
             if entry not in self.z3_ast_cache:
                     self.z3_ast_cache[entry] = z3.Not(self.z3_variables[prop]) if negated else self.z3_variables[prop]
             self.solver.assert_exprs(self.z3_ast_cache[entry])
-            self.check_result = None
+
+            if (not negated, prop) in self.current_assertions:
+                self.check_result = False
+            else:
+                self.check_result = None
 
     def add_real_constraint(self, negated, node):
         assert node.real_expr_id is not None
@@ -57,7 +61,11 @@ class LocalSolver:
                     z3_ast = self.real_term_to_z3(node)
                     self.z3_ast_cache[entry] = z3.Not(z3_ast) if negated else z3_ast
             self.solver.assert_exprs(self.z3_ast_cache[entry])
-            self.check_result = None
+            
+            if (not negated, node.real_expr_id) in self.current_assertions:
+                self.check_result = False
+            else:
+                self.check_result = None
 
     def check(self):
         if self.check_result is None:
