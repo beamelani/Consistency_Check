@@ -188,6 +188,34 @@ class Node:
         '''
         return " ".join([formula_to_string(self.to_list()), str(self.current_time), str(self.counter)])
 
+    def set_min_time(self):
+        '''
+        :param formula:
+        :return: estrae il min lower bound della formula e setta il current_time
+        '''
+        match self.operator:
+            case 'P':
+                min_time = self.execution_time if self.execution_time != -1 else None
+            case '!':
+                if self.operands[0].operator == 'P' and self.operands[0].execution_time != -1:
+                    min_time = self.operands[0].execution_time
+                else:
+                    min_time = None
+            case 'G' | 'F' | 'U' | 'R':
+                min_time = self.lower
+            case 'O':
+                min_time = self.operands[0].lower
+            case '&&' | '||' | ',' | '->':
+                min_time = None
+                for op in self.operands:
+                    op_time = op.set_min_time()
+                    if op_time is not None and (min_time is None or op_time < min_time):
+                        min_time = op_time
+            case _:
+                raise ValueError(f'Operator {self.operator} not handled')
+        self.current_time = min_time
+        return min_time
+
     def __getitem__(self, i):
         '''
         Can be used to write e.g. node[0] to get the first operand

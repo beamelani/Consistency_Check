@@ -130,37 +130,6 @@ def push_negation(node):
         return new_node
 
 
-def set_min_time(formula):
-    '''
-    :param formula:
-    :return: estrae il min lower bound della formula e setta il current_time
-    '''
-    if formula.operator in {'P'}:
-        if not formula.execution_time == -1:
-            min_time = formula.execution_time
-        else:
-            min_time = None
-    elif formula.operator in {'!'}:
-        if formula.operands[0].operator == 'P' and not formula.operands[0].execution_time == -1:
-            min_time = formula.operands[0].execution_time
-        else:
-            min_time = None
-    elif formula.operator in {'G', 'F', 'U', 'R'}:
-        min_time = formula.lower
-    elif formula.operator in {'O'}:
-        min_time = formula.operands[0].lower
-    elif formula.operator in {'&&', '||', ',', '->'}:
-        times = []
-        for op in formula.operands:
-            op_time = set_min_time(op)
-            if op_time is not None:
-                times.append(op_time)
-        min_time = min(times, default=None)
-    formula.current_time = min_time
-    return min_time
-
-
-
 def calculate_time_quantum(formula):
     """
     Compute the maximum time length `quantum` such that all interval bounds are integer multiples of `quantum`.
@@ -1318,7 +1287,7 @@ def add_children(tableau_data, local_solver, node, depth, last_spawned, max_dept
     child_queue = []
     for child in children:
         if child != 'Rejected':
-            set_min_time(child) # updates the node's current_time, called here once and for all
+            child.set_min_time() # updates the node's current_time, called here once and for all
             if mode != 'sat' or child.current_time == current_time or not check_rejected(tableau_data, child):
                 child_queue.append(child)
             elif tableau_data.tree and mode == 'sat':
@@ -1382,7 +1351,7 @@ def build_decomposition_tree(tableau_data, root, max_depth):
             False if the tableau has only rejected branches rooted at node,
             None if we reached max_dept without finding an accepting branch
     """
-    time = set_min_time(root)
+    time = root.set_min_time()
     if tableau_data.build_tree:
         root.counter = tableau_data.counter
         tableau_data.tree.add_node(root.to_label())
