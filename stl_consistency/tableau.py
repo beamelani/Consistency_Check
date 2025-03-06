@@ -381,7 +381,7 @@ def decompose_all_G_nodes(outer_node, current_time):
     """
     assert outer_node.operator == ','
     # Funzione interna ricorsiva per modificare l'argomento
-    def modify_argument(arg, G_node, identifier, short):
+    def modify_argument(arg, G_node, identifier, short, simple):
         if arg.operator == 'P':
             ret = arg.shallow_copy()
             ret.execution_time = current_time #in realtà nel G non serve perché rimane il OG, però potrebbe forse servire quando OG si cancella perche lb=ub
@@ -393,7 +393,14 @@ def decompose_all_G_nodes(outer_node, current_time):
                 ret.operands[0].execution_time = current_time
                 return ret
             return arg
-        elif arg.operator in {'U', 'R', 'F'} or (arg.operator in {'G', 'F'} and G_node.lower == G_node.initial_time) or (arg.operator in {'G', 'F'} and not short):
+        elif simple and arg.operator == 'F' and G_node.lower + 2 <= G_node.upper:
+            # We expand with the equivalence G[a,b]F[c,d] q = (F[a+c+1,a+c+d] q || (G[a+c,a+c] q && G[a+c+d+1,a+c+d+1] q)) && G[a+2,b]F[c,d] q
+            G_node.lower += 1 # this implements G[a+2,b]F[c,d] q because decompose_jump adds 1 again
+            a = G_node.lower
+            c, d = arg.lower, arg.upper
+            q = arg.operands[0]
+            return Node('||', Node('F', a+c+1, a+c+d, q), Node(',', Node('G', a+c, a+c, q), Node('G', a+c+d+1, a+c+d+1, q)))
+        elif arg.operator in {'U', 'R', 'F'} or (arg.operator == 'G' and (not short or G_node.lower == G_node.initial_time)):
             # Modifica bounds sommando quelli del nodo G
             extract = arg.shallow_copy()
             extract.lower = arg.lower + lower_bound
@@ -428,7 +435,7 @@ def decompose_all_G_nodes(outer_node, current_time):
         elif arg.operator in {'&&', ','}:
             # Applica la modifica ricorsivamente agli operandi
             arg = arg.shallow_copy()
-            new_operands = (modify_argument(op, G_node, identifier, True) for op in arg.operands)
+            new_operands = (modify_argument(op, G_node, identifier, short, False) for op in arg.operands)
             arg.operands = [x for x in new_operands if x is not None]
             if arg.operands:
                 return arg
@@ -436,7 +443,7 @@ def decompose_all_G_nodes(outer_node, current_time):
                 return None
         elif arg.operator in {'||', '->'}:
             arg = arg.shallow_copy()
-            new_operands = (modify_argument(op, G_node, identifier, False) for op in arg.operands)
+            new_operands = (modify_argument(op, G_node, identifier, False, False) for op in arg.operands)
             arg.operands = [x for x in new_operands if x is not None]
             return arg
         else:
@@ -446,10 +453,12 @@ def decompose_all_G_nodes(outer_node, current_time):
     G_nodes = []
     for i, operand in enumerate(outer_node.operands):
         if operand.operator == 'G' and operand.lower == current_time:
-            G_nodes.append(operand)
+            # We need a shallow_copy for GF because it changes operand.lower
+            new_operand = operand.shallow_copy() if operand[0].operator == 'F' else operand
+            G_nodes.append(new_operand)
             if operand.lower < operand.upper:
                 # Sostituisco con ['O', ['G', 'a', 'b', ['p']]]
-                outer_node.operands[i] = Node('O', operand)
+                outer_node.operands[i] = Node('O', new_operand)
             else:
                 # Elimino l'elemento se a == b
                 outer_node.operands[i] = None
@@ -463,7 +472,7 @@ def decompose_all_G_nodes(outer_node, current_time):
         if G_node.operator == 'G' and G_node.operands[0].operator not in {'P', '!'} and G_node.initial_time == '-1':
             set_initial_time(G_node)
         # Decomponi il nodo originale
-        new_operands = modify_argument(G_node.operands[0], G_node, identifier, True)
+        new_operands = modify_argument(G_node.operands[0], G_node, identifier, True, True)
         if new_operands:
             outer_node.operands.append(new_operands)
     return [outer_node]
