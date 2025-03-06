@@ -57,14 +57,6 @@ Creare il problema con tutti i vincoli
 solve(constraint1, constraint2,...)  #li considera in and
 """
 
-'''
-COSE DA FARE:
-1) DONE verifica come sistemare decompose_imply nel caso in cui tu abbia una formula del tipo G(->, G..., XXX) o G(->, XXX, G...).
-Quando decomponi -> estrai gli operatori interni e anche lì in alcuni casi puoi accorpare i G/F
-2) verifica cosa fare nel caso in cui tu abbia G(||, G, XXX)
-3) sistema il caso con G(F...) [DONE] e versioni + complesse (G(&&, F.., XXX)) 
-
-'''
 
 
 import re
@@ -396,16 +388,13 @@ def decompose(tableau_data, node, current_time):
         elif node.operands[j].operator == 'F' and node.operands[j].lower == current_time:
             return decompose_F(node, j)
         elif node.operands[j].operator == 'U' and node.operands[j].lower == current_time:
-            node = copy.deepcopy(node)
             return decompose_U(node, j)
         elif node.operands[j].operator == 'R' and node.operands[j].lower == current_time:
-            node = copy.deepcopy(node)
-            return decompose_R(node.operands[j].to_list(), node, j)
+            return decompose_R(node, j)
         elif node.operands[j].operator == '->':
             if tableau_data.mode == 'complete' or tableau_data.mode == 'sat':
                 return decompose_imply_classic(node, j)
             else:
-                node = copy.deepcopy(node)
                 return decompose_imply_new(node, j)
 
     # se arrivo qui vuol dire che non sono entrata in nessun return e quindi non c'era nulla da decomporre
@@ -567,7 +556,7 @@ def decompose_U(formula, index):
     oppure può succedere q e così via fino a 5, se a 5 è sempre successo p e mai q elimino il ramo perché U non è soddisfatto
     :return:
     NB: nel ramo dove faccio q se P ha operator = 'P' devo aggiungere execution_time
-    pUq diventa q OR pand OU
+    pUq diventa q OR p and OU
     '''
     assert index >= 0 and formula is not None
     U_formula = formula[index]
@@ -609,10 +598,8 @@ def decompose_U(formula, index):
     #Node in which U is not satisfied (p, OU)
     new_node1 = formula.shallow_copy()
     new_operand = modify_argument(first_operand.shallow_copy(), True) #derived indica se is_derived deve essere True (quindi è vero nel nodo con p, OU quando p è G,F...)
-    new_operand.is_derived = True
     new_node1.replace_operand(index, Node('O', U_formula))
     new_node1.operands.extend([new_operand])
-
     # Node where U is satisfied (q)
     new_node2 = formula.shallow_copy()
     new_node2.replace_operand(index, modify_argument(second_operand.shallow_copy(), False))
@@ -621,69 +608,71 @@ def decompose_U(formula, index):
 
 
 
-#TODO togli deepcopy
-def decompose_R(node, formula, index):
+def decompose_R(formula, index):
     '''
-    NB: questo fa SOLO da a in poi, per la parte prima di a aggiungo un G nel pre-processing
+    NB: questo fa SOLO da a in poi, per la parte prima di a aggiungo un F[0,2]p nel pre-processing
     p R[a,b] q
     q always holds in [a, b], but if p holds in a position t'' before b, then q holds from a to t''
     Quindi se p succede prima di a, allora q non è mai vero: quindi tra 0 e a ho che se succede p, allora non avrò mai q
-    quindi se succede p, puoi cancellare il R dalla formula: quindi tra 0 a a ho p OR (pR[a,b]q)
-    tra a e b ho q and O(pRq) OR p
-NB: nel ramo dove faccio p se P ha operator = 'P' devo aggiungere execution_time
-    :param formula:
-    :param index:
-    :return:
+    quindi se succede p, puoi cancellare il R dalla formula
+    :return:    p R[a,b] q diventa: (q and O(pRq)) OR p
     '''
     assert index >= 0 and formula is not None
-    # p R[a,b] q diventa:
-    # (q and O(pRq)) OR p
-    formula_1 = copy.deepcopy(formula)
-    formula_2 = copy.deepcopy(formula)
-    del formula_1.operands[index]  # tolgo U dalla formula di partenza
-    del formula_2.operands[index]
-    if node[3][0] not in {'G', 'F', 'U', 'R'}:
-        node_1 = Node(*[',', node[3]])
-    else:
-        node_1 = copy.deepcopy(node[3])
-        node_1[1] = node_1[1] + node[1]
-        node_1[2] = node_1[2] + node[1]
-        node_1 = Node(*node[1])
-        # node[3][0] in {'U', 'R'}:
-            #node_1 = add_G_for_U(node_1, node[3][0], False)
-    if node[1] == node[2]:  # se sono all'ultimo istante non ho O
-        if node[4][0] not in {'G', 'F', 'U', 'R'}:
-            node_2 = Node(*[',', node[4]])
-        else:
-            new_node = copy.deepcopy(node[4])
-            new_node[1] = new_node[1] + node[1]
-            new_node[2] = new_node[2] + node[1]
-            node_2 = Node(*[',', new_node])
-            #if node[4][0] in {'U', 'R'}:
-                #node_2 = add_G_for_U(node_2, ',', False)
-    else:
-        if node[4][0] not in {'G', 'F', 'U', 'R'}:
-            node_2 = Node(*[',', ['O', node], node[4]])
-        else:
-            new_node = copy.deepcopy(node[4])
-            new_node[1] = new_node[1] + node[1]
-            new_node[2] = new_node[2] + node[1]
-            node_2 = Node(*[',', ['O', node], new_node])
-            #if node[4][0] in {'U', 'R'}:
-                #node_2 = add_G_for_U(node_2, ',', True)
-    if len(node_2.operands) >= 2:  # se ho O(R...)
-        node_2.operands[1].is_derived = True
-        node_2.operands[1].identifier = formula.operands[index].identifier
-        node_2.operands[0].operands[0].initial_time = formula.operands[index].initial_time
-        node_2.operands[0].operands[0].identifier = formula.operands[index].identifier
-    else:  # caso in cui sono a R[b,b], togli is_derived dagli operatori derivati da R
-        for operand in formula_2.operands:  # tolgo solo da qui perché formula_1 non ha is_derived essendo in OR con R
-            if operand.identifier == formula.operands[index].identifier:
-                operand.is_derived = False
-    formula_1.operands.extend(node_1.operands)
-    formula_2.operands.extend(node_2.operands)
-    return formula_1, formula_2
+    R_formula = formula[index]
+    first_operand = formula[index].operands[0]
+    second_operand = formula[index].operands[1]
+    lower_bound = R_formula.lower
+    current_time = R_formula.current_time
 
+    def modify_argument(arg, derived):
+        if arg.operator == 'P':
+            ret = arg.shallow_copy()
+            ret.execution_time = current_time
+            return ret
+        elif arg.operator in {'!'}:
+            if arg.operands[0].operator in {'P'}:
+                ret = arg.shallow_copy()
+                ret.operands[0] = arg.operands[0].shallow_copy()
+                ret.operands[0].execution_time = current_time
+                return ret
+            return arg
+        elif arg.operator in {'G', 'F', 'U', 'R'}:
+            # Modifica bounds sommando quelli del nodo
+            extract = arg.shallow_copy()
+            extract.lower = arg.lower + lower_bound
+            extract.upper = arg.upper + lower_bound
+            extract.current_time = current_time
+            extract.identifier = R_formula.identifier
+            if derived:
+                extract.is_derived = True
+            return extract
+        elif arg.operator in {'&&', '||', ',', '->'}:
+            # Applica la modifica ricorsivamente agli operandi
+            new_arg = arg.shallow_copy()
+            new_arg.operands = [modify_argument(op, derived) for op in arg.operands]
+            return new_arg
+        else:
+            raise ValueError(f"Operatore non gestito: {arg.operator}")
+
+    # Node in which U is not satisfied (p, OU)
+    new_node1 = formula.shallow_copy()
+    if R_formula.lower < R_formula.upper:
+        new_operand = modify_argument(second_operand.shallow_copy(),
+                                      True)  # derived indica se is_derived deve essere True (quindi è vero nel nodo con p, OU quando p è G,F...)
+        new_node1.replace_operand(index, Node('O', R_formula))
+        new_node1.operands.extend([new_operand])
+    else:
+        new_operand = modify_argument(first_operand.shallow_copy(), False)
+        new_node1.replace_operand(index, new_operand)
+        for operand in new_node1.operands:  # quando R va via tolgo is_derived dagli operatori
+            if operand.is_derived and operand.identifier == R_formula.identifier:
+                operand.is_derived = False
+
+    # Node where U is satisfied (q)
+    new_node2 = formula.shallow_copy()
+    new_node2.replace_operand(index, modify_argument(first_operand.shallow_copy(), False))
+
+    return [new_node2, new_node1]
 
 def decompose_and(node):
     assert node.operator == ','
@@ -1179,7 +1168,7 @@ def add_G_for_U(node, single, derived):
 
 def modify_U_R(node):
     """Modifica una formula sostituendo ogni p U[a,b] q e p R[a,b] q in tutta la formula ricorsivamente."""
-
+    """ pU[a,b]q diventa pU[a,b]q && G[0,a]p mentre (p R[a,b] q) → (F[0,a] p) ∨ (p R[a,b] q)"""
     # Se il nodo è atomico ('P'), lo restituiamo senza modifiche
     if node.operator == 'P':
         return node
@@ -1422,7 +1411,6 @@ def make_tableau(formula, max_depth, mode, build_tree, parallel, verbose):
     if formula.operator != ',':
         formula = Node(',', formula)
 
-    #formula = add_G_for_U(formula, formula.operator, False)
     formula = modify_U_R(formula)
     formula = decompose_and(formula)[0] #perché funzione sopra aggiunge && di troppo, sistemare
     assign_and_or_element(formula)
