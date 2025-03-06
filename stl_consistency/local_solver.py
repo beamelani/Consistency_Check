@@ -29,27 +29,21 @@ class LocalSolver:
         self.solver = z3.Solver()
         self.z3_variables = {}
         self.z3_ast_cache = {} # contains entries of the form (negated, key) -> z3_ast
+        self.boolean_solver = BooleanSolver()
         self.current_assertions = set() # contains entries of the form (negated, key) keeping track of current assertions in solver
         self.assertion_stack = [] # contains entries of the form [(negated, key)]
-         # Cache for result of self.solver.check(). To be invalidated after every self.solver.assert_exprs
+        # Cache for result of self.solver.check(). To be invalidated after every self.solver.assert_exprs
         self.check_result = True
 
     def add_boolean_constraint(self, negated, prop):
-        if prop not in self.z3_variables:
-                self.z3_variables[prop] = z3.Bool(prop)
-
         entry = (negated, prop)
         if entry not in self.current_assertions:
             self.current_assertions.add(entry)
             self.assertion_stack[-1].append(entry)
-            if entry not in self.z3_ast_cache:
-                    self.z3_ast_cache[entry] = z3.Not(self.z3_variables[prop]) if negated else self.z3_variables[prop]
-            self.solver.assert_exprs(self.z3_ast_cache[entry])
+            self.boolean_solver.add_constraint(negated, prop)
 
-            if (not negated, prop) in self.current_assertions:
-                self.check_result = False
-            else:
-                self.check_result = None
+            if self.check_result:
+                self.check_result = self.boolean_solver.check()
 
     def add_real_constraint(self, negated, node):
         assert node.real_expr_id is not None
@@ -64,12 +58,14 @@ class LocalSolver:
             
             if (not negated, node.real_expr_id) in self.current_assertions:
                 self.check_result = False
-            else:
+
+            if self.check_result:
                 self.check_result = None
 
     def check(self):
         if self.check_result is None:
-            self.check_result = self.solver.check() == z3.sat
+            #print(self.solver)
+            self.check_result = self.boolean_solver.check() and self.solver.check() == z3.sat
         return self.check_result
 
     def push(self):
@@ -81,6 +77,9 @@ class LocalSolver:
             old_assertions = self.assertion_stack.pop()
             for ass in old_assertions:
                 self.current_assertions.remove(ass)
+                negated, term = ass
+                if isinstance(term, str):
+                    self.boolean_solver.remove_constraint(negated, term)
             self.solver.pop()
             if len(old_assertions) > 0:
                 self.check_result = None
@@ -128,3 +127,37 @@ class LocalSolver:
             case '-':
                 return lhs - rhs
         raise ValueError(f"Operatore non gestito: {expr[0]}")
+
+
+class BooleanSolver:
+
+    def __init__(self):
+        self.pos_props = set()
+        self.neg_props = set()
+        self.check_result = True
+
+    def add_constraint(self, negated, prop):
+        if negated:
+            self.neg_props.add(prop)
+            if prop in self.pos_props:
+                self.check_result = False
+        else:
+            self.pos_props.add(prop)
+            if prop in self.neg_props:
+                self.check_result = False
+
+    def remove_constraint(self, negated, prop):
+        if negated:
+            self.neg_props.remove(prop)
+        else:
+            self.pos_props.remove(prop)
+
+        if not self.check_result:
+            # It we remove a constraint, the set of terms might become satisfiable
+            self.check_result = None
+    
+    def check(self):
+        if self.check_result is None:
+            self.check_result = self.pos_props.isdisjoint(self.neg_props)
+
+        return self.check_result
