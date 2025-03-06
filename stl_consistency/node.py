@@ -258,8 +258,7 @@ class Node:
 
     def get_imply_sort_key(self):
         return (
-            # We put ops that generate just one child first so they are decomposed first
-            'A' + self.operator if self.operator in {'&&', ',', 'G'} else self.operator,
+            self.operator,
             self.operands,
             self.lower - self.current_time,
             self.upper - self.current_time
@@ -267,7 +266,7 @@ class Node:
 
     def get_imply_search_key(self):
         return (
-            'A' + self.operator if self.operator in {'&&', ',', 'G'} else self.operator,
+            self.operator,
             self.operands
         )
 

@@ -344,29 +344,32 @@ def decompose(tableau_data, local_solver, node, current_time):
     :param current_time: istante di tempo attuale, per capire quali operatori sono attivi e quali no
     :return: ritorna la lista decomposta (i.e. il successivo nodo del tree)
     """
-    assert node.operator == ','
     # fai qui il check accept/reject, se rigetti non serve andare avanti
     if not local_consistency_check(local_solver, node):
         return ['Rejected']
 
+    res, has_decomposed = decompose_and(node)
+    if has_decomposed:
+        return res
+    
+    res, has_decomposed = decompose_all_G_nodes(node, current_time)
+    if has_decomposed:
+        return res
+
     for j in range(len(node.operands)):
-        if node.operands[j].operator in {'&&', ','}:
-            return decompose_and(node)
-        elif node.operands[j].operator == '||':
+        if node.operands[j].operator == '||':
             return decompose_or(node, j)
-        elif node.operands[j].operator == 'G' and node.operands[j].lower == current_time:
-            return decompose_all_G_nodes(node, current_time)
+        elif node.operands[j].operator == '->':
+            if tableau_data.mode == 'complete' or tableau_data.mode == 'sat':
+                return decompose_imply_classic(node, j)
+            else:
+                return decompose_imply_new(node, j)
         elif node.operands[j].operator == 'F' and node.operands[j].lower == current_time:
             return decompose_F(node, j)
         elif node.operands[j].operator == 'U' and node.operands[j].lower == current_time:
             return decompose_U(node, j)
         elif node.operands[j].operator == 'R' and node.operands[j].lower == current_time:
             return decompose_R(node, j)
-        elif node.operands[j].operator == '->':
-            if tableau_data.mode == 'complete' or tableau_data.mode == 'sat':
-                return decompose_imply_classic(node, j)
-            else:
-                return decompose_imply_new(node, j)
 
     # se arrivo qui vuol dire che non sono entrata in nessun return e quindi non c'era nulla da decomporre
     res = decompose_jump(node)
@@ -475,7 +478,7 @@ def decompose_all_G_nodes(outer_node, current_time):
         new_operands = modify_argument(G_node.operands[0], G_node, identifier, True, True)
         if new_operands:
             outer_node.operands.append(new_operands)
-    return [outer_node]
+    return [outer_node], len(G_nodes) > 0
 
 
 def decompose_F(node, index):
@@ -654,11 +657,13 @@ def decompose_and(node):
     assert node.operator == ','
     new_node = node.shallow_copy()
     # We decomose all AND operators, but only at the first level
+    has_decomposed = False
     for i, operand in enumerate(node.operands):
         if operand.operator in {'&&', ','}:
             new_node.replace_operand(i, *operand.operands)
+            has_decomposed = True
 
-    return [new_node]
+    return [new_node], has_decomposed
 
 
 def decompose_or(node, index):
@@ -1260,7 +1265,7 @@ def make_tableau(formula, max_depth, mode, build_tree, parallel, verbose):
         formula = Node(',', formula)
 
     formula = modify_U_R(formula)
-    formula = decompose_and(formula)[0] #perché funzione sopra aggiunge && di troppo, sistemare
+    formula = decompose_and(formula)[0][0] # perché funzione sopra può aggiungere && di troppo
     assign_and_or_element(formula)
     formula = assign_identifier(formula)
     assign_real_expr_id(formula)
