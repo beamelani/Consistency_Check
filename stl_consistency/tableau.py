@@ -357,19 +357,23 @@ def decompose(tableau_data, local_solver, node, current_time):
         return res
 
     for j in range(len(node.operands)):
-        if node.operands[j].operator == '||':
-            return decompose_or(node, j)
-        elif node.operands[j].operator == '->':
-            if tableau_data.mode == 'complete' or tableau_data.mode == 'sat':
-                return decompose_imply_classic(node, j)
-            else:
-                return decompose_imply_new(node, j)
-        elif node.operands[j].operator == 'F' and node.operands[j].lower == current_time:
-            return decompose_F(node, j)
-        elif node.operands[j].operator == 'U' and node.operands[j].lower == current_time:
-            return decompose_U(node, j)
-        elif node.operands[j].operator == 'R' and node.operands[j].lower == current_time:
-            return decompose_R(node, j)
+        match node.operands[j].operator:
+            case '||':
+                return decompose_or(node, j)
+            case '->':
+                if tableau_data.mode == 'complete' or tableau_data.mode == 'sat':
+                    return decompose_imply_classic(node, j)
+                else:
+                    return decompose_imply_new(node, j)
+            case 'F':
+                if node.operands[j].lower == current_time:
+                    return decompose_F(node, j)
+            case 'U':
+                if node.operands[j].lower == current_time:
+                    return decompose_U(node, j)
+            case 'R':
+                if node.operands[j].lower == current_time:
+                    return decompose_R(node, j)
 
     # se arrivo qui vuol dire che non sono entrata in nessun return e quindi non c'era nulla da decomporre
     res = decompose_jump(node)
@@ -963,28 +967,30 @@ def local_consistency_check(local_solver, node):
     :return: True if node is consistent, False otherwise
     '''
     for operand in node.operands:
-        if operand.operator == 'O' and operand[0].operator in {'F', 'U'} and operand[0].lower == operand[0].upper:
-            return False
-        if operand.operator == 'P':
-            if operand[0] in {'<', '<=', '>', '>=', '==', '!='}:
-                local_solver.add_real_constraint(False, operand)
-            else: # Boolean variable
-                prop = operand[0]
-                if prop == 'B_false':
-                    return False # we have false in the upper level of a node
-                elif prop == 'B_true':
-                    continue # if we have true in the upper level of a node we can just ignore it
-                local_solver.add_boolean_constraint(False, prop)
-        elif operand.operator == '!':
-            if operand[0][0] in {'<', '<=', '>', '>=', '==', '!='}:
-                local_solver.add_real_constraint(True, operand[0])
-            else: # Boolean variable
-                prop = operand[0][0]
-                if prop == 'B_true':
-                    return False # we have !true in the upper level of a node
-                elif prop == 'B_false':
-                    continue # if we have !false in the upper level of a node we can just ignore it
-                local_solver.add_boolean_constraint(True, prop)
+        match operand.operator:
+            case 'O':
+                if operand.operator == 'O' and operand[0].operator in {'F', 'U'} and operand[0].lower == operand[0].upper:
+                    return False
+            case 'P':
+                if operand[0] in {'<', '<=', '>', '>=', '==', '!='}:
+                    local_solver.add_real_constraint(False, operand)
+                else: # Boolean variable
+                    prop = operand[0]
+                    if prop == 'B_false':
+                        return False # we have false in the upper level of a node
+                    elif prop == 'B_true':
+                        continue # if we have true in the upper level of a node we can just ignore it
+                    local_solver.add_boolean_constraint(False, prop)
+            case '!':
+                if operand[0][0] in {'<', '<=', '>', '>=', '==', '!='}:
+                    local_solver.add_real_constraint(True, operand[0])
+                else: # Boolean variable
+                    prop = operand[0][0]
+                    if prop == 'B_true':
+                        return False # we have !true in the upper level of a node
+                    elif prop == 'B_false':
+                        continue # if we have !false in the upper level of a node we can just ignore it
+                    local_solver.add_boolean_constraint(True, prop)
 
     return local_solver.check()
 
