@@ -406,8 +406,6 @@ def decompose_all_G_nodes(outer_node, current_time):
             extract.upper = arg.upper + lower_bound
             extract.is_derived = True
             extract.identifier = identifier
-            #if arg.operator in {'U', 'R'}:
-                #extract = add_G_for_U(extract, extract.operator, True)
             return extract
         elif short and arg.operator == 'G' and G_node.lower > G_node.initial_time: #non aggiungo un altro G, ma allungo intervallo di quello già esistente
             G_counter = 0
@@ -503,8 +501,6 @@ def decompose_F(node, index):
             extract.lower = arg.lower + lower_bound
             extract.upper = arg.upper + lower_bound
             extract.current_time = current_time
-            #if arg.operator in {'U', 'R'}:
-                #extract = add_G_for_U(extract, extract.operator, True)
             return extract
         elif arg.operator in {'&&', '||', ',', '->'}:
             # Applica la modifica ricorsivamente agli operandi
@@ -858,26 +854,7 @@ def decompose_jump(node):
     flag = flagging(node)
     time_instants = extract_time_instants(node, flag)
     if not flag:  # non ci sono operatori probelmatici attivi
-        '''
-        new_node = Node(',')
-        new_node.satisfied_implications = node.satisfied_implications #altrimenti perdi info
-        for operand in node.operands:
-            if operand.operator not in {'P', '!', 'O'}:
-                new_node.operands.append(operand)
-            elif operand.operator == 'O' and operand.operands[0].lower < operand.operands[0].upper:
-                sub_formula = operand.operands[0].shallow_copy()
-                # trovo il primo numero maggiore dell'istante corrente di tempo
-                indice = bisect.bisect_right(time_instants, sub_formula.lower)
-                sub_formula.lower = time_instants[indice]
-                new_node.operands.append(sub_formula)
-        if new_node.operands:
-            if len(new_node.operands) > 1:
-                simplify_F(new_node)
-            return [new_node]
-        else:
-            return None
-        '''
-        #provo a fare togliendo dal nodo originale, invece di crearne uno nuovo
+        #tolgo dal nodo originale, invece di crearne uno nuovo
         new_operands = []
         for operand in node.operands:
             if operand.operator not in {'P', '!', 'O'}:
@@ -1023,61 +1000,6 @@ def set_initial_time(formula):
         formula.initial_time = formula.lower
     return formula
 
-'''
-def add_G_for_U(node, single, derived):
-    """
-    NB: devo applicarlo non solo all'inizio, ma anche dopo (es se ho GU o FU o GR...)
-    Cerca un operatore 'U' in un nodo e, se presente, aggiunge un nodo 'G' con scope [0, lower]
-    avente come operando il primo argomento dell'operatore 'U' a pari livello.
-
-    Invece per R sostituisce R con F[0,a] p OR (p R[a,b] q)
-
-    :param node: Oggetto di tipo Node su cui effettuare la modifica.
-    :return: Il nodo modificato
-
-    """
-    if single in {',', '&&', '||', '->'}:
-        new_operands = []
-        for operand in node.operands:
-            if isinstance(operand, Node):
-                # Se troviamo un nodo con operatore 'U', creiamo il nuovo nodo 'G'
-                if operand.operator == 'U' and operand.lower != '0':
-                    # Creiamo il nodo G con bounds [0, operand.lower] e primo operando di 'U'
-                    new_G_node = Node('G', '0', operand.lower, operand.operands[0])
-                    if derived:
-                        new_G_node.is_derived = True
-                    # Aggiungiamo sia l'operatore 'U' corrente sia il nuovo 'G' come figli del nodo
-                    new_operands.append(operand)
-                    new_operands.append(new_G_node)
-                elif operand.operator == 'R' and operand.lower != '0':  # qui non serve is_derived perché F è in OR
-                    new_G_node = Node(
-                        *['||', ['F', '0', operand.lower, operand.operands[0].to_list()], operand.to_list()])
-                    new_operands.append(new_G_node)
-                elif operand.operator not in {'G', 'F', 'O'}:
-                    # Se non è un nodo 'U', richiamiamo ricorsivamente la funzione
-                    add_G_for_U(operand, ',', False)
-                    new_operands.append(operand)
-                else:
-                    new_operands.append(operand)
-            else:
-                new_operands.append(operand)
-
-        # Aggiorna gli operandi del nodo corrente con quelli modificati
-        node.operands = new_operands
-        return node
-    elif single in {'U', 'R'}:  # nel caso in cui U e R escano dalla decomp di nested non sono mai qui
-        if single == 'U' and node.lower != '0':
-            new_G_node = Node(*['G', '0', node.lower, node.operands[0].to_list()])
-            # Ritorna un nodo con ',' come operatore che include sia 'U' sia 'G'
-            return Node(*[',', node.to_list(), new_G_node.to_list()])
-        elif single == 'R' and node.lower != '0':
-            new_G_node = Node(*['||', ['F', '0', node.lower, node.operands[0].to_list()], node.to_list()])
-            return new_G_node
-        else:
-            return node
-    else:
-        return node
-'''
 
 def modify_U_R(node):
     """Modifica una formula sostituendo ogni p U[a,b] q e p R[a,b] q in tutta la formula ricorsivamente."""
