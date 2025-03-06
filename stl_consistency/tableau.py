@@ -57,22 +57,16 @@ Creare il problema con tutti i vincoli
 solve(constraint1, constraint2,...)  #li considera in and
 """
 
-
-
-import re
 import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
-import random
-import copy
-import z3
 from fractions import Fraction
-from math import gcd, lcm
+from math import lcm
 import bisect
 import concurrent.futures as fs
 from stl_consistency.node import Node
 from stl_consistency.local_solver import LocalSolver
-from stl_consistency.parser import STLParser
+
 
 def push_negation(node):
     if node.operator == '!':
@@ -401,7 +395,7 @@ def decompose_all_G_nodes(outer_node, current_time):
             return arg
         elif arg.operator in {'U', 'R', 'F'} or (arg.operator in {'G', 'F'} and G_node.lower == G_node.initial_time) or (arg.operator in {'G', 'F'} and not short):
             # Modifica bounds sommando quelli del nodo G
-            extract = copy.deepcopy(arg) # TODO modify add_G_for_U so that we don't need a deep copy
+            extract = arg.shallow_copy()
             extract.lower = arg.lower + lower_bound
             extract.upper = arg.upper + lower_bound
             extract.is_derived = True
@@ -497,7 +491,7 @@ def decompose_F(node, index):
             return arg
         elif arg.operator in {'G', 'F', 'U', 'R'}:
             # Modifica bounds sommando quelli del nodo G
-            extract = copy.deepcopy(arg) # TODO modify add_G_for_U so that we don't need a deep copy
+            extract = arg.shallow_copy()
             extract.lower = arg.lower + lower_bound
             extract.upper = arg.upper + lower_bound
             extract.current_time = current_time
