@@ -71,6 +71,7 @@ from math import gcd, lcm
 import bisect
 import concurrent.futures as fs
 from stl_consistency.node import Node
+from stl_consistency.local_solver import LocalSolver
 from stl_consistency.parser import STLParser
 
 def push_negation(node):
@@ -119,37 +120,6 @@ def push_negation(node):
         new_node = node.shallow_copy()
         new_node.operands = [push_negation(op) for op in node.operands]
         return new_node
-
-
-def set_min_time(formula):
-    '''
-    :param formula:
-    :return: estrae il min lower bound della formula e setta il current_time
-    '''
-    if formula.operator in {'P'}:
-        if not formula.execution_time == -1:
-            min_time = formula.execution_time
-        else:
-            min_time = None
-    elif formula.operator in {'!'}:
-        if formula.operands[0].operator == 'P' and not formula.operands[0].execution_time == -1:
-            min_time = formula.operands[0].execution_time
-        else:
-            min_time = None
-    elif formula.operator in {'G', 'F', 'U', 'R'}:
-        min_time = formula.lower
-    elif formula.operator in {'O'}:
-        min_time = formula.operands[0].lower
-    elif formula.operator in {'&&', '||', ',', '->'}:
-        times = []
-        for op in formula.operands:
-            op_time = set_min_time(op)
-            if op_time is not None:
-                times.append(op_time)
-        min_time = min(times, default=None)
-    formula.current_time = min_time
-    return min_time
-
 
 
 def calculate_time_quantum(formula):
@@ -266,12 +236,19 @@ def assign_identifier(formula):
 # TODO Can we merge this with assign_identifier?
 def assign_real_expr_id(node):
     id_counter = 0
+    # We use a list instead of a set because lists (node.operands) are unhashable
+    already_assigned = []
 
     def do_assign(node):
         nonlocal id_counter
         if node.operator == 'P' and len(node.operands) > 1:
-            node.real_expr_id = id_counter
-            id_counter += 1
+            prev_id = next(filter(lambda expr_id: expr_id[0] == node.operands, already_assigned), None)
+            if prev_id:
+                node.real_expr_id = prev_id[1]
+            else:
+                node.real_expr_id = id_counter
+                already_assigned.append((node.operands, id_counter))
+                id_counter += 1
         elif node.operator != 'P':
             for operand in node.operands:
                 do_assign(operand)
@@ -367,7 +344,7 @@ def formula_to_string(formula):
 
 
 
-def decompose(tableau_data, node, current_time):
+def decompose(tableau_data, local_solver, node, current_time):
     """
     :param node: nodo da decomporre che ha operatore ','
     :param current_time: istante di tempo attuale, per capire quali operatori sono attivi e quali no
@@ -375,7 +352,7 @@ def decompose(tableau_data, node, current_time):
     """
     assert node.operator == ','
     # fai qui il check accept/reject, se rigetti non serve andare avanti
-    if not local_consistency_check(tableau_data, node):
+    if not local_consistency_check(local_solver, node):
         return ['Rejected']
 
     for j in range(len(node.operands)):
@@ -995,100 +972,36 @@ def decompose_jump(node):
             simplify_F(new_node)
         return [new_node]
 
-def real_expr_to_z3(z3_variables, expr):
-    if isinstance(expr, str):
-        if STLParser.is_float(expr):
-            return float(expr)
-        if expr not in z3_variables:
-            z3_variables[expr] = z3.Real(expr)
-        return z3_variables[expr]
 
-    assert isinstance(expr, list) and len(expr) == 3
-    lhs = real_expr_to_z3(z3_variables, expr[1])
-    rhs = real_expr_to_z3(z3_variables, expr[2])
-    match expr[0]:
-        case '+':
-            return lhs + rhs
-        case '-':
-            return lhs - rhs
-    raise ValueError(f"Operatore non gestito: {expr[0]}")
-
-def real_term_to_z3(tableau_data, node, negated):
-    z3_expr_cache = tableau_data.z3_negated_exprs if negated else tableau_data.z3_positive_exprs
-    if node.real_expr_id in z3_expr_cache:
-        return z3_expr_cache[node.real_expr_id]
-
-    comp, lhs, rhs = node.operands
-    lhs = real_expr_to_z3(tableau_data.z3_variables, lhs)
-    rhs = real_expr_to_z3(tableau_data.z3_variables, rhs)
-    match comp:
-        case '<':
-            res = lhs < rhs
-        case '<=':
-            res = lhs <= rhs
-        case '>':
-            res = lhs > rhs
-        case '>=':
-            res = lhs >= rhs
-        case '==':
-            res = lhs == rhs
-        case '!=':
-            res = lhs != rhs
-        case _:
-            raise ValueError(f"Unknown operator: {comp}")
-    
-    if negated:
-        res = z3.Not(res)
-
-    if node.real_expr_id is not None:
-        z3_expr_cache[node.real_expr_id] = res
-    return res
-
-def local_consistency_check(tableau_data, node):
+def local_consistency_check(local_solver, node):
     '''
     :return: True if node is consistent, False otherwise
     '''
-    constraints = []
     for operand in node.operands:
         if operand.operator == 'O' and operand[0].operator in {'F', 'U'} and operand[0].lower == operand[0].upper:
             return False
         if operand.operator == 'P':
             if operand[0] in {'<', '<=', '>', '>=', '==', '!='}:
-                constraints.append(real_term_to_z3(tableau_data, operand, False))
+                local_solver.add_real_constraint(False, operand)
             else: # Boolean variable
                 prop = operand[0]
                 if prop == 'B_false':
                     return False # we have false in the upper level of a node
                 elif prop == 'B_true':
                     continue # if we have true in the upper level of a node we can just ignore it
-                
-                if prop not in tableau_data.z3_variables:
-                    tableau_data.z3_variables[prop] = z3.Bool(prop)
-
-                constraints.append(tableau_data.z3_variables[prop])
+                local_solver.add_boolean_constraint(False, prop)
         elif operand.operator == '!':
             if operand[0][0] in {'<', '<=', '>', '>=', '==', '!='}:
-                constraints.append(real_term_to_z3(tableau_data, operand[0], True))
+                local_solver.add_real_constraint(True, operand[0])
             else: # Boolean variable
                 prop = operand[0][0]
                 if prop == 'B_true':
                     return False # we have !true in the upper level of a node
                 elif prop == 'B_false':
                     continue # if we have !false in the upper level of a node we can just ignore it
-                
-                if prop not in tableau_data.z3_variables:
-                    tableau_data.z3_variables[prop] = z3.Bool(prop)
+                local_solver.add_boolean_constraint(True, prop)
 
-                if prop not in tableau_data.z3_negated_exprs:
-                    tableau_data.z3_negated_exprs[prop] = z3.Not(tableau_data.z3_variables[prop])
-
-                constraints.append(tableau_data.z3_negated_exprs[prop])
-
-    solver = z3.Solver()
-    solver.assert_exprs(constraints)
-    #print(str(solver))
-    # Verifica se vincoli sono sat
-    return solver.check() == z3.sat
+    return local_solver.check()
 
 
 def set_initial_time(formula):
@@ -1273,7 +1186,7 @@ def check_rejected(tableau_data, node):
             return False
     return False
 
-def add_children(tableau_data, node, depth, last_spawned, max_depth, current_time):
+def add_children(tableau_data, local_solver, node, depth, last_spawned, max_depth, current_time):
     mode = tableau_data.mode
 
     if depth >= max_depth:
@@ -1284,8 +1197,10 @@ def add_children(tableau_data, node, depth, last_spawned, max_depth, current_tim
 
     current_time = node.current_time # extract_min_time(node_copy) should have been called by the parent
     assert current_time is None or isinstance(current_time, int)
-    children = decompose(tableau_data, node, current_time)
+    local_solver.push()
+    children = decompose(tableau_data, local_solver, node, current_time)
     if children is None:
+        local_solver.pop()
         if tableau_data.verbose:
             print('No more children in this branch')
         if mode in {'sat', 'complete'}:
@@ -1305,7 +1220,7 @@ def add_children(tableau_data, node, depth, last_spawned, max_depth, current_tim
     child_queue = []
     for child in children:
         if child != 'Rejected':
-            set_min_time(child) # updates the node's current_time, called here once and for all
+            child.set_min_time() # updates the node's current_time, called here once and for all
             if mode != 'sat' or child.current_time == current_time or not check_rejected(tableau_data, child):
                 child_queue.append(child)
             elif tableau_data.tree and mode == 'sat':
@@ -1323,9 +1238,15 @@ def add_children(tableau_data, node, depth, last_spawned, max_depth, current_tim
 
         pool = fs.ProcessPoolExecutor(max_workers=2)
         try:
-            futures = [pool.submit(add_children, tableau_data, child, depth + 1, depth, max_depth, current_time) for child in child_queue]
+            futures = [pool.submit(
+                add_children,
+                tableau_data,
+                local_solver if child.current_time == current_time else LocalSolver(),
+                child, depth + 1, depth, max_depth, current_time
+            ) for child in child_queue]
             for fut in fs.as_completed(futures):
                 if fut.result():
+                    local_solver.pop()
                     return True
         finally:
             # We wait for running subtask to finish, otherwise they remain hanging.
@@ -1333,13 +1254,18 @@ def add_children(tableau_data, node, depth, last_spawned, max_depth, current_tim
             pool.shutdown(wait=True, cancel_futures=True)
     else:
         for child in child_queue:
-            if add_children(tableau_data, child, depth + 1, last_spawned, max_depth, current_time):
+            # If the child comes from a temporal jump, we need a new, empty solver
+            child_solver = local_solver if child.current_time == current_time else LocalSolver()
+            if add_children(tableau_data, child_solver, child, depth + 1, last_spawned, max_depth, current_time):
                 if mode == 'complete':
                     complete_result = True
                 else: # mode in {'sat', 'strong_sat'}
+                    local_solver.pop()
                     return True
             elif mode == 'sat' and child.current_time is not None and child.current_time > current_time:
                 add_rejected(tableau_data, child)
+
+    local_solver.pop()
 
     if mode in {'sat', 'strong_sat'}:
         return False
@@ -1358,7 +1284,7 @@ def build_decomposition_tree(tableau_data, root, max_depth):
             False if the tableau has only rejected branches rooted at node,
             None if we reached max_dept without finding an accepting branch
     """
-    time = set_min_time(root)
+    time = root.set_min_time()
     if tableau_data.build_tree:
         root.counter = tableau_data.counter
         tableau_data.tree.add_node(root.to_label())
@@ -1366,7 +1292,7 @@ def build_decomposition_tree(tableau_data, root, max_depth):
     if tableau_data.verbose:
         print(root.to_list())
 
-    res = add_children(tableau_data, root, 0, 0, max_depth, time)
+    res = add_children(tableau_data, LocalSolver(), root, 0, 0, max_depth, time)
 
     if res and tableau_data.mode in {'sat', 'strong_sat'} and tableau_data.verbose:
         print("The requirement set is consistent")
@@ -1393,9 +1319,6 @@ class TableauData:
             self.tree = None
         if mode == 'sat':
             self.rejected_store = []
-        self.z3_variables = {}
-        self.z3_positive_exprs = {}
-        self.z3_negated_exprs = {}
 
 
 def plot_tree(G):
