@@ -733,14 +733,17 @@ def decompose_imply_classic(node, index):
 
     # euristica per ottimizzare, se nella formula ho già antecedente che deve essere vero
     # resituisco prima nodo in cui antecedente è vero, altrimenti il contrario
-    if lhs.operator == 'P':
+    def check_match(sub1, sub2):
+        return sub1.operator == sub2.operator and ((sub1.operator == 'P' and sub1.operands == sub2.operands) or (sub1.operator == '!' and sub1[0].operands == sub2[0].operands))
+
+    if lhs.operator in {'P', '!'}:
         for operand in node.operands:
-            if lhs[0] == operand[0]:
+            if check_match(lhs, operand):
                 return new_node2, new_node1
     elif lhs.operator in {'&&', ',', '||'}:
-        for operand in node.operands:
-            for element in lhs.operands:
-                if element[0] == operand[0]:
+        for element in lhs.operands:
+            for operand in node.operands:
+                if check_match(element, operand):
                     return new_node2, new_node1
     return new_node1, new_node2
 
