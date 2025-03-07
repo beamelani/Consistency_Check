@@ -356,29 +356,40 @@ def decompose(tableau_data, local_solver, node, current_time):
     if has_decomposed:
         return res
 
+    res = None
     for j in range(len(node.operands)):
         match node.operands[j].operator:
             case '||':
-                return decompose_or(node, j)
+                res = decompose_or(node, j)
+                break
             case '->':
                 if tableau_data.mode == 'complete' or tableau_data.mode == 'sat':
-                    return decompose_imply_classic(node, j)
+                    res = decompose_imply_classic(node, j)
                 else:
-                    return decompose_imply_new(node, j)
+                    res = decompose_imply_new(node, j)
+                break
             case 'F':
                 if node.operands[j].lower == current_time:
-                    return decompose_F(node, j)
+                    res = decompose_F(node, j)
+                    break
             case 'U':
                 if node.operands[j].lower == current_time:
-                    return decompose_U(node, j)
+                    res = decompose_U(node, j)
+                    break
             case 'R':
                 if node.operands[j].lower == current_time:
-                    return decompose_R(node, j)
+                    res = decompose_R(node, j)
+                    break
+
+    if res is not None:
+        for child in res:
+            child.current_time = node.current_time
+        return res
 
     # se arrivo qui vuol dire che non sono entrata in nessun return e quindi non c'era nulla da decomporre
     res = decompose_jump(node)
     if res:
-        res[0].current_time = node.current_time
+        res[0].set_min_time()
     return res
 
 
@@ -1156,7 +1167,6 @@ def add_children(tableau_data, local_solver, node, depth, last_spawned, max_dept
     child_queue = []
     for child in children:
         if child != 'Rejected':
-            child.set_min_time() # updates the node's current_time, called here once and for all
             if mode != 'sat' or child.current_time == current_time or not check_rejected(tableau_data, child):
                 child_queue.append(child)
             elif tableau_data.tree and mode == 'sat':
