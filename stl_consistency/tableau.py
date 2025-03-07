@@ -279,64 +279,6 @@ def flagging(node):
             return False
     return False
 
-def formula_to_string(formula):
-    """
-    :param formula:
-    :return: trasforma la lista in una stringa per utilizzarla nell'etichetta del nodo del grafo e stamparla
-    """
-    if isinstance(formula, list) and len(formula) == 1 and isinstance(formula[0], list):  # se ho [[formula]]
-        formula = formula[0]
-
-    if isinstance(formula, list) and len(formula) == 1 and isinstance(formula[0],
-                                                                      str):  # serve per formule del tipo ['p']
-        return formula[0]
-
-    if isinstance(formula, str):  # probabilemente non serve
-        return formula
-
-    operator = formula[0]
-
-    if operator == 'G':
-        _, lowerb, upperb, arg = formula
-        return f"G[{lowerb}, {upperb}] ({formula_to_string(arg)})"
-
-    elif operator == 'F':
-        _, lowerb, upperb, arg = formula
-        return f"F[{lowerb}, {upperb}] ({formula_to_string(arg)})"
-
-    elif operator == 'O':
-        _, arg = formula
-        return f"O ({formula_to_string(arg)})"
-
-    elif operator == '!':
-        _, arg = formula
-        return f"!({formula_to_string(arg)})"
-
-    elif operator == 'U':
-        _, lowerb, upperb, arg1, arg2 = formula
-        return f"({formula_to_string(arg1)}) U[{lowerb}, {upperb}] ({formula_to_string(arg2)})"
-
-    elif operator == 'R':
-        _, lowerb, upperb, arg1, arg2 = formula
-        return f"({formula_to_string(arg1)}) R[{lowerb}, {upperb}] ({formula_to_string(arg2)})"
-
-    elif operator == '&&':
-        subformulas = [f"({formula_to_string(subformula)})" for subformula in formula[1:]]
-        return " && ".join(subformulas)
-
-    elif operator == ',':
-        subformulas = [f"({formula_to_string(subformula)})" for subformula in formula[1:]]
-        return " , ".join(subformulas)
-
-    elif operator == '||':
-        subformulas = [f"({formula_to_string(subformula)})" for subformula in formula[1:]]
-        return " || ".join(subformulas)
-
-    elif operator == '->':
-        _, arg1, arg2 = formula
-        return f"({formula_to_string(arg1)}) -> ({formula_to_string(arg2)})"
-
-
 
 def decompose(tableau_data, local_solver, node, current_time):
     """
@@ -1127,7 +1069,7 @@ def check_rejected(tableau_data, node):
     for rejected in tableau_data.rejected_store[i:]:
         if node.implies_quick(rejected):
             if tableau_data.verbose:
-                print('Rejecting', node.to_list(), ' because it implies rejected node ', rejected.to_list())
+                print('Rejecting', node, ' because it implies rejected node ', rejected)
             return True
         if rejected.operator == node.operator == ',' and node.operands[-1].get_imply_search_key() < rejected.operands[0].get_imply_search_key():
             return False
@@ -1160,10 +1102,7 @@ def add_children(tableau_data, local_solver, node, depth, last_spawned, max_dept
                 return False
     if tableau_data.verbose:
         for child in children:
-            if not isinstance(child, str):
-                print(child.to_list())
-            else:
-                print(child)
+            print(child)
     child_queue = []
     for child in children:
         if child != 'Rejected':
@@ -1179,8 +1118,8 @@ def add_children(tableau_data, local_solver, node, depth, last_spawned, max_dept
     if mode == 'complete':
         complete_result = False
     if tableau_data.parallel and mode == 'sat' and depth - last_spawned > 30 and len(child_queue) > 1: # add 'strong_sat'
-        # print("spawning", node.to_list())
-        # print("children: ", str([child.to_list() for child in child_queue]))
+        # print("spawning", node)
+        # print("children: ", str([child for child in child_queue]))
 
         pool = fs.ProcessPoolExecutor(max_workers=2)
         try:
@@ -1236,7 +1175,7 @@ def build_decomposition_tree(tableau_data, root, max_depth):
         tableau_data.tree.add_node(root.to_label())
 
     if tableau_data.verbose:
-        print(root.to_list())
+        print(root)
 
     res = add_children(tableau_data, LocalSolver(), root, 0, 0, max_depth, time)
 

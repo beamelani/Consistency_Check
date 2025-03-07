@@ -7,7 +7,7 @@ from itertools import combinations
 from wrapt_timeout_decorator import *
 
 from stl_consistency.parser import STLParser
-from stl_consistency.node import Node, formula_to_string
+from stl_consistency.node import Node
 from stl_consistency.smtchecker import smt_check_consistency
 
 from stl_consistency.tableau import make_tableau, plot_tree

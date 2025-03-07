@@ -21,64 +21,6 @@
 # SOFTWARE.
 
 
-## TODO: adapt for class representation
-def formula_to_string(formula):
-    """
-    :param formula:
-    :return: trasforma la lista in una stringa per utilizzarla nell'etichetta del nodo del grafo e stamparla
-    """
-    if isinstance(formula, list) and len(formula) == 1 and isinstance(formula[0], list): # se ho [[formula]]
-        formula = formula[0]
-
-    if isinstance(formula, list) and len(formula) == 1 and isinstance(formula[0], str): #serve per formule del tipo ['p']
-        return formula[0][2:]
-
-    if isinstance(formula, str): #probabilemente non serve
-        return formula
-
-    operator = formula[0]
-
-    if operator == 'G':
-        _, lowerb, upperb, arg = formula
-        return f"G[{lowerb}, {upperb}] ({formula_to_string(arg)})"
-
-    elif operator == 'F':
-        _, lowerb, upperb, arg = formula
-        return f"F[{lowerb}, {upperb}] ({formula_to_string(arg)})"
-
-    elif operator == 'O':
-        _, arg = formula
-        return f"O ({formula_to_string(arg)})"
-
-    elif operator == '!':
-        _, arg = formula
-        return f"!({formula_to_string(arg)})"
-
-    elif operator == 'U':
-        _, lowerb, upperb, arg1, arg2 = formula
-        return f"({formula_to_string(arg1)}) U[{lowerb}, {upperb}] ({formula_to_string(arg2)})"
-
-    elif operator == 'R':
-        _, lowerb, upperb, arg1, arg2 = formula
-        return f"({formula_to_string(arg1)}) R[{lowerb}, {upperb}] ({formula_to_string(arg2)})"
-
-    elif operator == '&&':
-        subformulas = [f"({formula_to_string(subformula)})" for subformula in formula[1:]]
-        return " && ".join(subformulas)
-
-    elif operator == ',':
-        subformulas = [f"({formula_to_string(subformula)})" for subformula in formula[1:]]
-        return " , ".join(subformulas)
-
-    elif operator == '||':
-        subformulas = [f"({formula_to_string(subformula)})" for subformula in formula[1:]]
-        return " || ".join(subformulas)
-
-    elif operator == '->':  # Implication
-        _,  arg1, arg2 = formula
-        return f"({formula_to_string(arg1)}) -> ({formula_to_string(arg2)})"
-
-
 class Node:
     def __init__(self, *args):
         if len(args) == 0:
@@ -168,7 +110,7 @@ class Node:
             new.real_expr_id = self.real_expr_id
         return new
 
-    def to_list(self):
+    def __list__(self):
         '''
         Convert node to list representation
         '''
@@ -186,7 +128,7 @@ class Node:
         Use node.to_label(counter) to create a label for a graph node.
         The current time must be set before using this method with node.set_current_time()
         '''
-        return " ".join([formula_to_string(self.to_list()), str(self.current_time), str(self.counter)])
+        return " ".join([str(self), str(self.current_time), str(self.counter)])
 
     def set_min_time(self):
         '''
@@ -231,6 +173,37 @@ class Node:
         if self.operator != 'P':
             for op in self.operands:
                 op.flatten()
+
+    def __str__(self):
+        match self.operator:
+            case 'G' | 'F':
+                return f"{self.operator}[{self.lower},{self.upper}] {self.operands[0]}"
+            case 'O' | '!':
+                return f"{self.operator} {self.operands[0]}"
+            case 'U' | 'R':
+                return f"({self.operands[0]}) {self.operator}[{self.lower},{self.upper}] ({self.operands[0]})"
+            case '&&' | '||' | '->':
+                return f"({f' {self.operator} '.join(str(op) for op in self.operands)})"
+            case ',':
+                return f"({', '.join(str(op) for op in self.operands)})"
+            case 'P':
+                if len(self.operands) == 1:
+                    return self.operands[0]
+                else:
+                    return Node.arith_expr_to_string(self.operands)
+            case _:
+                raise ValueError(f'Operator {self.operator} not handled.')
+
+    def arith_expr_to_string(expr):
+        if isinstance(expr, list):
+            if len(expr) == 3 and expr[0] in {'<', '<=', '>', '>=', '==', '!=', '+', '-'}:
+                return ' '.join([Node.arith_expr_to_string(expr[1]), expr[0], Node.arith_expr_to_string(expr[2])])
+            elif len(expr) == 1 and isinstance(expr[0], str):
+                return expr[0]
+        elif isinstance(expr, str):
+            return expr
+        else:
+            raise ValueError('Bad operator')
 
     def __hash__(self):
         '''
