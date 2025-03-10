@@ -608,7 +608,7 @@ def decompose_R(formula, index):
 
     # Node where U is satisfied (q)
     new_node2 = formula.shallow_copy()
-    new_node2.replace_operand(index, modify_argument(first_operand.shallow_copy(), False))
+    new_node2.replace_operand(index, modify_argument(first_operand.shallow_copy(), False), modify_argument(second_operand.shallow_copy(), False))
 
     return [new_node2, new_node1]
 
