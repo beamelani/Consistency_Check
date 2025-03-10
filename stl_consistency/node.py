@@ -158,6 +158,18 @@ class Node:
         self.current_time = min_time
         return min_time
 
+    def get_max_upper(self):
+        '''
+        :return: the maximum upper bound from temporal operators in the first-level
+                 boolean closure of self, and -1 if self is purely propositional
+        '''
+        match self.operator:
+            case '&&' | '||' | ',' | '->' | '!':
+                return max(op.get_max_upper() for op in self.operands)
+            case _:
+                # Works because in all non-temporal operators self.upper == -1
+                return self.upper
+
     def __getitem__(self, i):
         '''
         Can be used to write e.g. node[0] to get the first operand
