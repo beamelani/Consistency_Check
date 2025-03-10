@@ -367,7 +367,7 @@ def decompose_all_G_nodes(outer_node, current_time):
             extract = arg.shallow_copy()
             extract.lower = arg.lower + lower_bound
             extract.upper = arg.upper + lower_bound
-            extract.is_derived = True
+            extract.is_derived = G_node.lower < G_node.upper
             extract.identifier = identifier
             return extract
         elif short and arg.operator == 'G' and G_node.lower > G_node.initial_time: #non aggiungo un altro G, ma allungo intervallo di quello già esistente
