@@ -56,15 +56,15 @@ requirements = [
 
 requirements_riscritti = [
     ['G', '0', T, ['||', ['R_function_status == 0'], ['R_function_status == 1'], ['R_function_status == 2']]], #where 0 == inactive, 1==armed, 2==active
-    ['G', '0', T, ['->', ['&&', ['R_function_status == 0'], ['R_n_s == 1'],  ['R_X_c-R_X_b <= 5'], ['R_X_c-R_X_b>= -5'], ['G', '0', '5', ['R_airspeed>= R_Vmin']], ['!', ['B_X_over']], ['B_X_Activation_Request']], ['F', '1', '2', ['R_function_status == 2']]]],
-    ['G', '0', T, ['->', ['&&', ['R_function_status == 2'], ['||', ['!', ['R_n_s == 1']], ['F', '0', '10', ['B_X_ch']], ['G', '0', '5', ['R_airspeed < R_Vmin']],  ['!', ['B_r_actuation']], ['!', ['B_X_Activation_Request']]]], ['F', '1', '2', ['R_function_status == 0']]]],
-    ['G', '0', T, ['->', ['&&', ['R_function_status == 1'], ['||', ['!', ['R_n_s ==1']], ['F', '0', '5', ['B_X_ch']], ['!', ['B_X_Activation_Request']], ['!', ['B_r_actuation']]]], ['F', '1', '2', ['R_function_status == 0']]]],
-    ['G', '0', T, ['->', ['&&', ['R_function_status == 0'], ['R_n_s ==1'], ['||', ['R_X_c - R_X_b >5'], ['R_X_c - R_X_b <-5']], ['B_X_Activation_Request']], ['F', '1', '2', ['R_function_status == 1']]]],
-    ['G', '0', T, ['->', ['&&', ['R_function_status == 1'], ['!', ['B_X_over']], ['R_X_c - R_X_b <=5'], ['R_X_c - R_X_b >=-5'], ['G', '0', '5', ['R_airspeed >= R_Vmin']]], ['F', '1', '2', ['R_function_status == 2']]]],
+    ['G', '0', T, ['->', ['&&', ['R_function_status == 0'], ['R_n_s == 1'],  ['|R_X_c - R_X_b| <= 5'], ['G', '0', '5', ['R_airspeed >= R_Vmin']], ['!', ['B_X_over']], ['B_X_Activation_Request']], ['F', '1', '2', ['R_function_status == 2']]]],
+    ['G', '0', T, ['->', ['&&', ['R_function_status == 2'], ['||', ['!', ['R_n_s == 1']], ['F', '0', '10', ['B_X_ch']], ['G', '0', '5', ['R_airspeed < R_Vmin']], ['!', ['B_r_actuation']], ['!', ['B_X_Activation_Request']]]], ['F', '1', '2', ['R_function_status == 0']]]],
+    ['G', '0', T, ['->', ['&&', ['R_function_status == 1'], ['||', ['!', ['R_n_s == 1']], ['F', '0', '5', ['B_X_ch']], ['!', ['B_X_Activation_Request']], ['!', ['B_r_actuation']]]], ['F', '1', '2', ['R_function_status == 0']]]],
+    ['G', '0', T, ['->', ['&&', ['R_function_status == 0'], ['R_n_s == 1'], ['|R_X_c - R_X_b| > 5'], ['B_X_Activation_Request']], ['F', '1', '2', ['R_function_status == 1']]]],
+    ['G', '0', T, ['->', ['&&', ['R_function_status == 1'], ['!', ['B_X_over']], ['|R_X_c - R_X_b| <= 5'], ['G', '0', '5', ['R_airspeed >= R_Vmin']]], ['F', '1', '2', ['R_function_status == 2']]]],
     ['G', '0', T, ['->', ['R_function_status == 2'], ['||', ['R_function_active_status == 0'], ['R_function_active_status == 1'], ['R_function_active_status == 2']]]],
-    ['G', '0', T, ['->', ['&&', ['R_function_active_status == 0'], ['!', ['B_X_over']], ['R_Delta_T_Error_reference < R_T_Error'], ['R_Delta_T_Error_reference > 0 - R_T_Error']], ['F', '1', '2', ['R_function_active_status == 1']]]],
-    ['G', '0', T, ['->', ['&&', ['R_function_active_status == 1'], ['!', ['B_X_over']], ['R_T_Error < 3'], ['R_T_Error  > -3'],  ['R_Roll_attitude < 0.8'], ['R_Roll_attitude > -0.8'],  ['R_X_deviation < 0.5'], ['R_X_deviation > -0.5'], ['R_dalfadt < 0.002'], ['R_dalfadt > -0.002'], ['!', ['B_h_on']], ['!', ['B_f_on']]], ['F', '1', '2', ['R_function_active_status == 2']]]],
-    ['G', '0', T, ['->', ['&&', ['R_function_active_status == 2'], ['!', ['B_X_over']], ['||', ['R_T_Error > 5'], ['R_T_Error < -5']], ['||', ['R_Roll_attitude > 2.6'], ['R_Roll_attitude < -2.6']], ['||', ['R_X_deviation > 1.5'], ['R_X_deviation < -1.5']], ['||', ['R_dalfadt > 0.075'], ['R_dalfadt < -0.075']], ['||', ['B_h_on'], ['B_f_on']]], ['F', '1', '2', ['R_function_active_status == 1']]]],
+    ['G', '0', T, ['->', ['&&', ['R_function_active_status == 0'], ['!', ['B_X_over']], ['|R_Delta_T_Error_reference| < R_T_Error']], ['F', '1', '2', ['R_function_active_status == 1']]]],
+    ['G', '0', T, ['->', ['&&', ['R_function_active_status == 1'], ['!', ['B_X_over']], ['|R_T_Error| < 3'], ['|R_Roll_attitude| < 0.8'], ['|R_X_deviation| < 0.5'], ['|R_dalfadt| < 0.002'], ['!', ['B_h_on']], ['!', ['B_f_on']]], ['F', '1', '2', ['R_function_active_status == 2']]]],
+    ['G', '0', T, ['->', ['&&', ['R_function_active_status == 2'], ['!', ['B_X_over']], ['|R_T_Error| > 5'], ['|R_Roll_attitude| > 2.6'], ['|R_X_deviation| > 1.5'], ['|R_dalfadt| > 0.075'], ['||', ['B_h_on'], ['B_f_on']]], ['F', '1', '2', ['R_function_active_status == 1']]]],
     ['G', '0', T, ['->', ['&&', ['R_function_status == 2'], ['!', ['B_X_over']]], ['F', '0', '5', ['R_LME_cr == 1']]]],
     ['G', '0', T, ['->', ['R_function_status == 0'], ['F', '0', '5', ['R_LME_cr == 0']]]],
     ['G', '0', T, ['->', ['R_function_status == 1'], ['F', '0', '5', ['R_LMA_cr == 1']]]],
@@ -83,9 +83,9 @@ parameter_ranges = [
     ['G', '0', T, ['&&', ['R_airspeed >=0'], ['R_airspeed <= 200']]],
     ['G', '0', T, ['&&', ['R_a >= 0'], ['R_a <= 360']]],
     ['G', '0', T, ['||', ['R_n_s == 0'], ['R_n_s == 1'], ['R_n_s == 2']]],
-    ['G', '0', T, ['&&', ['R_T_Error >= -180'], ['R_T_Error <= 180']]],
-    ['G', '0', T, ['&&', ['R_Roll_attitude >= -50'], ['R_Roll_attitude <= 50']]],
-    ['G', '0', T, ['&&', ['R_X_deviation >= -180'], ['R_X_deviation <= 180']]],
+    ['G', '0', T, ['|R_T_Error| <= 180']],
+    ['G', '0', T, ['|R_Roll_attitude| <= 50']],
+    ['G', '0', T, ['|R_X_deviation| <= 180']],
     ['G', '0', T, ['||', ['R_LME_cr == 0'], ['R_LME_cr == 1'], ['R_LME_cr == 2']]],
     ['G', '0', T, ['||', ['R_LMA_cr == 0'], ['R_LMA_cr == 1'], ['R_LMA_cr == 2']]],
     ['G', '0', T, ['||', ['R_Y_pushbutton == 0'], ['R_Y_pushbutton == 1'], ['R_Y_pushbutton == 2']]],
@@ -185,7 +185,7 @@ cars = [
     ['G', '0', '100', ['R_dist > 0.1']],
     ['G', '0', '20', ['->', ['R_dist < 6'], ['F', '0', '15', ['B_acc2']]]],
     ['F', '12', '20', ['->', ['B_dec2'], ['F', '3', '18', ['B_acc2']]]],
-    ['F', '4', '40', ['U', '10', '20', ['B_dec2'], ['&&', ['R_x >= -0.5'], ['R_x <= 0.5'], ['R_y >= -0.5'], ['R_y <= 0.5']]]]
+    ['F', '4', '40', ['U', '10', '20', ['B_dec2'], ['&&', ['|R_x| <= 0.5'], ['|R_y| <= 0.5']]]]
 ]
 
 thermostat = [
@@ -297,16 +297,17 @@ def pretty_print(results, ms, csvfile):
 if __name__ == '__main__':
     datasets = {
         "avionics": requirements_riscritti,
-        #"cars": cars,
-        #"thermostat": thermostat,
-        #"watertank": watertank,
-        #"railroad": railroad,
-        #"batteries": batteries,
-        #"railroad_merged": railroad_merged
+        "parameter_ranges": parameter_ranges,
+        "cars": cars,
+        "thermostat": thermostat,
+        "watertank": watertank,
+        "railroad": railroad,
+        "batteries": batteries,
+        "railroad_merged": railroad_merged
     }
     #datasets = [cars, thermostat, watertank, batteries]
-    sys.setrecursionlimit(1000000)
-    max_depth = 100000
+    sys.setrecursionlimit(100000000)
+    max_depth = 10000000
     timeout = 60 # in seconds
 
     #results = [check_dataset(ds, max_depth) for ds in datasets]

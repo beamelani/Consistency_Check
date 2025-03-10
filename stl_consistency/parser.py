@@ -176,7 +176,7 @@ class STLParser:
         Complete parsing of partially-parsed formulas in which relational constraints are unparsed strings
         '''
         assert isinstance(formula, list)
-        if len(formula) == 1 and formula[0][0:2] == 'R_':
+        if len(formula) == 1:
             return self.parse_formula_as_stl_list(formula[0])
         return [
             self.parse_relational_exprs(el) if isinstance(el, list) else el

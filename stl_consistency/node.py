@@ -211,7 +211,10 @@ class Node:
         '''
         Node: only hashes formula content!
         '''
-        return hash((self.operator, self.lower, self.upper, tuple(self.operands)))
+        return hash((
+            self.operator, self.lower, self.upper,
+            Node.lists_to_tuples(self.operands) if self.operator == 'P' else tuple(self.operands)
+        ))
 
     def __eq__(self, other):
         '''
@@ -286,3 +289,7 @@ class Node:
                 return False
         return True
 
+    def lists_to_tuples(l):
+        if isinstance(l, list) or isinstance(l, tuple):
+            return tuple(Node.lists_to_tuples(el) for el in l)
+        return l
