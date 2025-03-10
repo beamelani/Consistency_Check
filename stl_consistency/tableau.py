@@ -75,7 +75,7 @@ def push_negation(node):
             case 'P':
                 return node
             case '!':
-                return operand[0]
+                return push_negation(operand[0])
 
         new_node = operand.shallow_copy()
         match operand.operator:
