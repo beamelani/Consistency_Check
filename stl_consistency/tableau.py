@@ -71,42 +71,44 @@ from stl_consistency.local_solver import LocalSolver
 def push_negation(node):
     if node.operator == '!':
         operand = node[0]
-        new_node = operand.shallow_copy()
-        if operand.operator == 'P':
-            return node
-        elif operand.operator == ',' or operand.operator == '&&':
-            new_node.operator = '||'
-            new_node.operands = [push_negation(Node('!', op)) for op in operand]
-        elif operand.operator == '||':
-            new_node.operator = ','
-            new_node.operands = [push_negation(Node('!', op)) for op in operand]
-        elif operand.operator == '->':
-            new_node.operator = ','
-            new_node.operands = [operand[0], push_negation(Node('!', operand[1]))]
-        elif operand.operator == '!':
-            pass
-        elif operand.operator == 'O':
-            new_node.operator = operand.operator
-            new_node.operands = [push_negation(Node('!', operand[0]))]
-        elif operand.operator == 'G':
-            new_node.operator = 'F'
-            new_node.lower, new_node.upper = operand.lower, operand.upper
-            new_node.operands = [push_negation(Node('!', operand[0]))]
-        elif operand.operator == 'F':
-            new_node.operator = 'G'
-            new_node.lower, new_node.upper = operand.lower, operand.upper
-            new_node.operands = [push_negation(Node('!', operand[0]))]
-        elif operand.operator == 'U':
-            new_node.operator = 'R'
-            new_node.lower, new_node.upper = operand.lower, operand.upper
-            new_node.operands = [push_negation(Node('!', operand[0])), push_negation(Node('!', operand[1]))]
-        elif operand.operator == 'R':
-            new_node.operator = 'U'
-            new_node.lower, new_node.upper = operand.lower, operand.upper
-            new_node.operands = [push_negation(Node('!', operand[0])), push_negation(Node('!', operand[1]))]
-        else:
-            raise ValueError('Bad formula')
+        match operand.operator:
+            case 'P':
+                return node
+            case '!':
+                return operand[0]
 
+        new_node = operand.shallow_copy()
+        match operand.operator:
+            case ',' | '&&':
+                new_node.operator = '||'
+                new_node.operands = [push_negation(Node('!', op)) for op in operand]
+            case '||':
+                new_node.operator = ','
+                new_node.operands = [push_negation(Node('!', op)) for op in operand]
+            case '->':
+                new_node.operator = ','
+                new_node.operands = [operand[0], push_negation(Node('!', operand[1]))]
+            case 'O':
+                new_node.operator = operand.operator
+                new_node.operands = [push_negation(Node('!', operand[0]))]
+            case 'G':
+                new_node.operator = 'F'
+                new_node.lower, new_node.upper = operand.lower, operand.upper
+                new_node.operands = [push_negation(Node('!', operand[0]))]
+            case 'F':
+                new_node.operator = 'G'
+                new_node.lower, new_node.upper = operand.lower, operand.upper
+                new_node.operands = [push_negation(Node('!', operand[0]))]
+            case 'U':
+                new_node.operator = 'R'
+                new_node.lower, new_node.upper = operand.lower, operand.upper
+                new_node.operands = [push_negation(Node('!', operand[0])), push_negation(Node('!', operand[1]))]
+            case 'R':
+                new_node.operator = 'U'
+                new_node.lower, new_node.upper = operand.lower, operand.upper
+                new_node.operands = [push_negation(Node('!', operand[0])), push_negation(Node('!', operand[1]))]
+            case _:
+                raise ValueError('Bad formula')
         return new_node
     elif node.operator == 'P':
         return node
