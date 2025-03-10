@@ -30,7 +30,7 @@ def run_with_timeout(timeout, f, *args, **kwargs):
 
 # Benchmark: (avionics requirements)
 # 1) stabilire un time horizon (T)
-T = str(10)
+T = str(5)
 requirements = [
     ['G', '0', T, ['||', ['&&', ['B_active'], ['!', ['B_inactive']], ['!', ['B_armed']]], ['&&', ['B_inactive'], ['!', ['B_active']], ['!', ['B_armed']]], ['&&', ['B_armed'], ['!', ['B_inactive']], ['!', ['B_active']]]]],
     ['G', '0', T, ['->', ['&&', ['B_inactive'], ['R_n_s == 1'],  ['R_X_c-R_X_b <= 5'], ['R_X_c-R_X_b>= -5'], ['G', '0', '5', ['R_airspeed>= R_Vmin']], ['!', ['B_X_over']], ['B_X_Activation_Request']], ['F', '0', '2', ['&&', ['!', ['B_inactive']], ['B_active']]]]],
@@ -62,9 +62,9 @@ requirements_riscritti = [
     ['G', '0', T, ['->', ['&&', ['R_function_status == 0'], ['R_n_s ==1'], ['||', ['R_X_c - R_X_b >5'], ['R_X_c - R_X_b <-5']], ['B_X_Activation_Request']], ['F', '1', '2', ['R_function_status == 1']]]],
     ['G', '0', T, ['->', ['&&', ['R_function_status == 1'], ['!', ['B_X_over']], ['R_X_c - R_X_b <=5'], ['R_X_c - R_X_b >=-5'], ['G', '0', '5', ['R_airspeed >= R_Vmin']]], ['F', '1', '2', ['R_function_status == 2']]]],
     ['G', '0', T, ['->', ['R_function_status == 2'], ['||', ['R_function_active_status == 0'], ['R_function_active_status == 1'], ['R_function_active_status == 2']]]],
-    ['G', '0', T, ['->', ['&&', ['R_function_active_status == 0'], ['!', ['B_X_over']], ['R_Delta_T_Error_reference < R_T_Error'], ['R_Delta_T_Error_reference > 0 - R_T_Error']], ['F', '0', '1', ['R_function_active_status == 1']]]],
-    ['G', '0', T, ['->', ['&&', ['R_function_active_status == 1'], ['!', ['B_X_over']], ['R_T_Error < 3'], ['R_T_Error  > -3'],  ['R_Roll_attitude < 0.8'], ['R_Roll_attitude > -0.8'],  ['R_X_deviation < 0.5'], ['R_X_deviation > -0.5'], ['R_dalfadt < 0.002'], ['R_dalfadt > -0.002'], ['!', ['B_h_on']], ['!', ['B_f_on']]], ['F', '0', '1', ['R_function_active_status == 2']]]],
-    ['G', '0', T, ['->', ['&&', ['R_function_active_status == 2'], ['!', ['B_X_over']], ['||', ['R_T_Error > 5'], ['R_T_Error < -5']], ['||', ['R_Roll_attitude > 2.6'], ['R_Roll_attitude < -2.6']], ['||', ['R_X_deviation > 1.5'], ['R_X_deviation < -1.5']], ['||', ['R_dalfadt > 0.075'], ['R_dalfadt < -0.075']], ['||', ['B_h_on'], ['B_f_on']]], ['F', '0', '1', ['R_function_active_status == 1']]]],
+    ['G', '0', T, ['->', ['&&', ['R_function_active_status == 0'], ['!', ['B_X_over']], ['R_Delta_T_Error_reference < R_T_Error'], ['R_Delta_T_Error_reference > 0 - R_T_Error']], ['F', '1', '2', ['R_function_active_status == 1']]]],
+    ['G', '0', T, ['->', ['&&', ['R_function_active_status == 1'], ['!', ['B_X_over']], ['R_T_Error < 3'], ['R_T_Error  > -3'],  ['R_Roll_attitude < 0.8'], ['R_Roll_attitude > -0.8'],  ['R_X_deviation < 0.5'], ['R_X_deviation > -0.5'], ['R_dalfadt < 0.002'], ['R_dalfadt > -0.002'], ['!', ['B_h_on']], ['!', ['B_f_on']]], ['F', '1', '2', ['R_function_active_status == 2']]]],
+    ['G', '0', T, ['->', ['&&', ['R_function_active_status == 2'], ['!', ['B_X_over']], ['||', ['R_T_Error > 5'], ['R_T_Error < -5']], ['||', ['R_Roll_attitude > 2.6'], ['R_Roll_attitude < -2.6']], ['||', ['R_X_deviation > 1.5'], ['R_X_deviation < -1.5']], ['||', ['R_dalfadt > 0.075'], ['R_dalfadt < -0.075']], ['||', ['B_h_on'], ['B_f_on']]], ['F', '1', '2', ['R_function_active_status == 1']]]],
     ['G', '0', T, ['->', ['&&', ['R_function_status == 2'], ['!', ['B_X_over']]], ['F', '0', '5', ['R_LME_cr == 1']]]],
     ['G', '0', T, ['->', ['R_function_status == 0'], ['F', '0', '5', ['R_LME_cr == 0']]]],
     ['G', '0', T, ['->', ['R_function_status == 1'], ['F', '0', '5', ['R_LMA_cr == 1']]]],
@@ -297,12 +297,12 @@ def pretty_print(results, ms, csvfile):
 if __name__ == '__main__':
     datasets = {
         "avionics": requirements_riscritti,
-        "cars": cars,
-        "thermostat": thermostat,
-        "watertank": watertank,
-        "railroad": railroad,
-        "batteries": batteries,
-        "railroad_merged": railroad_merged
+        #"cars": cars,
+        #"thermostat": thermostat,
+        #"watertank": watertank,
+        #"railroad": railroad,
+        #"batteries": batteries,
+        #"railroad_merged": railroad_merged
     }
     #datasets = [cars, thermostat, watertank, batteries]
     sys.setrecursionlimit(1000000)
