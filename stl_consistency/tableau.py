@@ -859,7 +859,7 @@ def decompose_jump(node):
             # una volta calcolato il salto per ogni operatore problematico, faccio il minimo
             # una volta stabilito il salto da effettuare faccio un altro ciclo negli operands e applico il salto ad ognuno
             # controllando se ogni operatore è derivato da un nested o no (perché saltano in modo diverso)
-            if operand.operator == 'O' and operand.operands[0].lower <= operand.operands[0].upper and not operand.operands[0].is_derived:
+            if operand.operator == 'O' and operand.operands[0].lower <= operand.operands[0].upper and not operand.operands[0].is_derived and operand.operands[0].operator in {'G', 'U', 'R'}:
                 max_upper = -1
                 # trovo il max tra gli upper bound degli op interni
                 if operand.operands[0].operator in {'G', 'U'}:
