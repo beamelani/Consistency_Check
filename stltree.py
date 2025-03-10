@@ -34,7 +34,7 @@ def read_formula(filename):
     with open(filename, 'rt') as f:
         return f.read()
 
-MAX_HORIZON = 255
+MAX_HORIZON = 10000000
 
 def main():
     argp = argparse.ArgumentParser()
@@ -47,7 +47,7 @@ def main():
     argp.add_argument('formula', type=str, help='File containing formula to be checked.')
     args = argp.parse_args()
 
-    sys.setrecursionlimit(1000000)
+    sys.setrecursionlimit(100000000)
 
     formula = read_formula(args.formula)
     parser = STLParser()
