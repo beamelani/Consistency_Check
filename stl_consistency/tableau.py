@@ -975,7 +975,7 @@ def set_initial_time(formula):
 
 def modify_U_R(node):
     """Modifica una formula sostituendo ogni p U[a,b] q e p R[a,b] q in tutta la formula ricorsivamente."""
-    """ pU[a,b]q diventa pU[a,b]q && G[0,a]p mentre (p R[a,b] q) → (F[0,a] p) ∨ (p R[a,b] q)"""
+    """ pU[a,b]q diventa pU[a,b]q && G[0,a]p mentre (p R[a,b] q) → (F[0,a] p) || (p R[a,b] q)"""
     # Se il nodo è atomico ('P'), lo restituiamo senza modifiche
     if node.operator == 'P':
         return node
@@ -986,7 +986,7 @@ def modify_U_R(node):
         node.operands[i] = modify_U_R(node.operands[i])
 
     # Se il nodo è un Until, lo modifichiamo: (p U[a,b] q) → (p U[a,b] q) ∧ (G[0,a] p)
-    if node.operator == 'U':
+    if node.operator == 'U' and node.lower > 0:
         p = node[0]
         a = node.lower
 
@@ -996,7 +996,7 @@ def modify_U_R(node):
         return new_node # Sostituiamo con il nuovo nodo
 
     # Se il nodo è un Release, lo modifichiamo: (p R[a,b] q) → (F[0,a] p) ∨ (p R[a,b] q)
-    elif node.operator == 'R':
+    elif node.operator == 'R' and node.lower > 0:
         p = node[0]
         a = node.lower
 
@@ -1005,8 +1005,7 @@ def modify_U_R(node):
         new_node.operands = [F_part, node]
         return new_node  # Sostituiamo con il nuovo nodo
 
-
-    # Ricostruiamo il nodo con gli operandi aggiornati
+    # Restituiamo il nodo con gli operandi aggiornati
     return node
 
 
