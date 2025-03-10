@@ -181,7 +181,7 @@ class Node:
             case 'O' | '!':
                 return f"{self.operator} {self.operands[0]}"
             case 'U' | 'R':
-                return f"({self.operands[0]}) {self.operator}[{self.lower},{self.upper}] ({self.operands[0]})"
+                return f"({self.operands[0]}) {self.operator}[{self.lower},{self.upper}] ({self.operands[1]})"
             case '&&' | '||' | '->':
                 return f"({f' {self.operator} '.join(str(op) for op in self.operands)})"
             case ',':
