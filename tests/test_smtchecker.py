@@ -63,5 +63,8 @@ class TestSMTChecker(unittest.TestCase):
         parsed_formula = parser.parse_formula_as_stl_list(formula)
         self.assertEqual(smt_check_consistency(parsed_formula, 'strong_sat'), False)
 
+    def test_abs(self):
+        self.make_test("G[0,5] (|x| > 20 | |x| < 10) && F[0,5] (x == -15)", False)
+
 if __name__ == '__main__':
     unittest.main()

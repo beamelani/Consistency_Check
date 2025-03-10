@@ -1082,6 +1082,7 @@ def add_children(tableau_data, local_solver, node, depth, last_spawned, max_dept
     mode = tableau_data.mode
 
     if depth >= max_depth:
+        print('Max depth reached!')
         return None
 
     if tableau_data.tree:

@@ -81,6 +81,13 @@ class STLParser:
             assert len(expr) >= 3 and isinstance(expr[-2], str) and expr[1] in {'+', '-'}
             return [expr[-2], rexpr_action(*expr[0:-2]), expr[-1]]
 
+        def rterm_action(*rterm):
+            if len(rterm) == 1:
+                return rterm[0]
+            assert len(rterm) == 3 and rterm[0] == rterm[2] == '|'
+            return ['abs', rterm[1]]
+
+
         self.parser = pe.compile(
             r'''
             # Hierarchical syntax
@@ -104,6 +111,7 @@ class STLParser:
             RTerm       <  Identifier
                          / REAL
                          / LPAR RExpr RPAR
+                         / ABSPAR RExpr ABSPAR
             Interval    <  '[' TBound ',' TBound ']'
 
             # Lexical syntax
@@ -129,6 +137,7 @@ class STLParser:
             REL        <- ~('<=') / ~('<') / ~('>=') / ~('>') / ~('==') / ~('!=')
             LPAR       <- '('
             RPAR       <- ')'
+            ABSPAR     <- ~( '|' )
             EOF        <- !.
             ''',
             ignore=Star(Class("\t\n\f\r ")),
@@ -140,6 +149,7 @@ class STLParser:
                 'UnExpr': un_expr_action,
                 'Term': term_action,
                 'RExpr': rexpr_action,
+                'RTerm': rterm_action,
                 'Interval': Pack(list),
                 'NOT': Constant('!'),
                 'OR': Constant('||'),

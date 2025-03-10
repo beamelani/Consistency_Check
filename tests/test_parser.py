@@ -52,5 +52,21 @@ class TestSTLParser(unittest.TestCase):
             ]]
         )
 
+    def test_parens(self):
+        formula = "G[0,5] (x - (y + z) == 0)"
+        parser = STLParser()
+        self.assertEqual(
+            parser.parse_formula_as_stl_list(formula),
+            ['G', '0', '5', ['==', ['-', 'x', ['+', 'y', 'z']], '0']]
+        )
+
+    def test_abs(self):
+        formula = "G[0,5] (|x| > 20 | |x| < 10)"
+        parser = STLParser()
+        self.assertEqual(
+            parser.parse_formula_as_stl_list(formula),
+            ['G', '0', '5', ['||', ['>', ['abs', 'x'], '20'], ['<', ['abs', 'x'], '10']]]
+        )
+
 if __name__ == '__main__':
     unittest.main()

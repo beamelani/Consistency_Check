@@ -58,6 +58,8 @@ class TestTableau(unittest.TestCase):
     def test_release(self):
         self.make_test("(R_x == 10) R[1,6] (R_x < 10)", 10, True)
 
+    def test_abs(self):
+        self.make_test("G[0,5] (|x| > 20 | |x| < 10) && F[0,5] (x == -15)", 20, False)
 
 if __name__ == '__main__':
     unittest.main()

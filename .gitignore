@@ -4,3 +4,4 @@
 .vscode
 .pdm-python
 __pycache__
+benchmarks/data

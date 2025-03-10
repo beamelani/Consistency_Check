@@ -118,7 +118,12 @@ class LocalSolver:
                 self.z3_variables[expr] = z3.Real(expr)
             return self.z3_variables[expr]
 
-        assert isinstance(expr, list) and len(expr) == 3
+        assert isinstance(expr, list)
+        if len(expr) == 2:
+            assert expr[0] == 'abs'
+            return z3.Abs(self.real_expr_to_z3(expr[1]))
+
+        assert len(expr) == 3
         lhs = self.real_expr_to_z3(expr[1])
         rhs = self.real_expr_to_z3(expr[2])
         match expr[0]:

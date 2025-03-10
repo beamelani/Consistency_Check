@@ -228,13 +228,16 @@ class STLAbstractSyntaxTable:
             else:
                 # expr is a real variable
                 if self.containsVariable(expr) and self.getVariableType(expr) != 'real':
-                    raise ValueError(f"Variable '{left}' cannot be real and binary")
+                    raise ValueError(f"Variable '{expr}' cannot be real and binary")
                 self.addRealVariable(expr)
                 return expr
         else:
             assert isinstance(expr, list)
             if len(expr) == 1:
                 return self._visit_real_expr(expr[0])
+            elif len(expr) == 2:
+                assert expr[0] == 'abs'
+                return (expr[0], self._visit_real_expr(expr[1]))
             assert len(expr) == 3
             return (expr[0], self._visit_real_expr(expr[1]), self._visit_real_expr(expr[2]))
 
