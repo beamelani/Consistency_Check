@@ -431,7 +431,7 @@ def decompose_all_G_nodes(outer_node, current_time):
         identifier = G_node.identifier
         #initial_time = node.initial_time
         # a volte se il G annidato viene dalla dec di un altro op annidato diverso da G (tipo F), non ha l'initial time settato
-        if G_node.operator == 'G' and G_node.operands[0].operator not in {'P', '!'} and G_node.initial_time == '-1':
+        if G_node.initial_time == '-1':
             set_initial_time(G_node)
         # Decomponi il nodo originale
         new_operands = modify_argument(G_node.operands[0], G_node, identifier, True, True)
@@ -532,8 +532,11 @@ def decompose_U(formula, index):
         else:
             raise ValueError(f"Operatore non gestito: {arg.operator}")
 
-    # TODO verifica che initial time e identifier siano trasmessi correttamente nei nuovi nodi -> SEMBRA OK
-    #Node in which U is not satisfied (p, OU)
+    # If the U operator comes from the argument of another operator, its initial time may not be set
+    if U_formula.initial_time == '-1':
+            set_initial_time(U_formula)
+
+    # Node in which U is not satisfied (p, OU)
     new_node1 = formula.shallow_copy()
     new_operand = modify_argument(first_operand.shallow_copy(), True) #derived indica se is_derived deve essere True (quindi è vero nel nodo con p, OU quando p è G,F...)
     new_node1.replace_operand(index, Node('O', U_formula))
@@ -591,6 +594,10 @@ def decompose_R(formula, index):
             return new_arg
         else:
             raise ValueError(f"Operatore non gestito: {arg.operator}")
+
+    # If the R operator comes from the argument of another operator, its initial time may not be set
+    if R_formula.initial_time == '-1':
+            set_initial_time(R_formula)
 
     # Node in which U is not satisfied (p, OU)
     new_node1 = formula.shallow_copy()
