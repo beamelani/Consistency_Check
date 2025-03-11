@@ -609,12 +609,12 @@ def decompose_R(formula, index):
     # Node in which U is not satisfied (p, OU)
     new_node1 = formula.shallow_copy()
     if R_formula.lower < R_formula.upper:
-        new_operand = modify_argument(second_operand.shallow_copy(),
-                                      True)  # derived indica se is_derived deve essere True (quindi è vero nel nodo con p, OU quando p è G,F...)
+        # derived indica se is_derived deve essere True (quindi è vero nel nodo con p, OU quando p è G,F...)
+        new_operand = modify_argument(second_operand.shallow_copy(), True)
         new_node1.replace_operand(index, Node('O', R_formula))
         new_node1.operands.extend([new_operand])
     else:
-        new_operand = modify_argument(first_operand.shallow_copy(), False)
+        new_operand = modify_argument(second_operand.shallow_copy(), False)
         new_node1.replace_operand(index, new_operand)
         for operand in new_node1.operands:  # quando R va via tolgo is_derived dagli operatori
             if operand.is_derived and operand.identifier == R_formula.identifier:
