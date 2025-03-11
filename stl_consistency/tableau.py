@@ -875,29 +875,32 @@ def decompose_jump(node):
     else:  # caso con operatori problematici, uso direttamente i nodi per non perdere info su is_derived e initial_time
         # We first compute the time jump
         jump = []
-        for operand in node.operands:
-            # Controllo prima gli operatori nested problematici perché il salto dipende da loro:
-            # verifico se ho raggiunto la threshold per cui posso saltare, se l'ho raggiunta cacolo il salto,
-            # se non l'ho raggiunta il salto è 1
-            # una volta calcolato il salto per ogni operatore problematico, faccio il minimo
-            # una volta stabilito il salto da effettuare faccio un altro ciclo negli operands e applico il salto ad ognuno
-            # controllando se ogni operatore è derivato da un nested o no (perché saltano in modo diverso)
-            if operand.operator == 'O' and operand.operands[0].lower <= operand.operands[0].upper and not operand.operands[0].is_derived and operand.operands[0].operator in {'G', 'U', 'R'}:
-                max_upper = -1
-                # trovo il max tra gli upper bound degli op interni
-                if operand.operands[0].operator in {'G', 'U'}:
-                    max_upper = operand.operands[0].operands[0].get_max_upper()
-                elif operand.operands[0].operator == 'R':
-                    max_upper = operand.operands[0].operands[1].get_max_upper()
-                
-                if max_upper != -1 and operand.operands[0].lower >= operand.operands[0].initial_time + max_upper:
-                    # se operatore interno è esaurito
-                    indice = bisect.bisect_right(time_instants, operand.operands[0].lower) # trovo il primo numero maggiore dell'istante corrente di tempo
-                    jump.append(time_instants[indice] - operand.operands[0].lower) # il jump che devo fare è l'istante in cui devo arrivare - quello corrente
-                else:  # se sono qui non posso saltare, devo andare avanti di 1 in 1
-                    jump.append(1)
+        if node.jump1:
+            jump = 1
+        else:
+            for operand in node.operands:
+                # Controllo prima gli operatori nested problematici perché il salto dipende da loro:
+                # verifico se ho raggiunto la threshold per cui posso saltare, se l'ho raggiunta cacolo il salto,
+                # se non l'ho raggiunta il salto è 1
+                # una volta calcolato il salto per ogni operatore problematico, faccio il minimo
+                # una volta stabilito il salto da effettuare faccio un altro ciclo negli operands e applico il salto ad ognuno
+                # controllando se ogni operatore è derivato da un nested o no (perché saltano in modo diverso)
+                if operand.operator == 'O' and operand.operands[0].lower <= operand.operands[0].upper and not operand.operands[0].is_derived and operand.operands[0].operator in {'G', 'U', 'R'}:
+                    max_upper = -1
+                    # trovo il max tra gli upper bound degli op interni
+                    if operand.operands[0].operator in {'G', 'U'}:
+                        max_upper = operand.operands[0].operands[0].get_max_upper()
+                    elif operand.operands[0].operator == 'R':
+                        max_upper = operand.operands[0].operands[1].get_max_upper()
 
-        jump = min(jump)
+                    if max_upper != -1 and operand.operands[0].lower >= operand.operands[0].initial_time + max_upper:
+                        # se operatore interno è esaurito
+                        indice = bisect.bisect_right(time_instants, operand.operands[0].lower) # trovo il primo numero maggiore dell'istante corrente di tempo
+                        jump.append(time_instants[indice] - operand.operands[0].lower) # il jump che devo fare è l'istante in cui devo arrivare - quello corrente
+                    else:  # se sono qui non posso saltare, devo andare avanti di 1 in 1
+                        jump.append(1)
+
+            jump = min(jump)
         # Now we build the new node after the jump
         new_node_operands = []
         for operand in node.operands:
