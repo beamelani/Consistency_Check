@@ -1211,11 +1211,12 @@ def plot_tree(G):
     plt.show()
 
 
-def make_tableau(formula, max_depth, mode, build_tree, parallel, verbose):
+def make_tableau(formula, max_depth, mode, build_tree, parallel, verbose, mltl=False):
     if formula.operator != ',':
         formula = Node(',', formula)
 
-    formula = modify_U_R(formula)
+    if not mltl:
+        formula = modify_U_R(formula)
     formula = decompose_and(formula)[0][0] # perché funzione sopra può aggiungere && di troppo
     assign_and_or_element(formula)
     formula = assign_identifier(formula)

@@ -44,7 +44,7 @@ def bench_command(fname, args):
     match args.engine:
         case 'tableau':
             prog_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'stltree.py')
-            return [prog_path, '--smtlib-result', fname]
+            return [prog_path, '--smtlib-result', '--mltl', fname]
         case 'smt-quant':
             return ['bash', '-c', "'", args.translator_path, '-smtlib', f'"$(cat {fname})"', '|', args.z3_path, '-in', "'"]
     assert False

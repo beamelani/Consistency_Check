@@ -25,6 +25,7 @@
 import argparse
 import sys
 import time
+import networkx
 
 from stl_consistency.parser import STLParser
 from stl_consistency.smtchecker import smt_check_consistency
@@ -34,15 +35,17 @@ def read_formula(filename):
     with open(filename, 'rt') as f:
         return f.read()
 
-MAX_HORIZON = 10000000
+DEFAULT_DEPTH = 10000000
 
 def main():
     argp = argparse.ArgumentParser()
     argp.add_argument('-s', '--smt', action='store_true', help='Use SMT-based bounded satisfiability checker instead of tree-based tableau (default)')
-    argp.add_argument('-p', '--plot', type=int, default=0, help='Plot the tree-shaped tableau up to the given depth.')
+    argp.add_argument('-d', '--max-depth', type=int, default=DEFAULT_DEPTH, help='Build tableau up to the given depth (ignored if --smt is given)')
+    argp.add_argument('-p', '--plot', type=str, help='Plot the tree-shaped tableau to the given dot file (ignored if --smt is given)')
     argp.add_argument('-t', '--strong-sat', action='store_true', help='Use strong definition of satisfiability that avoids formulas being satisfied vacuously (default is normal satisfiability)')
     argp.add_argument('--smtlib-result', action='store_true', help='Emit result as SMTLIB output (sat, unsat, unknown)')
     argp.add_argument('--parallel', action='store_true', help='Use parallel version of the tableau')
+    argp.add_argument('--mltl', action='store_true', help='Use MLTL semantics for U and R operators.') # TODO support this in SMT engine
     argp.add_argument('-v', '--verbose', action='store_true')
     argp.add_argument('formula', type=str, help='File containing formula to be checked.')
     args = argp.parse_args()
@@ -59,19 +62,6 @@ def main():
         parsed_formula = parser.parse_formula_as_stl_list(formula)
         parsing_t = time.perf_counter()
         res = smt_check_consistency(parsed_formula, mode, args.verbose)
-
-    elif args.plot > 0:
-        parsed_formula = parser.parse_formula_as_node(formula)
-        tableau, _ = make_tableau(
-            parsed_formula,
-            max_depth=args.plot,
-            mode='complete',
-            build_tree=True,
-            parallel=args.parallel,
-            verbose=False
-        )
-        plot_tree(tableau)
-
     else:
         start_t = time.perf_counter()
 
@@ -80,25 +70,29 @@ def main():
 
         res = make_tableau(
             parsed_formula,
-            MAX_HORIZON,
+            args.max_depth,
             mode,
-            build_tree=False,
+            build_tree=args.plot is not None,
             parallel=args.parallel,
-            verbose=args.verbose
+            verbose=args.verbose,
+            mltl=args.mltl
         )
 
-    if args.plot <= 0:
-        if args.smtlib_result:
-            if res:
-                print('sat')
-            else:
-                print('unsat') # TODO distinguish unknown
+        if args.plot:
+            tree, res = res
+            networkx.drawing.nx_pydot.write_dot(tree, args.plot)
+
+    if args.smtlib_result:
+        if res:
+            print('sat')
         else:
-            print(f'Elapsed time: {time.perf_counter() - parsing_t} (parsing: {parsing_t - start_t})')
-            if res:
-                print('The constraints are consistent.')
-            else:
-                print(f'The constraints are not consistent (for signals up to t = {MAX_HORIZON}).')
+            print('unsat') # TODO distinguish unknown
+    else:
+        print(f'Elapsed time: {time.perf_counter() - parsing_t} (parsing: {parsing_t - start_t})')
+        if res:
+            print('The constraints are consistent.')
+        else:
+            print(f'The constraints are not consistent (for signals up to t = {args.max_depth}).')
 
 
 if __name__ == "__main__":
