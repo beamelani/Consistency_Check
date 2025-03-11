@@ -427,9 +427,9 @@ def decompose_all_G_nodes(outer_node, current_time):
                 #outer_node.operands[i] = None
                 # Setto jump1 a True se necessario
                 if outer_node.operands[i][0].operator in {'P', '!'} and any(op.lower == outer_node.operands[i].lower for j, op in enumerate(outer_node.operands) if j != i):
-                    TableauData.jump1 = True
+                    outer_node.jump1 = True
                 elif outer_node.operands[i][0].operator in {'&&', '||', '->'} and any(op.operator in {'P', '!'} for op in outer_node.operands[i][0].operands) and any(op.lower == outer_node.operands[i].lower for j, op in enumerate(outer_node.operands) if j != i):
-                    TableauData.jump1 = True
+                    outer_node.jump1 = True
                 outer_node.operands[i] = None
     outer_node.operands = [x for x in outer_node.operands if x is not None]
 
@@ -606,7 +606,7 @@ def decompose_R(formula, index):
     if R_formula.initial_time == '-1':
             set_initial_time(R_formula)
 
-    # Node in which U is not satisfied (p, OU)
+    # Node in which U is not satisfied (q, OU)
     new_node1 = formula.shallow_copy()
     if R_formula.lower < R_formula.upper:
         new_operand = modify_argument(second_operand.shallow_copy(),
@@ -614,13 +614,18 @@ def decompose_R(formula, index):
         new_node1.replace_operand(index, Node('O', R_formula))
         new_node1.operands.extend([new_operand])
     else:
-        new_operand = modify_argument(first_operand.shallow_copy(), False)
+        new_operand = modify_argument(second_operand.shallow_copy(), False)
         new_node1.replace_operand(index, new_operand)
         for operand in new_node1.operands:  # quando R va via tolgo is_derived dagli operatori
             if operand.is_derived and operand.identifier == R_formula.identifier:
                 operand.is_derived = False
+        for operand in new_node1.operands:
+            if second_operand.operator in {'P', '!'} and any(op.lower == R_formula.lower for j, op in enumerate(new_node1.operands) if j != index):
+                new_node1.jump1 = True
+            elif second_operand.operator in {'&&', '||', '!'} and any(op.operator in {'P', '!'} for op in second_operand.operands) and any(op.lower == R_formula.lower for j, op in enumerate(new_node1.operands) if j != index):
+                new_node1.jump1 = True
 
-    # Node where U is satisfied (q)
+    # Node where U is satisfied (p)
     new_node2 = formula.shallow_copy()
     new_node2.replace_operand(index, modify_argument(first_operand.shallow_copy(), False), modify_argument(second_operand.shallow_copy(), False))
 
@@ -853,12 +858,12 @@ def decompose_jump(node):
             elif operand.operator == 'O' and operand.operands[0].lower < operand.operands[0].upper:
                 sub_formula = operand.operands[0].shallow_copy()
                 # trovo il primo numero maggiore dell'istante corrente di tempo
-                if not TableauData.jump1:
+                if not node.jump1:
                     indice = bisect.bisect_right(time_instants, sub_formula.lower)
                     sub_formula.lower = time_instants[indice]
                 else:
                     sub_formula.lower = sub_formula.lower + 1
-                    TableauData.jump1 = False
+                    node.jump1 = False
                 new_operands.append(sub_formula)
         node.operands = new_operands
         if node.operands:
@@ -1054,10 +1059,10 @@ def assign_and_or_element(node):
 def set_jump1(formula):
     for operand in formula.operands:
         if operand.operator in {'P', '!'}:
-            TableauData.jump1 = True
+            formula.jump1 = True
             return
         if operand.operator in {'&&', '||', '->'} and any(op.operator in {'P', '!'} for op in operand.operands):
-            TableauData.jump1 = True
+            formula.jump1 = True
             return
 
 
@@ -1214,7 +1219,6 @@ class TableauData:
         self.mode = mode
         self.parallel = parallel
         self.verbose = verbose
-        self.jump1 = False #needed because in some instances you can only jump 1 step to make sure you do not miss anything important
         if build_tree:
             self.counter = 0
             self.tree = nx.DiGraph()

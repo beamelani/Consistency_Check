@@ -39,6 +39,7 @@ class Node:
         self.and_element = -1 # identifica univoc gli operandi di un && dentro a un G
         self.or_element = -1 # identifica univoc gli operandi di un || dentro a un G
         self.execution_time = -1 # serve in nodi con operator = 'P'
+        self.jump1 = False # needed because in some instances you can only jump 1 step to make sure you do not miss anything important
         if operator in {'&&', '||', ',', '!', 'O', '->', '<->'}:
             self.lower = self.upper = -1
             self.operands = list(args)
@@ -99,6 +100,7 @@ class Node:
         new.and_element = self.and_element
         new.or_element = self.or_element
         new.execution_time = self.execution_time
+        new.jump1 = self.jump1
         new.lower = self.lower
         new.upper = self.upper
         new.operands = self.operands.copy()
