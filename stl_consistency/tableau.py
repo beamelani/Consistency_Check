@@ -1079,8 +1079,7 @@ def add_children(tableau_data, local_solver, node, depth, last_spawned, max_dept
     if tableau_data.tree:
         node_label = node.to_label()
 
-    current_time = node.current_time # extract_min_time(node_copy) should have been called by the parent
-    assert current_time is None or isinstance(current_time, int)
+    current_time = node.current_time
     local_solver.push()
     children = decompose(tableau_data, local_solver, node, current_time)
     if children is None:
@@ -1164,7 +1163,9 @@ def build_decomposition_tree(tableau_data, root, max_depth):
             False if the tableau has only rejected branches rooted at node,
             None if we reached max_dept without finding an accepting branch
     """
+    root.set_root_execution_time()
     time = root.set_min_time()
+    
     if tableau_data.build_tree:
         root.counter = tableau_data.counter
         tableau_data.tree.add_node(root.to_label())

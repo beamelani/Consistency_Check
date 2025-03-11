@@ -305,3 +305,11 @@ class Node:
         if isinstance(l, list) or isinstance(l, tuple):
             return tuple(Node.lists_to_tuples(el) for el in l)
         return l
+
+    def set_root_execution_time(self):
+        match self.operator:
+            case 'P':
+                self.execution_time = 0
+            case '!' | '&&' | '||' | ',' | '->':
+                for op in self.operands:
+                    op.set_root_execution_time()
