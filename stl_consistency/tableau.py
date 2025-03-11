@@ -426,9 +426,9 @@ def decompose_all_G_nodes(outer_node, current_time):
                 # Elimino l'elemento se a == b
                 #outer_node.operands[i] = None
                 # Setto jump1 a True se necessario
-                if outer_node.operands[i][0].operator in {'P', '!'} and any(op.lower == outer_node.operands[i].lower for j, op in enumerate(outer_node.operands) if j != i):
+                if outer_node.operands[i][0].operator in {'P', '!'} and any(op.lower == outer_node.operands[i].lower for j, op in enumerate(outer_node.operands) if (j != i and op is not None)):
                     outer_node.jump1 = True
-                elif outer_node.operands[i][0].operator in {'&&', '||', '->'} and any(op.operator in {'P', '!'} for op in outer_node.operands[i][0].operands) and any(op.lower == outer_node.operands[i].lower for j, op in enumerate(outer_node.operands) if j != i):
+                elif outer_node.operands[i][0].operator in {'&&', '||', '->'} and any(op.operator in {'P', '!'} for op in outer_node.operands[i][0].operands) and any(op.lower == outer_node.operands[i].lower for j, op in enumerate(outer_node.operands) if (j != i and op is not None)):
                     outer_node.jump1 = True
                 outer_node.operands[i] = None
     outer_node.operands = [x for x in outer_node.operands if x is not None]
