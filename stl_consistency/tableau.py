@@ -58,6 +58,7 @@ solve(constraint1, constraint2,...)  #li considera in and
 """
 
 import networkx as nx
+import random
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
 from fractions import Fraction
@@ -423,6 +424,12 @@ def decompose_all_G_nodes(outer_node, current_time):
                 outer_node.operands[i] = Node('O', new_operand)
             else:
                 # Elimino l'elemento se a == b
+                #outer_node.operands[i] = None
+                # Setto jump1 a True se necessario
+                if outer_node.operands[i][0].operator in {'P', '!'} and any(op.lower == outer_node.operands[i].lower for j, op in enumerate(outer_node.operands) if j != i):
+                    TableauData.jump1 = True
+                elif outer_node.operands[i][0].operator in {'&&', '||', '->'} and any(op.operator in {'P', '!'} for op in outer_node.operands[i][0].operands) and any(op.lower == outer_node.operands[i].lower for j, op in enumerate(outer_node.operands) if j != i):
+                    TableauData.jump1 = True
                 outer_node.operands[i] = None
     outer_node.operands = [x for x in outer_node.operands if x is not None]
 
@@ -846,8 +853,12 @@ def decompose_jump(node):
             elif operand.operator == 'O' and operand.operands[0].lower < operand.operands[0].upper:
                 sub_formula = operand.operands[0].shallow_copy()
                 # trovo il primo numero maggiore dell'istante corrente di tempo
-                indice = bisect.bisect_right(time_instants, sub_formula.lower)
-                sub_formula.lower = time_instants[indice]
+                if not TableauData.jump1:
+                    indice = bisect.bisect_right(time_instants, sub_formula.lower)
+                    sub_formula.lower = time_instants[indice]
+                else:
+                    sub_formula.lower = sub_formula.lower + 1
+                    TableauData.jump1 = False
                 new_operands.append(sub_formula)
         node.operands = new_operands
         if node.operands:
@@ -1040,6 +1051,16 @@ def assign_and_or_element(node):
             assign_and_or_element(operand)
 
 
+def set_jump1(formula):
+    for operand in formula.operands:
+        if operand.operator in {'P', '!'}:
+            TableauData.jump1 = True
+            return
+        if operand.operator in {'&&', '||', '->'} and any(op.operator in {'P', '!'} for op in operand.operands):
+            TableauData.jump1 = True
+            return
+
+
 def add_tree_child(tableau_data, G, parent_label, child):
     tableau_data.counter += 1
     if isinstance(child, str):
@@ -1193,6 +1214,7 @@ class TableauData:
         self.mode = mode
         self.parallel = parallel
         self.verbose = verbose
+        self.jump1 = False #needed because in some instances you can only jump 1 step to make sure you do not miss anything important
         if build_tree:
             self.counter = 0
             self.tree = nx.DiGraph()
@@ -1227,6 +1249,7 @@ def make_tableau(formula, max_depth, mode, build_tree, parallel, verbose, mltl=F
     # formula = normalize_bounds(formula)
 
     tableau_data = TableauData(formula, mode, build_tree, parallel, verbose)
+    set_jump1(formula)
     return build_decomposition_tree(tableau_data, formula, max_depth)
 
 
