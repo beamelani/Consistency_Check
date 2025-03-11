@@ -241,7 +241,9 @@ class SMTSTLConsistencyChecker:
                     prop1 = formula[3]
                     prop2 = formula[4]
 
-                    if t + int_b < time_horizon:
+                    if (t + int_b < time_horizon and
+                        all(f"{prop1}_t{self._encode_time(t + i, time_horizon)}" in self.smt_variables for i in range(0, int_a + 1)) and
+                        all(f"{prop2}_t{self._encode_time(t + i, time_horizon)}" in self.smt_variables for i in range(int_a, int_b + 1))):
 
                         # We create
                         if verbose:
@@ -264,40 +266,34 @@ class SMTSTLConsistencyChecker:
                         if verbose:
                             print(f"s.add({prop}_B == Or({prop_b_list}))")
                             print("")
-                        if not f"{key}_t{self._encode_time(t + int_a, time_horizon)}_C" in self.smt_variables:
+                        if f"{key}_t{self._encode_time(t + int_a, time_horizon)}_C" not in self.smt_variables:
                             if verbose:
-                                print(
-                                    f"The variables {key}_t{self._encode_time(t + int_a, time_horizon)}_C is not in self.smt_variables")
+                                print(f"The variables {key}_t{self._encode_time(t + int_a, time_horizon)}_C are not in self.smt_variables")
 
-                            if not f"{key}_t{self._encode_time(time_horizon, time_horizon)}_C" in self.smt_variables:
+                            if f"{key}_t{self._encode_time(t + int_b, time_horizon)}_C" not in self.smt_variables:
                                 if verbose:
-                                    print(
-                                        f"{key}_t{self._encode_time(time_horizon - 1, time_horizon)}_C = Bool('{key}_t{self._encode_time(time_horizon - 1, time_horizon)}_C')")
-                                self.smt_variables[f"{key}_t{self._encode_time(time_horizon - 1, time_horizon)}_C"] = Bool(
-                                    f"{key}_t{self._encode_time(time_horizon - 1, time_horizon)}_C")
-                                s.add(self.smt_variables[f"{key}_t{self._encode_time(time_horizon - 1, time_horizon)}_C"] ==
-                                      self.smt_variables[f"{prop2}_t{self._encode_time(time_horizon - 1, time_horizon)}"])
+                                    print(f"{key}_t{self._encode_time(t + int_b, time_horizon)}_C = Bool('{key}_t{self._encode_time(t + int_b, time_horizon)}_C')")
+                                self.smt_variables[f"{key}_t{self._encode_time(t + int_b, time_horizon)}_C"] = Bool(
+                                    f"{key}_t{self._encode_time(t + int_b, time_horizon)}_C")
+                                s.add(self.smt_variables[f"{key}_t{self._encode_time(t + int_b, time_horizon)}_C"] ==
+                                      self.smt_variables[f"{prop2}_t{self._encode_time(t + int_b, time_horizon)}"])
                                 if verbose:
-                                    print(
-                                        f"s.add({key}_t{self._encode_time(time_horizon - 1, time_horizon)}_C == {prop2}_t{self._encode_time(time_horizon - 1, time_horizon)})")
-                                    print("")
-                            for i in range(t + int_a, time_horizon - 1):
+                                    print(f"s.add({key}_t{self._encode_time(t + int_b, time_horizon)}_C == {prop2}_t{self._encode_time(t + int_b, time_horizon)})")
+
+                            for i in range(t + int_b - 1, t + int_a - 1, -1):
 
                                 k = time_horizon - i - 2 + int_a
                                 # print(f"i = {i}, k = {k}")
-                                if not f"{key}_t{self._encode_time(k, time_horizon)}_C" in self.smt_variables:
+                                if not f"{key}_t{self._encode_time(i, time_horizon)}_C" in self.smt_variables:
                                     if verbose:
-                                        print(
-                                            f"{key}_t{self._encode_time(k, time_horizon)}_C = Bool('{key}_t{self._encode_time(k, time_horizon)}_C')")
-                                    self.smt_variables[f"{key}_t{self._encode_time(k, time_horizon)}_C"] = Bool(
-                                        f"{key}_t{self._encode_time(k, time_horizon)}_C")
+                                        print(f"{key}_t{self._encode_time(i, time_horizon)}_C = Bool('{key}_t{self._encode_time(i, time_horizon)}_C')")
+                                    self.smt_variables[f"{key}_t{self._encode_time(i, time_horizon)}_C"] = Bool(f"{key}_t{self._encode_time(k, time_horizon)}_C")
                                     if verbose:
-                                        print(
-                                            f"s.add({key}_t{self._encode_time(k, time_horizon)}_C == Or({prop2}_t{self._encode_time(k, time_horizon)},And({prop1}_t{self._encode_time(k + 1, time_horizon)},{key}_t{self._encode_time(k + 1, time_horizon)}_C))")
-                                    s.add(self.smt_variables[f"{key}_t{self._encode_time(k, time_horizon)}_C"] == Or(
-                                        self.smt_variables[f"{prop2}_t{self._encode_time(k, time_horizon)}"],
-                                        And(self.smt_variables[f"{prop1}_t{self._encode_time(k, time_horizon)}"],
-                                            self.smt_variables[f"{key}_t{self._encode_time(k + 1, time_horizon)}_C"])))
+                                        print(f"s.add({key}_t{self._encode_time(i, time_horizon)}_C == Or({prop2}_t{self._encode_time(i, time_horizon)},And({prop1}_t{self._encode_time(i + 1, time_horizon)},{key}_t{self._encode_time(i + 1, time_horizon)}_C))")
+                                    s.add(self.smt_variables[f"{key}_t{self._encode_time(i, time_horizon)}_C"] == Or(
+                                        self.smt_variables[f"{prop2}_t{self._encode_time(i, time_horizon)}"],
+                                        And(self.smt_variables[f"{prop1}_t{self._encode_time(i, time_horizon)}"],
+                                            self.smt_variables[f"{key}_t{self._encode_time(i + 1, time_horizon)}_C"])))
 
                         self.smt_variables[f"{prop}"] = Bool(f"{prop}")
                         if verbose:
