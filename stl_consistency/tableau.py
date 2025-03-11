@@ -877,6 +877,7 @@ def decompose_jump(node):
         jump = []
         if node.jump1:
             jump = 1
+            node.jump1 = False
         else:
             for operand in node.operands:
                 # Controllo prima gli operatori nested problematici perché il salto dipende da loro:
