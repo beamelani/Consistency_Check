@@ -635,49 +635,56 @@ def decompose_and(node):
 def decompose_or(node, index):
     assert index >= 0 and node is not None
     # Funzione di ordinamento basata sulla complessità
-    def complexity_score(node):
+    def complexity_score(or_node, node):
+        def check_match(sub1, sub2):
+            return sub1.operator == sub2.operator and ((sub1.operator == 'P' and sub1.operands == sub2.operands) or (
+                        sub1.operator == '!' and sub1[0].operands == sub2[0].operands))
         """Calcola un punteggio di complessità per ordinare i nodi, penalizzando gli annidamenti temporali."""
         # 1. Operatori con solo 'P' → Migliori
-        if node.operator in {'P', '!'}:
+        if or_node.operator in {'P', '!'}:
+            for operand in node.operands:
+                if check_match(or_node, operand):
+                    return -1 #se operatore di OR è uguale ad un operatore del node, restituisco score + basso almeno viene messo per primo
             return 0
-        if node.operator in {'&&', ','} and all(op.operator == 'P' for op in node.operands):
+        if or_node.operator in {'&&', ','} and all(op.operator == 'P' for op in or_node.operands):
             return 1
-        if node.operator == '->' and all(op.operator == 'P' for op in node.operands):
+        if or_node.operator == '->' and all(op.operator == 'P' for op in or_node.operands):
             return 2
-        if node.operator == '||' and all(op.operator == 'P' for op in node.operands):
+        if or_node.operator == '||' and all(op.operator == 'P' for op in or_node.operands):
             return 3
 
         # 2. Operatori temporali senza annidamenti complessi
-        if node.operator in {'G', 'F', 'U', 'R'}:
+        if or_node.operator in {'G', 'F', 'U', 'R'}:
             # Penalizzo in base all'orizzonte temporale
-            score = 10 + (node.upper - node.lower)
+            score = 10 + (or_node.upper - or_node.lower)
 
             # Penalizzazione extra se l'operando è un altro temporale
-            if node.operator == 'G' and node.operands[0].operator in {'G', 'F', 'U', 'R'}:
+            if or_node.operator == 'G' and or_node.operands[0].operator in {'G', 'F', 'U', 'R'}:
                 score += 20  # G annidato → peggior caso
-            elif node.operator == 'U' and node.operands[0].operator in {'G', 'F', 'U', 'R'}:
+            elif or_node.operator == 'U' and or_node.operands[0].operator in {'G', 'F', 'U', 'R'}:
                 score += 15  # U con temporale nel primo operand → peggio
-            elif node.operator == 'R' and node.operands[1].operator in {'G', 'F', 'U', 'R'}:
+            elif or_node.operator == 'R' and or_node.operands[1].operator in {'G', 'F', 'U', 'R'}:
                 score += 15  # R con temporale nel secondo operand → peggio
 
             return score
 
         # 3. Operatori logici misti (nessun solo P)
-        if node.operator == '->':
-            return 30 + len(node.operands)
-        elif node.operator == '&&':
-            return 40 + len(node.operands)
-        elif node.operator == '||':
-            return 50 + len(node.operands)
-        elif node.operator == ',':
-            return 60 + len(node.operands)
+        if or_node.operator == '->':
+            return 30 + len(or_node.operands)
+        elif or_node.operator == '&&':
+            return 40 + len(or_node.operands)
+        elif or_node.operator == '||':
+            return 50 + len(or_node.operands)
+        elif or_node.operator == ',':
+            return 60 + len(or_node.operands)
         
-        raise ValueError(f"Operatore non gestito: {node.operator}")
+        raise ValueError(f"Operatore non gestito: {or_node.operator}")
 
     # voglio creare un nodo figlio per ogni operand dell'OR, nodo che contiene l'operand dell'or + il resto del nodo padre (tolto l'or)
     res = []
     # Ordino i nodi secondo l’euristica
-    for or_operand in sorted(node[index].operands, key=complexity_score):
+    #for or_operand in sorted(node[index].operands, key=complexity_score):
+    for or_operand in sorted(node[index].operands, key=lambda op: complexity_score(op, node)):
         new_node = node.shallow_copy()
         if or_operand.is_derived and or_operand.or_element > -1:
             z = 0
