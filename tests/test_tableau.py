@@ -69,5 +69,8 @@ class TestTableau(unittest.TestCase):
     def test_release(self):
         self.make_test("false R[0,10] a", 100, True)
 
+    def test_jump1(self):
+        self.make_test("!a && G[10,20] !a && F[0,20] a", 200, True)
+
 if __name__ == '__main__':
     unittest.main()
