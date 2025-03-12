@@ -863,8 +863,8 @@ def decompose_jump(node):
                     sub_formula.lower = time_instants[indice]
                 else:
                     sub_formula.lower = sub_formula.lower + 1
-                    node.jump1 = False
                 new_operands.append(sub_formula)
+        node.jump1 = False
         node.operands = new_operands
         if node.operands:
             if len(node.operands) > 1:
