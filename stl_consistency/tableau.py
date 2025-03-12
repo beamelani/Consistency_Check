@@ -996,6 +996,8 @@ def check_rejected(tableau_data, node):
     return False
 
 def add_children(tableau_data, local_solver, node, depth, last_spawned, max_depth, current_time):
+    if local_solver is None:
+        local_solver = LocalSolver()
     mode = tableau_data.mode
 
     if depth >= max_depth:
@@ -1037,6 +1039,7 @@ def add_children(tableau_data, local_solver, node, depth, last_spawned, max_dept
     
     if mode == 'complete':
         complete_result = False
+
     if tableau_data.parallel and mode == 'sat' and depth - last_spawned > 30 and len(child_queue) > 1: # add 'strong_sat'
         # print("spawning", node)
         # print("children: ", str([child for child in child_queue]))
@@ -1046,7 +1049,7 @@ def add_children(tableau_data, local_solver, node, depth, last_spawned, max_dept
             futures = [pool.submit(
                 add_children,
                 tableau_data,
-                local_solver if child.current_time == current_time else LocalSolver(),
+                None, # z3 stuff can't be pickled
                 child, depth + 1, depth, max_depth, current_time
             ) for child in child_queue]
             for fut in fs.as_completed(futures):
