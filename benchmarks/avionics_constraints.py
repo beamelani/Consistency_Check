@@ -5,12 +5,12 @@ sys.path.append(os.getcwd())
 import time
 from itertools import combinations
 from wrapt_timeout_decorator import *
+from fractions import Fraction
 
-from stl_consistency.parser import STLParser
+from stl_consistency.parser import STLParser, normalize_bounds
 from stl_consistency.node import Node
 from stl_consistency.smtchecker import smt_check_consistency
-
-from stl_consistency.tableau import make_tableau, plot_tree
+from stl_consistency.tableau import make_tableau
 
 import csv
 from tabulate import tabulate
@@ -244,24 +244,25 @@ def make_and(formulas):
 
 
 # Funzione per eseguire entrambi i test su un dataset
-def check_dataset(dataset_name, dataset, max_depth, timeout):
+def check_dataset(dataset_name, dataset, max_depth, max_quantum, timeout):
     # Formula
     formula = make_and(dataset)
     parser = STLParser()
     parsed_formula = parser.parse_relational_exprs(formula)
+    normalized_formula = normalize_bounds(parsed_formula, max_quantum)
 
     # Prima prova: SMT
     start_t = time.perf_counter()
-    res_smt = run_with_timeout(timeout, smt_check_consistency, parsed_formula, 'sat', False)
+    res_smt = run_with_timeout(timeout, smt_check_consistency, normalized_formula, 'sat', False)
     elapsed_smt = time.perf_counter() - start_t
 
     # Seconda prova: Tableau
     start_t = time.perf_counter()
-    res_tableau = run_with_timeout(timeout, make_tableau, Node(*parsed_formula), max_depth, 'sat', False, False, False)
-    #res_tableau = make_tableau(Node(*parsed_formula), max_depth, 'sat', False, False, False)
+    res_tableau = run_with_timeout(timeout, make_tableau, Node(*normalized_formula), max_depth, 'sat', False, False, False)
+    #res_tableau = make_tableau(Node(*normalized_formula), max_depth, 'sat', False, False, False)
     elapsed_tableau = time.perf_counter() - start_t
 
-    #nx.drawing.nx_pydot.write_dot(res_tableau[0], './rr_bug.dot')
+    #nx.drawing.nx_pydot.write_dot(res_tableau[0], './bug.dot')
 
     # Dizionario con i risultati
     return {
@@ -311,7 +312,7 @@ if __name__ == '__main__':
     timeout = 60 # in seconds
 
     #results = [check_dataset(ds, max_depth) for ds in datasets]
-    results = [check_dataset(name, data, max_depth, timeout) for name, data in datasets.items()]
+    results = [check_dataset(name, data, max_depth, 1, timeout) for name, data in datasets.items()]
 
     print("Benchmark results:")
     pretty_print(results, ms=False, csvfile="results.csv")
