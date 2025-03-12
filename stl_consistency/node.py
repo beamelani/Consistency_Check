@@ -315,3 +315,10 @@ class Node:
             case '!' | '&&' | '||' | ',' | '->':
                 for op in self.operands:
                     op.set_root_execution_time()
+
+    def check_boolean_closure(self, pred):
+        match self.operator:
+            case '!' | '&&' | '||' | ',' | '->':
+                return any(op.check_boolean_closure(pred) for op in self.operands)
+            case _:
+                return pred(self)

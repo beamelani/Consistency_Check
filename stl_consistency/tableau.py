@@ -20,45 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# Nuova versione del codice Tableau test che prende come input una lista del tipo:
-
-"""
-[['&&', 'sottof1', 'sottof2',...]]
-|| come sopra
-! come sopra
-[['G', 'lowerb', 'upperb', 'arg']]
-F come sopra
-[['O', 'arg']]
-[['U', 'lowerb', 'upperb', 'arg1', 'arg2']]
-[['R', 'lowerb', 'upperb', 'arg1', 'arg2']]
-[['->', 'lowerb', 'upperb', 'arg1', 'arg2']]
-
-Sintassi Z3
-Definire variabili:
-x = Real('x')
-p = Bool('p')
-z = Int('z')
-
-Scrivere i vincoli:
-
-Bool constraints:
-Not(p)
-Implies(p,q)
-Or(p,q)
-And(p,q)
-r == q (bi-implication)
-
-Real Constraints, puoi scrivere con i seguenti operatori <, <=, >, >=, == , !=  espressioni del tipo:
-x>5
-x+y == 7
-2*x+y == 1
-
-Creare il problema con tutti i vincoli
-solve(constraint1, constraint2,...)  #li considera in and
-"""
-
 import networkx as nx
-import random
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
 from fractions import Fraction
@@ -423,13 +385,11 @@ def decompose_all_G_nodes(outer_node, current_time):
                 # Sostituisco con ['O', ['G', 'a', 'b', ['p']]]
                 outer_node.operands[i] = Node('O', new_operand)
             else:
-                # Elimino l'elemento se a == b
-                #outer_node.operands[i] = None
                 # Setto jump1 a True se necessario
-                if outer_node.operands[i][0].operator in {'P', '!'} and any(op.lower == outer_node.operands[i].lower for j, op in enumerate(outer_node.operands) if (j != i and op is not None)):
+                if (operand[0].check_boolean_closure(lambda n: n.operator == 'P') and
+                    any(other.lower == operand.lower for j, other in enumerate(outer_node.operands) if (j != i and other is not None))):
                     outer_node.jump1 = True
-                elif outer_node.operands[i][0].operator in {'&&', '||', '->'} and any(op.operator in {'P', '!'} for op in outer_node.operands[i][0].operands) and any(op.lower == outer_node.operands[i].lower for j, op in enumerate(outer_node.operands) if (j != i and op is not None)):
-                    outer_node.jump1 = True
+                # Elimino l'elemento se a == b
                 outer_node.operands[i] = None
     outer_node.operands = [x for x in outer_node.operands if x is not None]
 
@@ -619,11 +579,9 @@ def decompose_R(formula, index):
         for operand in new_node1.operands:  # quando R va via tolgo is_derived dagli operatori
             if operand.is_derived and operand.identifier == R_formula.identifier:
                 operand.is_derived = False
-        for operand in new_node1.operands:
-            if second_operand.operator in {'P', '!'} and any(op.lower == R_formula.lower for j, op in enumerate(new_node1.operands) if j != index):
-                new_node1.jump1 = True
-            elif second_operand.operator in {'&&', '||', '!'} and any(op.operator in {'P', '!'} for op in second_operand.operands) and any(op.lower == R_formula.lower for j, op in enumerate(new_node1.operands) if j != index):
-                new_node1.jump1 = True
+        if (second_operand.check_boolean_closure(lambda n: n.operator == 'P') and
+            any(op.lower == R_formula.lower for j, op in enumerate(new_node1.operands) if j != index)):
+            new_node1.jump1 = True
 
     # Node where U is satisfied (p)
     new_node2 = formula.shallow_copy()
@@ -874,11 +832,11 @@ def decompose_jump(node):
             return None
     else:  # caso con operatori problematici, uso direttamente i nodi per non perdere info su is_derived e initial_time
         # We first compute the time jump
-        jump = []
         if node.jump1:
             jump = 1
             node.jump1 = False
         else:
+            jump = [] 
             for operand in node.operands:
                 # Controllo prima gli operatori nested problematici perché il salto dipende da loro:
                 # verifico se ho raggiunto la threshold per cui posso saltare, se l'ho raggiunta cacolo il salto,
@@ -1059,17 +1017,6 @@ def assign_and_or_element(node):
         if isinstance(operand, Node):
             assign_and_or_element(operand)
 
-
-def set_jump1(formula):
-    for operand in formula.operands:
-        if operand.operator in {'P', '!'}:
-            formula.jump1 = True
-            return
-        if operand.operator in {'&&', '||', '->'} and any(op.operator in {'P', '!'} for op in operand.operands):
-            formula.jump1 = True
-            return
-
-
 def add_tree_child(tableau_data, G, parent_label, child):
     tableau_data.counter += 1
     if isinstance(child, str):
@@ -1195,7 +1142,8 @@ def build_decomposition_tree(tableau_data, root, max_depth):
     """
     root.set_root_execution_time()
     time = root.set_min_time()
-    
+    root.jump1 = root.check_boolean_closure(lambda n: n.operator == 'P')
+
     if tableau_data.build_tree:
         root.counter = tableau_data.counter
         tableau_data.tree.add_node(root.to_label())
@@ -1257,7 +1205,6 @@ def make_tableau(formula, max_depth, mode, build_tree, parallel, verbose, mltl=F
     # formula = normalize_bounds(formula)
 
     tableau_data = TableauData(formula, mode, build_tree, parallel, verbose)
-    set_jump1(formula)
     return build_decomposition_tree(tableau_data, formula, max_depth)
 
 
