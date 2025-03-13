@@ -268,12 +268,12 @@ def decompose_all_G_nodes(outer_node, current_time):
                 return ret
             return arg
         elif simple and arg.operator == 'F' and G_node.lower + 2 <= G_node.upper:
-            # We expand with the equivalence G[a,b]F[c,d] q = (F[a+c+1,a+c+d] q || (G[a+c,a+c] q && G[a+c+d+1,a+c+d+1] q)) && G[a+2,b]F[c,d] q
-            G_node.lower += 1 # this implements G[a+2,b]F[c,d] q because decompose_jump adds 1 again
+            # We expand with the equivalence G[a,b]F[c,d] q = (F[a+c+1,a+d] q || (G[a+c,a+c] q && G[a+d+1,a+d+1] q)) && G[a+2,b]F[c,d] q
             a = G_node.lower
             c, d = arg.lower, arg.upper
             q = arg.operands[0]
-            return Node('||', Node('F', a+c+1, a+c+d, q), Node(',', Node('G', a+c, a+c, q), Node('G', a+c+d+1, a+c+d+1, q)))
+            G_node.lower += 1 # this implements G[a+2,b]F[c,d] q because decompose_jump adds 1 again
+            return Node('||', Node('F', a+c+1, a+d, q), Node(',', Node('G', a+c, a+c, q), Node('G', a+d+1, a+d+1, q)))
         elif arg.operator in {'U', 'R', 'F'} or (arg.operator == 'G' and (not short or G_node.lower == G_node.initial_time)):
             # Modifica bounds sommando quelli del nodo G
             extract = arg.shallow_copy()
