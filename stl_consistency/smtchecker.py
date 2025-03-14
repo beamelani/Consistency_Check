@@ -242,7 +242,7 @@ class SMTSTLConsistencyChecker:
                     prop2 = formula[4]
 
                     if (t + int_b < time_horizon and
-                        all(f"{prop1}_t{self._encode_time(t + i, time_horizon)}" in self.smt_variables for i in range(0, int_a + 1)) and
+                        all(f"{prop1}_t{self._encode_time(t + i, time_horizon)}" in self.smt_variables for i in range(0, int_b)) and
                         all(f"{prop2}_t{self._encode_time(t + i, time_horizon)}" in self.smt_variables for i in range(int_a, int_b + 1))):
 
                         # We create
