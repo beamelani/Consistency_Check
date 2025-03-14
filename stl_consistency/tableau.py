@@ -243,10 +243,7 @@ def decompose(tableau_data, local_solver, node, current_time):
         return res
 
     # se arrivo qui vuol dire che non sono entrata in nessun return e quindi non c'era nulla da decomporre
-    res = decompose_jump(node)
-    if res:
-        res[0].set_min_time()
-    return res
+    return decompose_jump(node)
 
 
 def decompose_all_G_nodes(outer_node, current_time):
@@ -720,26 +717,33 @@ def decompose_jump(node):
     flag = flagging(node)
     time_instants = extract_time_instants(node, flag)
     if not flag:  # non ci sono operatori probelmatici attivi
-        #tolgo dal nodo originale, invece di crearne uno nuovo
+        if not time_instants:
+            # there are no temporal operators, we just return None
+            return None
+        if node.jump1:
+            new_time = node.current_time + 1
+        else:
+            # trovo il primo numero maggiore dell'istante corrente di tempo
+            indice = bisect.bisect_right(time_instants, node.current_time)
+            new_time = time_instants[indice]
+        
         new_operands = []
         for and_operand in node.operands:
             if and_operand.operator not in {'P', '!', 'O'}:
                 new_operands.append(and_operand)
             elif and_operand.operator == 'O' and and_operand.operands[0].lower < and_operand.operands[0].upper:
                 sub_formula = and_operand.operands[0].shallow_copy()
-                # trovo il primo numero maggiore dell'istante corrente di tempo
-                if not node.jump1:
-                    indice = bisect.bisect_right(time_instants, sub_formula.lower)
-                    sub_formula.lower = time_instants[indice]
-                else:
-                    sub_formula.lower = sub_formula.lower + 1
+                sub_formula.lower = new_time
                 new_operands.append(sub_formula)
-        node.jump1 = False
-        node.operands = new_operands
-        if node.operands:
-            if len(node.operands) > 1:
-                simplify_F(node)
-            return [node]
+        
+        if new_operands:
+            new_node = node.shallow_copy()
+            new_node.jump1 = False
+            new_node.operands = new_operands
+            new_node.current_time = new_time
+            if len(new_node.operands) > 1:
+                simplify_F(new_node)
+            return [new_node]
         else:
             return None
     else:  # caso con operatori problematici, uso direttamente i nodi per non perdere info su is_derived e initial_time
@@ -796,6 +800,7 @@ def decompose_jump(node):
 
         new_node = node.shallow_copy()
         new_node.operands = new_node_operands
+        new_node.current_time = node.current_time + jump
         if len(new_node.operands) > 1:
             simplify_F(new_node)
         return [new_node]
