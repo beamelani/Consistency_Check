@@ -944,8 +944,7 @@ def add_rejected(tableau_data, node):
     # Note: checking if some other node implies this one seems not to be useful
     node.sort_operands()
     tableau_data.rejected_store.append(node)
-    # We should use bisect.insort_left to keep the list sorted, but it seems to be slower for some benchmarks
-    # bisect.insort_left(rejected_store, node, key=Node.get_imply_sort_key)
+    bisect.insort_left(tableau_data.rejected_store, node, key=Node.get_imply_sort_key)
 
 def check_rejected(tableau_data, node):
     node.sort_operands()
@@ -1034,7 +1033,7 @@ def add_children(tableau_data, local_solver, node, depth, last_spawned, max_dept
                 else: # mode in {'sat', 'strong_sat'}
                     local_solver.pop()
                     return True
-            elif mode == 'sat' and child.current_time is not None and child.current_time > current_time:
+            elif mode == 'sat' and child.current_time > current_time:
                 add_rejected(tableau_data, child)
 
     local_solver.pop()

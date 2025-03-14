@@ -240,12 +240,14 @@ class Node:
     def __ge__(self, other):
         return (self.operator, self.lower, self.upper, self.operands) >= (other.operator, other.lower, other.upper, other.operands)
 
-    def get_imply_sort_key(self):
+    def get_imply_sort_key(self, time=None):
+        if time is None:
+            time = self.current_time
         return (
             self.operator,
             self.operands,
-            self.lower - self.current_time,
-            self.upper - self.current_time
+            self.lower - time,
+            self.upper - time
         )
 
     def get_imply_search_key(self):
@@ -255,20 +257,20 @@ class Node:
         )
 
     def sort_operands(self):
-        self.operands.sort(key=Node.get_imply_sort_key)
+        self.operands.sort(key=lambda op: op.get_imply_sort_key(self.current_time))
 
-    def implies_quick_inner(self, other):
+    def implies_quick_inner(self, other, time_self, time_other):
         if self.operator != other.operator:
             return False
         match self.operator:
             case 'F':
-                return self.operands[0] == other.operands[0] and other.lower - other.current_time <= self.lower - self.current_time and other.upper - other.current_time >= self.upper - self.current_time
+                return self.operands[0] == other.operands[0] and other.lower - time_other <= self.lower - time_self and other.upper - time_other >= self.upper - time_self
             case 'G':
-                return self.operands[0] == other.operands[0] and self.lower - self.current_time <= other.lower - other.current_time and self.upper - self.current_time >= other.upper - other.current_time
+                return self.operands[0] == other.operands[0] and self.lower - time_self <= other.lower - time_other and self.upper - time_self >= other.upper - time_other
             case 'P':
                 return self.operands[0] == other.operands[0]
             case '!':
-                return self.operands[0].implies_quick(other.operands[0])
+                return self.operands[0].implies_quick_inner(other.operands[0])
             # TODO: U, R, etc
         return False
 
@@ -283,7 +285,7 @@ class Node:
         for i in range(len(other.operands)):
             not_implies = order = True
             while j < len_operands and not_implies and order:
-                if self.operands[j].implies_quick_inner(other.operands[i]):
+                if self.operands[j].implies_quick_inner(other.operands[i], self.current_time, other.current_time):
                     not_implies = False
                     break
                 if other.operands[i].get_imply_search_key() < self.operands[j].get_imply_search_key():
