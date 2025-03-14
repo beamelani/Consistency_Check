@@ -759,11 +759,11 @@ def decompose_jump(node):
     if not flag:  # non ci sono operatori probelmatici attivi
         #tolgo dal nodo originale, invece di crearne uno nuovo
         new_operands = []
-        for operand in node.operands:
-            if operand.operator not in {'P', '!', 'O'}:
-                new_operands.append(operand)
-            elif operand.operator == 'O' and operand.operands[0].lower < operand.operands[0].upper:
-                sub_formula = operand.operands[0].shallow_copy()
+        for and_operand in node.operands:
+            if and_operand.operator not in {'P', '!', 'O'}:
+                new_operands.append(and_operand)
+            elif and_operand.operator == 'O' and and_operand.operands[0].lower < and_operand.operands[0].upper:
+                sub_formula = and_operand.operands[0].shallow_copy()
                 # trovo il primo numero maggiore dell'istante corrente di tempo
                 if not node.jump1:
                     indice = bisect.bisect_right(time_instants, sub_formula.lower)
@@ -786,47 +786,48 @@ def decompose_jump(node):
             node.jump1 = False
         else:
             jump = [] 
-            for operand in node.operands:
+            for and_operand in node.operands:
                 # Controllo prima gli operatori nested problematici perché il salto dipende da loro:
                 # verifico se ho raggiunto la threshold per cui posso saltare, se l'ho raggiunta cacolo il salto,
                 # se non l'ho raggiunta il salto è 1
                 # una volta calcolato il salto per ogni operatore problematico, faccio il minimo
                 # una volta stabilito il salto da effettuare faccio un altro ciclo negli operands e applico il salto ad ognuno
                 # controllando se ogni operatore è derivato da un nested o no (perché saltano in modo diverso)
-                if operand.operator == 'O' and operand.operands[0].lower <= operand.operands[0].upper and not operand.operands[0].is_derived and operand.operands[0].operator in {'G', 'U', 'R'}:
+                if and_operand.operator == 'O' and not and_operand.operands[0].is_derived and and_operand.operands[0].operator in {'G', 'U', 'R'}:
                     max_upper = -1
+                    o_operand = and_operand.operands[0]
                     # trovo il max tra gli upper bound degli op interni
-                    if operand.operands[0].operator in {'G', 'U'}:
-                        max_upper = operand.operands[0].operands[0].get_max_upper()
-                    elif operand.operands[0].operator == 'R':
-                        max_upper = operand.operands[0].operands[1].get_max_upper()
+                    if o_operand.operator in {'G', 'U'}:
+                        max_upper = o_operand.operands[0].get_max_upper()
+                    elif o_operand.operator == 'R':
+                        max_upper = o_operand.operands[1].get_max_upper()
 
-                    if max_upper != -1 and operand.operands[0].lower >= operand.operands[0].initial_time + max_upper:
+                    if max_upper != -1 and o_operand.lower >= o_operand.initial_time + max_upper:
                         # se operatore interno è esaurito
-                        indice = bisect.bisect_right(time_instants, operand.operands[0].lower) # trovo il primo numero maggiore dell'istante corrente di tempo
-                        jump.append(time_instants[indice] - operand.operands[0].lower) # il jump che devo fare è l'istante in cui devo arrivare - quello corrente
+                        indice = bisect.bisect_right(time_instants, o_operand.lower) # trovo il primo numero maggiore dell'istante corrente di tempo
+                        jump.append(time_instants[indice] - o_operand.lower) # il jump che devo fare è l'istante in cui devo arrivare - quello corrente
                     else:  # se sono qui non posso saltare, devo andare avanti di 1 in 1
                         jump.append(1)
 
             jump = min(jump)
         # Now we build the new node after the jump
         new_node_operands = []
-        for operand in node.operands:
-            if operand.operator in {'F', 'G', 'U', 'R'} and (jump == 1 or not operand.is_derived):
-                new_node_operands.append(operand)
-            elif operand.operator == 'O' and operand.operands[0].lower < operand.operands[0].upper:
+        for and_operand in node.operands:
+            if and_operand.operator in {'F', 'G', 'U', 'R'} and (jump == 1 or not and_operand.is_derived):
+                new_node_operands.append(and_operand)
+            elif and_operand.operator == 'O' and and_operand.operands[0].lower < and_operand.operands[0].upper:
                 if jump == 1:
-                    sub_formula = operand.operands[0].shallow_copy() # argomento di 'O'
+                    sub_formula = and_operand.operands[0].shallow_copy() # argomento di 'O'
                     sub_formula.lower = sub_formula.lower + jump
                     new_node_operands.append(sub_formula)
                 else:
-                    if operand.operands[0].is_derived:  # per questi devo aggiungere jump ad entrambi gli estremi dell'intervallo
-                        sub_formula = operand.operands[0].shallow_copy()
+                    if and_operand.operands[0].is_derived:  # per questi devo aggiungere jump ad entrambi gli estremi dell'intervallo
+                        sub_formula = and_operand.operands[0].shallow_copy()
                         sub_formula.lower = sub_formula.lower + jump
                         sub_formula.upper = sub_formula.upper + jump
                         new_node_operands.append(sub_formula)
                     else:
-                        sub_formula = operand.operands[0].shallow_copy()
+                        sub_formula = and_operand.operands[0].shallow_copy()
                         sub_formula.lower = sub_formula.lower + jump
                         new_node_operands.append(sub_formula)
 
