@@ -37,7 +37,6 @@ class Node:
         self.id_implication = -1 # serve per identificare da quale el. dell'implicazione proviene un termine quando è stato estratto (mi serve se l'impl è annidata e ha elementi con G e devo quindi sapere quale el incrementare invece di estrarre)
         self.and_element = -1 # identifica univoc gli operandi di un && dentro a un G
         self.or_element = -1 # identifica univoc gli operandi di un || dentro a un G
-        self.execution_time = -1 # serve in nodi con operator = 'P'
         self.jump1 = False # needed because in some instances you can only jump 1 step to make sure you do not miss anything important
         if operator in {'&&', '||', ',', '!', 'O', '->', '<->'}:
             self.lower = self.upper = -1
@@ -98,7 +97,6 @@ class Node:
         new.id_implication = self.id_implication
         new.and_element = self.and_element
         new.or_element = self.or_element
-        new.execution_time = self.execution_time
         new.jump1 = self.jump1
         new.lower = self.lower
         new.upper = self.upper
@@ -137,13 +135,8 @@ class Node:
         :return: estrae il min lower bound della formula e setta il current_time
         '''
         match self.operator:
-            case 'P':
-                min_time = self.execution_time if self.execution_time != -1 else None
-            case '!':
-                if self.operands[0].operator == 'P' and self.operands[0].execution_time != -1:
-                    min_time = self.operands[0].execution_time
-                else:
-                    min_time = None
+            case 'P' | '!':
+                min_time = None
             case 'G' | 'F' | 'U' | 'R':
                 min_time = self.lower
             case 'O':
@@ -306,14 +299,6 @@ class Node:
         if isinstance(l, list) or isinstance(l, tuple):
             return tuple(Node.lists_to_tuples(el) for el in l)
         return l
-
-    def set_root_execution_time(self):
-        match self.operator:
-            case 'P':
-                self.execution_time = 0
-            case '!' | '&&' | '||' | ',' | '->':
-                for op in self.operands:
-                    op.set_root_execution_time()
 
     def check_boolean_closure(self, pred):
         match self.operator:

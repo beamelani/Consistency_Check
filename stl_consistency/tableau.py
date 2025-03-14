@@ -256,16 +256,7 @@ def decompose_all_G_nodes(outer_node, current_time):
     assert outer_node.operator == ','
     # Funzione interna ricorsiva per modificare l'argomento
     def modify_argument(arg, G_node, identifier, short, simple):
-        if arg.operator == 'P':
-            ret = arg.shallow_copy()
-            ret.execution_time = current_time #in realtà nel G non serve perché rimane il OG, però potrebbe forse servire quando OG si cancella perche lb=ub
-            return ret
-        elif arg.operator == '!':
-            if arg.operands[0].operator == 'P':
-                ret = arg.shallow_copy()
-                ret.operands[0] = arg.operands[0].shallow_copy()
-                ret.operands[0].execution_time = current_time
-                return ret
+        if arg.operator in {'P', '!'}:
             return arg
         elif simple and arg.operator == 'F' and G_node.lower + 2 <= G_node.upper:
             # We expand with the equivalence G[a,b]F[c,d] q = (F[a+c+1,a+d] q || (G[a+c,a+c] q && G[a+d+1,a+d+1] q)) && G[a+2,b]F[c,d] q
@@ -365,16 +356,7 @@ def decompose_F(node, index):
 
     # Funzione interna ricorsiva per modificare l'argomento
     def modify_argument(arg):
-        if arg.operator == 'P':
-            ret = arg.shallow_copy()
-            ret.execution_time = current_time
-            return ret
-        elif arg.operator in {'!'}:
-            if arg.operands[0].operator in {'P'}:
-                ret = arg.shallow_copy()
-                ret.operands[0] = arg.operands[0].shallow_copy()
-                ret.operands[0].execution_time = current_time
-                return ret
+        if arg.operator in {'P', '!'}:
             return arg
         elif arg.operator in {'G', 'F', 'U', 'R'}:
             # Modifica bounds sommando quelli del nodo G
@@ -409,7 +391,6 @@ def decompose_U(formula, index):
     più cosa succede dopo (posso eliminare U da quel ramo. Mentre se succede p dovrò riportare che voglio avere pU[3,5]q all'ora all'istante successivo può succedere di nuovo p,
     oppure può succedere q e così via fino a 5, se a 5 è sempre successo p e mai q elimino il ramo perché U non è soddisfatto
     :return:
-    NB: nel ramo dove faccio q se P ha operator = 'P' devo aggiungere execution_time
     pUq diventa q OR p and OU
     '''
     assert index >= 0 and formula is not None
@@ -419,16 +400,7 @@ def decompose_U(formula, index):
     lower_bound = U_formula.lower
     current_time = U_formula.current_time
     def modify_argument(arg, derived):
-        if arg.operator == 'P':
-            ret = arg.shallow_copy()
-            ret.execution_time = current_time
-            return ret
-        elif arg.operator in {'!'}:
-            if arg.operands[0].operator in {'P'}:
-                ret = arg.shallow_copy()
-                ret.operands[0] = arg.operands[0].shallow_copy()
-                ret.operands[0].execution_time = current_time
-                return ret
+        if arg.operator in {'P', '!'}:
             return arg
         elif arg.operator in {'G', 'F', 'U', 'R'}:
             # Modifica bounds sommando quelli del nodo
@@ -482,16 +454,7 @@ def decompose_R(formula, index):
     current_time = R_formula.current_time
 
     def modify_argument(arg, derived):
-        if arg.operator == 'P':
-            ret = arg.shallow_copy()
-            ret.execution_time = current_time
-            return ret
-        elif arg.operator in {'!'}:
-            if arg.operands[0].operator in {'P'}:
-                ret = arg.shallow_copy()
-                ret.operands[0] = arg.operands[0].shallow_copy()
-                ret.operands[0].execution_time = current_time
-                return ret
+        if arg.operator in {'P', '!'}:
             return arg
         elif arg.operator in {'G', 'F', 'U', 'R'}:
             # Modifica bounds sommando quelli del nodo
@@ -1093,8 +1056,7 @@ def build_decomposition_tree(tableau_data, root, max_depth):
             False if the tableau has only rejected branches rooted at node,
             None if we reached max_dept without finding an accepting branch
     """
-    root.set_root_execution_time()
-    time = root.set_min_time()
+    root.current_time = 0
     root.jump1 = root.check_boolean_closure(lambda n: n.operator == 'P')
 
     if tableau_data.build_tree:
@@ -1104,7 +1066,7 @@ def build_decomposition_tree(tableau_data, root, max_depth):
     if tableau_data.verbose:
         print(root)
 
-    res = add_children(tableau_data, LocalSolver(), root, 0, 0, max_depth, time)
+    res = add_children(tableau_data, LocalSolver(), root, 0, 0, max_depth, root.current_time)
 
     if res and tableau_data.mode in {'sat', 'strong_sat'} and tableau_data.verbose:
         print("The requirement set is consistent")
