@@ -176,6 +176,14 @@ def has_temporal_operator(node):
             return any(has_temporal_operator(operand) for operand in node)
     return False
 
+def is_complex_temporal_operator(node):
+    match node.operator:
+        case 'G' | 'U':
+            return has_temporal_operator(node[0])
+        case 'R':
+            return has_temporal_operator(node[1])
+    return False
+
 def flagging(node):
     '''
     :param node:
@@ -803,7 +811,17 @@ def decompose_jump(node):
         new_node.current_time = node.current_time + jump
         if len(new_node.operands) > 1:
             simplify_F(new_node)
-        return [new_node]
+
+        # We build a simplified node without complex nested operators that implies new_node
+        simple_node_operands = list(filter(lambda n: not is_complex_temporal_operator(n), new_node.operands))
+        
+        if len(simple_node_operands) == len(new_node.operands):
+            return [new_node]
+        else:
+            simple_node = new_node.shallow_copy()
+            simple_node.operands = simple_node_operands
+            simple_node.siblings_imply = True
+            return [simple_node, new_node]
 
 
 def local_consistency_check(local_solver, node):
@@ -948,7 +966,7 @@ def add_tree_child(tableau_data, G, parent_label, child):
 def add_rejected(tableau_data, node):
     # Note: checking if some other node implies this one seems not to be useful
     node.sort_operands()
-    tableau_data.rejected_store.append(node)
+    #tableau_data.rejected_store.append(node)
     bisect.insort_left(tableau_data.rejected_store, node, key=Node.get_imply_sort_key)
 
 def check_rejected(tableau_data, node):
@@ -993,18 +1011,32 @@ def add_children(tableau_data, local_solver, node, depth, last_spawned, max_dept
     if tableau_data.verbose:
         for child in children:
             print(child)
+
     child_queue = []
     for child in children:
         if child != 'Rejected':
-            if mode != 'sat' or child.current_time == current_time or not check_rejected(tableau_data, child):
-                child_queue.append(child)
-            elif tableau_data.tree and mode == 'sat':
-                add_tree_child(tableau_data, tableau_data.tree, node_label, child)
-                node_label = child.to_label()
-                child = 'Rejected (memo)'
+            if child.siblings_imply:
+                if mode == 'sat':
+                    if check_rejected(tableau_data, child):
+                        # All other children imply this one, so they'll be rejected
+                        child_queue = []
+                        break
+                    else:
+                        # Children implied by others must be analyzed first
+                        child_queue.insert(0, child)
+            else:
+                if mode != 'sat' or child.current_time == current_time or not check_rejected(tableau_data, child):
+                    child_queue.append(child)
+                elif tableau_data.tree and mode == 'sat':
+                    add_tree_child(tableau_data, tableau_data.tree, node_label, child)
+                    node_label = child.to_label()
+                    child = 'Rejected (memo)'
         if tableau_data.tree:
             add_tree_child(tableau_data, tableau_data.tree, node_label, child)
     
+    if all(c.siblings_imply for c in child_queue):
+        child_queue = []
+
     if mode == 'complete':
         complete_result = False
 
@@ -1029,23 +1061,35 @@ def add_children(tableau_data, local_solver, node, depth, last_spawned, max_dept
             # TODO maybe use Event to stop them asap
             pool.shutdown(wait=True, cancel_futures=True)
     else:
+        max_depth_reached = False
         for child in child_queue:
             # If the child comes from a temporal jump, we need a new, empty solver
             child_solver = local_solver if child.current_time == current_time else LocalSolver()
-            if add_children(tableau_data, child_solver, child, depth + 1, last_spawned, max_depth, current_time):
-                if mode == 'complete':
-                    complete_result = True
-                else: # mode in {'sat', 'strong_sat'}
-                    local_solver.pop()
-                    return True
+            child_res = add_children(tableau_data, child_solver, child, depth + 1, last_spawned, max_depth, current_time)
+            if child_res:
+                if not child.siblings_imply:
+                    if mode == 'complete':
+                        complete_result = True
+                    else: # mode in {'sat', 'strong_sat'}
+                        local_solver.pop()
+                        return True
+            elif child_res is None:
+                max_depth_reached = True
             elif mode == 'sat' and child.current_time > current_time:
                 add_rejected(tableau_data, child)
+                if child.siblings_imply:
+                    # All other siblings will be rejected
+                    break
 
     local_solver.pop()
 
     if mode in {'sat', 'strong_sat'}:
+        if max_depth_reached:
+            return None
         return False
     else: # mode == 'complete'
+        if not complete_result and max_depth_reached:
+            return None
         return complete_result
 
 def build_decomposition_tree(tableau_data, root, max_depth):

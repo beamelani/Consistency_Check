@@ -38,6 +38,7 @@ class Node:
         self.and_element = -1 # identifica univoc gli operandi di un && dentro a un G
         self.or_element = -1 # identifica univoc gli operandi di un || dentro a un G
         self.jump1 = False # needed because in some instances you can only jump 1 step to make sure you do not miss anything important
+        self.siblings_imply = False
         if operator in {'&&', '||', ',', '!', 'O', '->', '<->'}:
             self.lower = self.upper = -1
             self.operands = list(args)
@@ -98,6 +99,7 @@ class Node:
         new.and_element = self.and_element
         new.or_element = self.or_element
         new.jump1 = self.jump1
+        new.siblings_imply = False
         new.lower = self.lower
         new.upper = self.upper
         new.operands = self.operands.copy()
