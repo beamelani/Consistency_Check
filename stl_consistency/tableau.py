@@ -965,19 +965,20 @@ def add_tree_child(tableau_data, G, parent_label, child):
 
 def add_rejected(tableau_data, node):
     # Note: checking if some other node implies this one seems not to be useful
-    node.sort_operands()
-    #tableau_data.rejected_store.append(node)
-    bisect.insort_left(tableau_data.rejected_store, node, key=Node.get_imply_sort_key)
+    if not check_rejected(tableau_data, node):
+        #print(node)
+        bisect.insort_left(tableau_data.rejected_store, node, key=Node.get_imply_sort_key)
 
 def check_rejected(tableau_data, node):
     node.sort_operands()
-    i = bisect.bisect_left(tableau_data.rejected_store, node.get_imply_search_key(), key=Node.get_imply_search_key)
+    max_lower = max((op.lower for op in node.operands if op.operator in {'G', 'F', 'U', 'R'}))
+    i = bisect.bisect_left(tableau_data.rejected_store, node.get_imply_sort_key(max_lower), key=Node.get_imply_sort_key)
     for rejected in tableau_data.rejected_store[i:]:
         if node.implies_quick(rejected):
             if tableau_data.verbose:
                 print('Rejecting', node, ' because it implies rejected node ', rejected)
             return True
-        if rejected.operator == node.operator == ',' and node.operands[-1].get_imply_search_key() < rejected.operands[0].get_imply_search_key():
+        if node.operands[-1].get_imply_search_key() < rejected.operands[0].get_imply_search_key():
             return False
     return False
 
@@ -1020,6 +1021,8 @@ def add_children(tableau_data, local_solver, node, depth, last_spawned, max_dept
                     if check_rejected(tableau_data, child):
                         # All other children imply this one, so they'll be rejected
                         child_queue = []
+                        if tableau_data.tree:
+                            add_tree_child(tableau_data, tableau_data.tree, node_label, 'Rejected (memo)')
                         break
                     else:
                         # Children implied by others must be analyzed first

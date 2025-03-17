@@ -272,7 +272,7 @@ class Node:
             case 'P':
                 return self.operands[0] == other.operands[0]
             case '!':
-                return self.operands[0].implies_quick_inner(other.operands[0])
+                return self.operands[0].implies_quick_inner(other.operands[0], time_self, time_other)
             # TODO: U, R, etc
         return False
 
@@ -282,22 +282,29 @@ class Node:
         Assumes both nodes' operands have been sorted with sort_operands
         '''
         assert self.operator == other.operator == ','
-        j = 0
-        len_operands = len(self.operands)
-        for i in range(len(other.operands)):
-            not_implies = order = True
-            while j < len_operands and not_implies and order:
-                if self.operands[j].implies_quick_inner(other.operands[i], self.current_time, other.current_time):
-                    not_implies = False
+        self_lower_bounds = sorted({op.lower for op in self.operands if op.operator in {'G', 'F', 'U', 'R'}})
+        len_self = len(self.operands)
+        len_other = len(other.operands)
+        for self_lower in self_lower_bounds:
+            found = True
+            j = 0
+            for i in range(len_other):
+                not_implies = order = True
+                while j < len_self and not_implies and order:
+                    if self.operands[j].implies_quick_inner(other.operands[i], self_lower, other.current_time):
+                        not_implies = False
+                        break
+                    if other.operands[i].get_imply_search_key() < self.operands[j].get_imply_search_key():
+                        order = False
+                        break
+                    j += 1
+                if not_implies: # j >= len(self.operands) or not order:
+                    # we break the loop because no operand in self implies other.operands[i]
+                    found = False
                     break
-                if other.operands[i].get_imply_search_key() < self.operands[j].get_imply_search_key():
-                    order = False
-                    break
-                j += 1
-            if not_implies: # j >= len(self.operands) or not order:
-                # we break the loop because no operand in self implies other.operands[i]
-                return False
-        return True
+            if found:
+                return True
+        return False
 
     def lists_to_tuples(l):
         if isinstance(l, list) or isinstance(l, tuple):
