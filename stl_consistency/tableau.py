@@ -964,7 +964,6 @@ def add_tree_child(tableau_data, G, parent_label, child):
     G.add_edge(parent_label, child_label)
 
 def add_rejected(tableau_data, node):
-    # Note: checking if some other node implies this one seems not to be useful
     if not check_rejected(tableau_data, node):
         #print(node)
         bisect.insort_left(tableau_data.rejected_store, node, key=Node.get_imply_sort_key)
