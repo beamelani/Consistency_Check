@@ -30,7 +30,7 @@ def run_with_timeout(timeout, f, *args, **kwargs):
 
 # Benchmark: (avionics requirements)
 # 1) stabilire un time horizon (T)
-T = str(1000)
+T = str(10)
 requirements = [
     ['G', '0', T, ['||', ['&&', ['B_active'], ['!', ['B_inactive']], ['!', ['B_armed']]], ['&&', ['B_inactive'], ['!', ['B_active']], ['!', ['B_armed']]], ['&&', ['B_armed'], ['!', ['B_inactive']], ['!', ['B_active']]]]],
     ['G', '0', T, ['->', ['&&', ['B_inactive'], ['R_n_s == 1'],  ['R_X_c-R_X_b <= 5'], ['R_X_c-R_X_b>= -5'], ['G', '0', '5', ['R_airspeed>= R_Vmin']], ['!', ['B_X_over']], ['B_X_Activation_Request']], ['F', '0', '2', ['&&', ['!', ['B_inactive']], ['B_active']]]]],
@@ -91,95 +91,93 @@ parameter_ranges = [
     ['G', '0', T, ['||', ['R_Y_pushbutton == 0'], ['R_Y_pushbutton == 1'], ['R_Y_pushbutton == 2']]],
 ]
 
-'''
+
 #Requisiti da: Benchmarks for Temporal Logic Requirements for Automotive Systems
-t = '10' #alcuni requisiti sono da 0 a un tempo t
-T = '100' #quando il requisito ha unboundend operators
+t = '10' #alcuni requisiti sono da 0 a un tempo t (nel paper)
+T1 = '1000' #quando il requisito ha unboundend operators ho aggiunto bound T1
 mtl_requirements = [
-    ['G', '0', T, ['&&', ['R_omega < R_omega_hat'], ['R_v < R_v_hat']]],
-    ['G', '0', T, ['->', ['&&', ['B_g2'], ['G', '1', '1', ['B_g1']]], ['G', '0.5', '2.5', ['!', ['B_g2']]]]],
-    ['G', '0', T, ['->', ['&&', ['!', ['B_g1']], ['G', '1', '1', ['B_g1']]], ['G', '0.5', '2.5', ['B_g1']]]],
-    ['G', '0', T, ['->', ['&&', ['!', ['B_g2']], ['G', '1', '1', ['B_g2']]], ['G', '0.5', '2.5', ['B_g2']]]],
-    ['G', '0', T, ['->', ['&&', ['!', ['B_g3']], ['G', '1', '1', ['B_g3']]], ['G', '0.5', '2.5', ['B_g3']]]],
-    ['G', '0', T, ['->', ['&&', ['!', ['B_g4']], ['G', '1', '1', ['B_g4']]], ['G', '0.5', '2.5', ['B_g4']]]],
-    ['!', ['&&', ['F', '0', t, ['R_v > R_v_hat']], ['G', '0', T, ['R_omega < R_omega_hat']]]],
-    ['F', '0', t, ['&&', ['R_v >= R_v_hat'], ['G', '0', T, ['R_omega < R_omega_hat']]]],
-    ['F', '0', '100', ['G', '0', '1', ['Not(R_Fuel_Flow_Rate == 0)']]],
-    ['G', '0', T, ['->', ['B_lambda_OOB'], ['F', '0', '1', ['G', '0', '1', ['Not(B_lambda_OOB)']]]]]
+    ['G', '0', T1, ['&&', ['R_omega < R_omega_hat'], ['R_v < R_v_hat']]],
+    ['G', '0', T1, ['->', ['&&', ['B_g2'], ['G', '1', '1', ['B_g1']]], ['G', '0.5', '2.5', ['!', ['B_g2']]]]],
+    ['G', '0', T1, ['->', ['&&', ['!', ['B_g1']], ['G', '1', '1', ['B_g1']]], ['G', '0.5', '2.5', ['B_g1']]]],
+    ['G', '0', T1, ['->', ['&&', ['!', ['B_g2']], ['G', '1', '1', ['B_g2']]], ['G', '0.5', '2.5', ['B_g2']]]],
+    ['G', '0', T1, ['->', ['&&', ['!', ['B_g3']], ['G', '1', '1', ['B_g3']]], ['G', '0.5', '2.5', ['B_g3']]]],
+    ['G', '0', T1, ['->', ['&&', ['!', ['B_g4']], ['G', '1', '1', ['B_g4']]], ['G', '0.5', '2.5', ['B_g4']]]],
+    ['!', ['&&', ['F', '0', t, ['R_v > R_v_hat']], ['G', '0', T1, ['R_omega < R_omega_hat']]]],
+    ['F', '0', t, ['&&', ['R_v >= R_v_hat'], ['G', '0', T1, ['R_omega < R_omega_hat']]]],
+    ['F', '0', '100', ['G', '0', '1', ['!', ['R_Fuel_Flow_Rate == 0']]]],
+    ['G', '0', T1, ['->', ['B_lambda_OOB'], ['F', '0', '1', ['G', '0', '1', ['!', ['B_lambda_OOB']]]]]]
 
 ]
 
 #Requisiti da: Powertrain Control Verification Benchmark
-T = '100' #questo valore scelto a caso, gli altri presi dal paper
+#questo valore di T3 scelto a caso, gli altri presi dal paper
+T3 = '15'
 epsilon = '0.02' #short interval
 t_s = '11'
 eta = '1'
 zeta_mezzi = '10'#zeta è il periodo del pulse train signal
 pcv = [
-    # rise(a) = ['&&', ['R_theta == 8.8'], ['F', '0', epsilon, ['R_theta == R_a']]] sono usati in altri req
-    # fall (a) = ['&&', ['R_theta == R_a'], ['F', '0', epsilon, ['R_theta == 8.8']]]
     # normal mode
-    ['G', '0', T, ['->', ['B_normal_mode'], ['&&', ['R_a > 8.8'], ['R_a < 70']]]],
-    ['G', t_s, T, ['->', ['B_normal_mode'], ['&&', ['R_mu > -0.05'], ['R_mu < 0.05']]]],
-    ['G', t_s, T, ['->', ['||', [['&&', ['R_theta == 8.8'], ['F', '0', epsilon, ['R_theta == R_a']]]], [['&&', ['R_theta == R_a'], ['F', '0', epsilon, ['R_theta == 8.8']]]]], ['G', eta, zeta_mezzi, ['&&', ['R_mu > - 0.02'], ['R_mu < 0.02']]]]],
-    ['F', T, T, ['->', ['B_normal_mode'], ['R_xrms < 0.05']]],
-    ['G', t_s, T, ['->', ['B_normal_mode'], ['R_mu > -0.1']]],
-    ['G', t_s, T, ['->', ['B_normal_mode'], ['R_mu < 0.1']]],
+    ['G', '0', T3, ['->', ['B_normal_mode'], ['&&', ['R_a > 8.8'], ['R_a < 70']]]],
+    ['G', t_s, T3, ['->', ['B_normal_mode'], ['|R_mu| < 0.05']]],
+    ['G', t_s, T3, ['->', ['||', ['&&', ['R_theta == 8.8'], ['F', '0', epsilon, ['R_theta == R_a']]], ['&&', ['R_theta == R_a'], ['F', '0', epsilon, ['R_theta == 8.8']]]], ['G', eta, zeta_mezzi, ['|R_mu| < 0.02']]]],
+    ['F', T3, T3, ['->', ['B_normal_mode'], ['R_xrms < 0.05']]],
+    ['G', t_s, T3, ['->', ['B_normal_mode'], ['|R_mu| < 0.1']]],
     #power mode
-    ['G', '0', T, ['->', ['B_power_mode'], ['&&', ['R_a >= 8.8'], ['R_a <= 90']]]],
-    ['G', t_s, T, ['->', ['&&', ['B_power_mode'], ['F', '0', epsilon, ['B_normal_mode']]], ['G', eta, zeta_mezzi, [['&&', ['R_mu > -0.02'], ['R_mu < 0.02']]]]]],
-    ['G', t_s, T, ['->', ['B_power_mode'], ['&&', ['R_mu_p > -0.2'], ['R_mu_p < 0.2']]]],
+    ['G', '0', T3, ['->', ['B_power_mode'], ['&&', ['R_a >= 8.8'], ['R_a <= 90']]]],
+    ['G', t_s, T3, ['->', ['&&', ['B_power_mode'], ['F', '0', epsilon, ['B_normal_mode']]], ['G', eta, zeta_mezzi, ['|R_mu| < 0.02']]]],
+    ['G', t_s, T3, ['->', ['B_power_mode'], ['|R_mu_p| < 0.2']]],
     # startup and sensor fail mode
-    ['G', '0', T, ['->', ['&&', ['||', ['B_startup_mode'], ['B_sensor_fail_mode']], ['||', [['&&', ['R_theta == 8.8'], ['F', '0', epsilon, ['R_theta == R_a']]]], [['&&', ['R_theta == R_a'], ['F', '0', epsilon, ['R_theta == 8.8']]]]]], ['G', eta, zeta_mezzi, [['&&', ['R_mu > - 0.1'], ['R_mu < 0.1']]]]]]
+    ['G', '0', T3, ['->', ['&&', ['||', ['B_startup_mode'], ['B_sensor_fail_mode']], ['||', ['&&', ['R_theta == 8.8'], ['F', '0', epsilon, ['R_theta == R_a']]], ['&&', ['R_theta == R_a'], ['F', '0', epsilon, ['R_theta == 8.8']]]]], ['G', eta, zeta_mezzi, ['|R_mu| < 0.1']]]]
 ]
 
 #requisiti da Signal-Based Properties of Cyber-Physical Systems: Taxonomy and Logic-based Characterization
-T = '3000'
-req_cps =[
-    ['G', '0', T, ['||', ['R_currentADCSMode == 0'], ['R_currentADCSMode == 1'], ['R_currentADCSMode == 2']]], # P1 where 0 == NMC, 1== NMF, 2== SM
+T2 = '3000'
+req_cps = [
+    ['G', '0', T2, ['||', ['R_currentADCSMode == 0'], ['R_currentADCSMode == 1'], ['R_currentADCSMode == 2']]], # P1 where 0 == NMC, 1== NMF, 2== SM
     # P2: non serve, basta definire il segnale come bool
     # P3: non serve, basta definire il segnale come bool
-    ['G', '0', T, ['R_RWs_angular_velocity == 816.814']], # P4
-    ['G', '2000', T, ['R_pointing_error < 2']], # P5
+    ['G', '0', T2, ['R_RWs_angular_velocity == 816.814']], # P4
+    ['G', '2000', T2, ['R_pointing_error < 2']], # P5
     ['G', '1500', '2000', ['R_RWs_angular_momentum < 0.35']], # P6
     ['G', '2000', '2000', ['&&', ['R_pointing_error > 0'], ['R_pointing_error < R_delta']]], # P7 delta???
     ['F', '2000', '7400', ['&&', ['R_pointing_error < R_k'], ['U', '2', '22', ['R_pointing_error >= R_k'], ['R_pointing_error < R_k']]]], # P8 SPIKE
     #[], # P9 OSCILLATION
-    ['G', '0', T, ['&&', ['R_sat_init_angular_velocity_degree <= 3'], ['R_sat_init_angular_velocity_degree >= -3']]], # P10
-    ['G', '2000', T, ['&&', ['R_sat_real_angular_velocity <= 1.5'], ['R_sat_real_angular_velocity >= -1.5']]], # P11
-    ['G', '0', T, ['||', ['R_sat_target_attitude == 1'], ['R_sat_target_attitude == -1']]], # P12
-    ['G', '2000', T, ['&&', ['R_sat_target_angular_velocity <= 1.5'], ['R_sat_target_angular_velocity >= -1.5']]], # P13
-    ['G', '0', T, ['||', ['R_sat_estimated_attitude == 1'], ['R_sat_estimated_attitude == -1']]], # P14
-    ['G', '2000', T, ['&&', ['R_sat_estimated_angular_velocity <= 1.5'], ['R_sat_estimated_angular_velocity >= -1.5']]], # P15
-    ['G', '2000', T, ['&&', ['R_sat_angular_velocity_measured <= 1.5'], ['R_sat_angular_velocity_measured >= -1.5']]], # P16
-    ['G', '0', T, ['&&', ['R_earth_mag_field_in_body_measured <= 60000'], ['R_earth_mag_field_in_body_measured >= -60000']]], # P17
-    ['G', '0', T, ['||', ['R_sun_direction_ECI == 1'], ['R_sun_direction_ECI == -1']]], # P18
-    ['G', '2000', T, ['&&', ['R_sat_target_angular_velocity_safe_spin_mode <= 1.5'], ['R_sat_target_angular_velocity_safe_spin_mode >= -1.5']]], # P19
-    ['G', '0', T, ['&&', ['R_RWs_torque <= 0.015'], ['R_RWs_torque >= -0.015']]], # P20
-    ['G', '0', T, ['R_sun_sensor_availability <= 3']], # P21 traduzioe non perfetta, ma good enough
+    ['G', '0', T2, ['|R_sat_init_angular_velocity_degree| <= 3']], # P10
+    ['G', '2000', T2, ['|R_sat_real_angular_velocity| <= 1.5']], # P11
+    ['G', '0', T2, ['||', ['R_sat_target_attitude == 1'], ['R_sat_target_attitude == -1']]], # P12
+    ['G', '2000', T2, ['|R_sat_target_angular_velocity| <= 1.5']], # P13
+    ['G', '0', T2, ['||', ['R_sat_estimated_attitude == 1'], ['R_sat_estimated_attitude == -1']]], # P14
+    ['G', '2000', T2, ['|R_sat_estimated_angular_velocity| <= 1.5']], # P15
+    ['G', '2000', T2, ['|R_sat_angular_velocity_measured| <= 1.5']], # P16
+    ['G', '0', T2, ['|R_earth_mag_field_in_body_measured| <= 60000']], # P17
+    ['G', '0', T2, ['||', ['R_sun_direction_ECI == 1'], ['R_sun_direction_ECI == -1']]], # P18
+    ['G', '2000', T2, ['|R_sat_target_angular_velocity_safe_spin_mode| <= 1.5']], # P19
+    ['G', '0', T2, ['|R_RWs_torque| <= 0.015']], # P20
+    ['G', '0', T2, ['R_sun_sensor_availability <= 3']], # P21 traduzioe non perfetta, ma good enough
     ['G', '2000', '2000', ['&&', ['R_q_real - R_q_estimate_attitude > 0'], ['R_q_real - R_q_estimate_attitude < R_delta']]], # P22
     ['G', '2000', '2000', ['&&', ['R_q_target_attitude - R_q_estimate > 0'], ['R_q_target_attitude - R_q_estimate < R_delta']]], # P23
-    ['G', '0', T, ['&&', ['R_sat_estimated_angular_velocity - R_sat_real_angular_velocity > 0'], ['R_sat_estimated_angular_velocity - R_sat_real_angular_velocity < R_delta']]], # P24
-    ['G', '0', T, ['&&', ['R_sat_angular_velocity_measured - R_sat_real_angular_velocity > 0'], ['R_sat_angular_velocity_measured - R_sat_real_angular_velocity < R_delta']]], # P25
+    ['G', '0', T2, ['&&', ['R_sat_estimated_angular_velocity - R_sat_real_angular_velocity > 0'], ['R_sat_estimated_angular_velocity - R_sat_real_angular_velocity < R_delta']]], # P24
+    ['G', '0', T2, ['&&', ['R_sat_angular_velocity_measured - R_sat_real_angular_velocity > 0'], ['R_sat_angular_velocity_measured - R_sat_real_angular_velocity < R_delta']]], # P25
     #[], # P26 derivative?
-    ['G', '0', T, ['->', ['Not(B_not_Eclipse)'], ['Not(B_sun_currents)']]], # P27
-    ['G', '0', T, ['->', ['B_pointing_error_under_15'], ['Not(B_pointing_error_above_20)']]], # P28
-    ['G', '0', T, ['->', ['B_pointing_error_above_20'], ['Not(B_pointing_error_under_15']]], # P29
-    ['G', '0', T, ['->', ['R_RWs_command == 0'], ['F', '0', '60', ['RWs_angular_velocity == 0']]]], # P30 monotonically decreasing come lo esprimo??
-    ['G', '0', T, ['->', ['R_RWs_angular_momentum > 0.35'], ['R_RWs_torque == 0']]], # P31
-    ['G', '0', T, ['->', ['R_currentADCSMode == 0'], ['R_control_error >= 10']]], # P32
-    ['G', '0', T, ['->', ['R_control_error < 10'], ['R_currentADCSMode == 1']]], # P33
-    ['G', '0', T, ['->', ['R_currentADCSMode == 1'], ['R_control_error <= 15']]], # P34
-    ['G', '0', T, ['->', ['R_currentADCSMode == 1'], ['->', ['R_RWs_command > 0'], ['F', '0', '180', ['R_pointing_error < 2']]]]], # P35
-    ['G', '0', T, ['->', ['R_currentADCSMode == 1'], ['->', ['R_RWs_command > 0'], ['F', '0', '180', ['R_control_error < 0.5']]]]], # P36
-    ['G', '0', T, ['->', ['R_currentADCSMode == 1'], ['->', ['B_not_Eclipse'], ['F', '0', '900', ['R_knowledge_error < 1']]]]], # P37
-    ['G', '0', T, ['->', ['R_currentADCSMode == 2'], ['->', ['R_RWs_command > 0'], ['F', '0', '900', ['R_RWs_angular_momentum < 0.25']]]]], # P38
-    ['G', '0', T, ['->', ['R_currentADCSMode == 2'], ['F', '0', '10799', ['R_real_Omega - R_signal_target_Omega == 0']]]], # P39
-    ['G', '0', T, ['->', ['B_not_Eclipse'], ['R_sun_angle < 45']]], # P40
-    ['G', '16200', T, ['->', ['R_pointing_error < 2'], ['F', '0', '5400', ['&&', ['R_pointing_error < R_k2'], ['U', '0', '600', ['R_pointing_error >= R_k'], ['R_pointing_error < R_k2']]]]]] # P41
-
+    ['G', '0', T2, ['->', ['!', ['B_not_Eclipse']], ['!', ['B_sun_currents']]]], # P27
+    ['G', '0', T2, ['->', ['B_pointing_error_under_15'], ['!', ['B_pointing_error_above_20']]]], # P28
+    ['G', '0', T2, ['->', ['B_pointing_error_above_20'], ['!', ['B_pointing_error_under_15']]]], # P29
+    ['G', '0', T2, ['->', ['R_RWs_command == 0'], ['F', '0', '60', ['RWs_angular_velocity == 0']]]], # P30 monotonically decreasing come lo esprimo??
+    ['G', '0', T2, ['->', ['R_RWs_angular_momentum > 0.35'], ['R_RWs_torque == 0']]], # P31
+    ['G', '0', T2, ['->', ['R_currentADCSMode == 0'], ['R_control_error >= 10']]], # P32
+    ['G', '0', T2, ['->', ['R_control_error < 10'], ['R_currentADCSMode == 1']]], # P33
+    ['G', '0', T2, ['->', ['R_currentADCSMode == 1'], ['R_control_error <= 15']]], # P34
+    ['G', '0', T2, ['->', ['R_currentADCSMode == 1'], ['->', ['R_RWs_command > 0'], ['F', '0', '180', ['R_pointing_error < 2']]]]], # P35
+    ['G', '0', T2, ['->', ['R_currentADCSMode == 1'], ['->', ['R_RWs_command > 0'], ['F', '0', '180', ['R_control_error < 0.5']]]]], # P36
+    ['G', '0', T2, ['->', ['R_currentADCSMode == 1'], ['->', ['B_not_Eclipse'], ['F', '0', '900', ['R_knowledge_error < 1']]]]], # P37
+    ['G', '0', T2, ['->', ['R_currentADCSMode == 2'], ['->', ['R_RWs_command > 0'], ['F', '0', '900', ['R_RWs_angular_momentum < 0.25']]]]], # P38
+    ['G', '0', T2, ['->', ['R_currentADCSMode == 2'], ['F', '0', '10799', ['R_real_Omega - R_signal_target_Omega == 0']]]], # P39
+    ['G', '0', T2, ['->', ['B_not_Eclipse'], ['R_sun_angle < 45']]], # P40
+    # intervallo molto lungo ['G', '16200', T2, ['->', ['R_pointing_error < 2'], ['F', '0', '5400', ['&&', ['R_pointing_error < R_k2'], ['U', '0', '600', ['R_pointing_error >= R_k'], ['R_pointing_error < R_k2']]]]]] # P41
+    ['G', '1600', T2, ['->', ['R_pointing_error < 2'], ['F', '0', '5400', ['&&', ['R_pointing_error < R_k2'], ['U', '0', '600', ['R_pointing_error >= R_k'], ['R_pointing_error < R_k2']]]]]] # P41
 ]
-'''
+
 #Requisiti da Bounded Model Checking of STL Properties using Syntactic Separation
 cars = [
     ['G', '0', '100', ['R_dist > 0.1']],
@@ -297,17 +295,20 @@ def pretty_print(results, ms, csvfile):
 # Esecuzione principale
 if __name__ == '__main__':
     datasets = {
-        "avionics": requirements_riscritti,
-        "parameter_ranges": parameter_ranges,
-        "cars": cars,
-        "thermostat": thermostat,
-        "watertank": watertank,
-        "railroad": railroad,
-        "batteries": batteries,
-        "railroad_merged": railroad_merged
+        #"avionics": requirements_riscritti,
+        #"parameter_ranges": parameter_ranges,
+        #"cars": cars,
+        #"thermostat": thermostat,
+        #"watertank": watertank,
+        #"railroad": railroad,
+        #"batteries": batteries,
+        #"railroad_merged": railroad_merged,
+        "pcv": pcv
+        #"mtl_requirements": mtl_requirements,
+        #"req_cps": req_cps
     }
     #datasets = [cars, thermostat, watertank, batteries]
-    sys.setrecursionlimit(100000000)
+    sys.setrecursionlimit(1000000000)
     max_depth = 10000000
     clock = 1 # Fraction(1,10)
     timeout = 60 # in seconds
