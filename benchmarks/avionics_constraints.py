@@ -30,7 +30,7 @@ def run_with_timeout(timeout, f, *args, **kwargs):
 
 # Benchmark: (avionics requirements)
 # 1) stabilire un time horizon (T)
-T = str(5)
+T = str(1000)
 requirements = [
     ['G', '0', T, ['||', ['&&', ['B_active'], ['!', ['B_inactive']], ['!', ['B_armed']]], ['&&', ['B_inactive'], ['!', ['B_active']], ['!', ['B_armed']]], ['&&', ['B_armed'], ['!', ['B_inactive']], ['!', ['B_active']]]]],
     ['G', '0', T, ['->', ['&&', ['B_inactive'], ['R_n_s == 1'],  ['R_X_c-R_X_b <= 5'], ['R_X_c-R_X_b>= -5'], ['G', '0', '5', ['R_airspeed>= R_Vmin']], ['!', ['B_X_over']], ['B_X_Activation_Request']], ['F', '0', '2', ['&&', ['!', ['B_inactive']], ['B_active']]]]],
@@ -220,10 +220,10 @@ batteries = [
 
 # Test stuff (do not remove pls!)
 
-railroad = [
-    ['G', '0', '50', ['F', '5', '20', ['B_a']]],
-    ['G', '5', '60', ['->', ['B_a'], ['G', '20', '40', ['!', ['B_a']]]]]
-]
+# railroad = [
+#     ['G', '0', '50', ['F', '5', '20', ['B_a']]],
+#     ['G', '5', '60', ['->', ['B_a'], ['G', '20', '40', ['!', ['B_a']]]]]
+# ]
 
 # railroad = [
 #     ['G', '0', '5', ['F', '1', '2', ['B_a']]],
@@ -258,11 +258,11 @@ def check_dataset(dataset_name, dataset, max_depth, max_quantum, timeout):
 
     # Seconda prova: Tableau
     start_t = time.perf_counter()
-    #res_tableau = run_with_timeout(timeout, make_tableau, Node(*normalized_formula), max_depth, 'sat', False, False, False)
-    res_tableau = make_tableau(Node(*normalized_formula), max_depth, 'sat', True, False, False)
+    res_tableau = run_with_timeout(timeout, make_tableau, Node(*normalized_formula), max_depth, 'sat', False, False, False)
+    #res_tableau = make_tableau(Node(*normalized_formula), max_depth, 'sat', True, False, False)
     elapsed_tableau = time.perf_counter() - start_t
 
-    nx.drawing.nx_pydot.write_dot(res_tableau[0], './bug.dot')
+    #nx.drawing.nx_pydot.write_dot(res_tableau[0], './bug.dot')
 
     # Dizionario con i risultati
     return {
@@ -297,22 +297,23 @@ def pretty_print(results, ms, csvfile):
 # Esecuzione principale
 if __name__ == '__main__':
     datasets = {
-        # "avionics": requirements_riscritti,
-        # "parameter_ranges": parameter_ranges,
-        # "cars": cars,
-        # "thermostat": thermostat,
-        # "watertank": watertank,
+        "avionics": requirements_riscritti,
+        "parameter_ranges": parameter_ranges,
+        "cars": cars,
+        "thermostat": thermostat,
+        "watertank": watertank,
         "railroad": railroad,
-        # "batteries": batteries,
-        # "railroad_merged": railroad_merged
+        "batteries": batteries,
+        "railroad_merged": railroad_merged
     }
     #datasets = [cars, thermostat, watertank, batteries]
     sys.setrecursionlimit(100000000)
-    max_depth = 20 #10000000
+    max_depth = 10000000
+    clock = 1 # Fraction(1,10)
     timeout = 60 # in seconds
 
     #results = [check_dataset(ds, max_depth) for ds in datasets]
-    results = [check_dataset(name, data, max_depth, 1, timeout) for name, data in datasets.items()]
+    results = [check_dataset(name, data, max_depth, clock, timeout) for name, data in datasets.items()]
 
     print("Benchmark results:")
     pretty_print(results, ms=False, csvfile="results.csv")
