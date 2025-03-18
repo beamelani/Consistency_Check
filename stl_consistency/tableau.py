@@ -332,7 +332,7 @@ def decompose_all_G_nodes(outer_node, current_time):
             else:
                 # Setto jump1 a True se necessario
                 if (operand[0].check_boolean_closure(lambda n: n.operator == 'P') and
-                    any(other.lower == operand.lower for j, other in enumerate(outer_node.operands) if (j != i and other is not None))):
+                    any(other.lower_bound() == operand.lower for j, other in enumerate(outer_node.operands) if (j != i and other is not None))):
                     outer_node.jump1 = True
                 # Elimino l'elemento se a == b
                 outer_node.operands[i] = None
@@ -385,6 +385,10 @@ def decompose_F(node, index):
     # Node where the operand holds
     new_node2 = node.shallow_copy()
     new_node2.replace_operand(index, modify_argument(F_formula.operands[0]))
+    if (F_formula.lower == F_formula.upper and
+        F_formula[0].check_boolean_closure(lambda n: n.operator == 'P') and
+        any(other.lower_bound() == F_formula.lower for j, other in enumerate(node.operands) if j != index)):
+        new_node2.jump1 = True
 
     return new_node2, new_node1 #conviene fare prima return del node_2
 
@@ -434,9 +438,14 @@ def decompose_U(formula, index):
     new_operand = modify_argument(first_operand.shallow_copy(), True) #derived indica se is_derived deve essere True (quindi è vero nel nodo con p, OU quando p è G,F...)
     new_node1.replace_operand(index, Node('O', U_formula))
     new_node1.operands.extend([new_operand])
+
     # Node where U is satisfied (q)
     new_node2 = formula.shallow_copy()
     new_node2.replace_operand(index, modify_argument(second_operand.shallow_copy(), False))
+    if (U_formula.lower == U_formula.upper and
+        U_formula[1].check_boolean_closure(lambda n: n.operator == 'P') and
+        any(other.lower_bound() == U_formula.lower for j, other in enumerate(formula.operands) if j != index)):
+        new_node2.jump1 = True
 
     return [new_node2, new_node1]
 
@@ -497,7 +506,7 @@ def decompose_R(formula, index):
             if operand.is_derived and operand.identifier == R_formula.identifier:
                 operand.is_derived = False
         if (second_operand.check_boolean_closure(lambda n: n.operator == 'P') and
-            any(op.lower == R_formula.lower for j, op in enumerate(new_node1.operands) if j != index)):
+            any(op.lower_bound() == R_formula.lower for j, op in enumerate(new_node1.operands) if j != index)):
             new_node1.jump1 = True
 
     # Node where U is satisfied (p)

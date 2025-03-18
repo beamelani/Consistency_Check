@@ -74,9 +74,13 @@ class Node:
         return self.current_time
 
     def lower_bound(self):
+        if self.operator == 'O':
+            return self.operands[0].lower
         return self.lower
 
     def upper_bound(self):
+        if self.operator == 'O':
+            return self.operands[0].upper
         return self.upper
 
     def replace_operand(self, index, new_operand, *more_new_operands):
