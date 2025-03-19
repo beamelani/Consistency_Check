@@ -247,7 +247,8 @@ def decompose(tableau_data, local_solver, node, current_time):
 
     if res is not None:
         for child in res:
-            child.current_time = node.current_time
+            if child != 'Rejected': #because decompose_imply_new puù restituire un ramo 'Rejected'
+                child.current_time = node.current_time
         return res
 
     # se arrivo qui vuol dire che non sono entrata in nessun return e quindi non c'era nulla da decomporre
