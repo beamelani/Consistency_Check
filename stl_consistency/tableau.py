@@ -675,7 +675,7 @@ def decompose_imply_new(node, index):
 
     assert index >= 0 and node is not None
     if len(node.operands) > 1:
-        if node.implications is None:  # non so perché a volte sia None, in attesa di trovare il problema uso questa soluzione
+        if node.implications is None or node.implications == 0:  # non so perché a volte sia None, in attesa di trovare il problema uso questa soluzione
             node = count_implications(node)
         new_node2 = node.shallow_copy()
         new_node2.replace_operand(index, lhs, rhs)
@@ -1012,7 +1012,7 @@ def add_children(tableau_data, local_solver, node, depth, last_spawned, max_dept
             print('No more children in this branch')
         if mode in {'sat', 'complete'}:
             return True
-        else: # mode == 'strong_sat':
+        elif mode == 'strong_sat':
             tableau_data.true_implications.update(node.satisfied_implications)
             if len(tableau_data.true_implications) == tableau_data.number_of_implications:
                 return True
