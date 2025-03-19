@@ -254,12 +254,12 @@ def check_dataset(dataset_name, dataset, max_depth, max_quantum, timeout):
 
     # Prima prova: SMT
     start_t = time.perf_counter()
-    res_smt = run_with_timeout(timeout, smt_check_consistency, normalized_formula, 'strong_sat', False)
+    res_smt = run_with_timeout(timeout, smt_check_consistency, normalized_formula, 'sat', False)
     elapsed_smt = time.perf_counter() - start_t
 
     # Seconda prova: Tableau
     start_t = time.perf_counter()
-    res_tableau = run_with_timeout(timeout, make_tableau, Node(*normalized_formula), max_depth, 'strong_sat', False, False, False)
+    res_tableau = run_with_timeout(timeout, make_tableau, Node(*normalized_formula), max_depth, 'sat', False, False, False)
     #res_tableau = make_tableau(Node(*normalized_formula), max_depth, 'sat', True, False, False)
     elapsed_tableau = time.perf_counter() - start_t
 
