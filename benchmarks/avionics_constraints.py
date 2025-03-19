@@ -77,6 +77,8 @@ requirements_riscritti = [
     ['G', '0', T, ['->', ['R_airspeed < R_Vmin'], ['F', '0', '5', ['B_LS_amr']]]],
 ]
 
+requirements_riscritti2 = ['G', '0', T, ['&&', ['||', ['R_function_status == 0'], ['R_function_status == 1'], ['R_function_status == 2']],['->', ['&&', ['R_function_status == 0'], ['R_n_s == 1'],  ['|R_X_c - R_X_b| <= 5'], ['G', '0', '5', ['R_airspeed >= R_Vmin']], ['!', ['B_X_over']], ['B_X_Activation_Request']], ['F', '1', '2', ['R_function_status == 2']]],['->', ['&&', ['R_function_status == 2'], ['||', ['!', ['R_n_s == 1']], ['F', '0', '10', ['B_X_ch']], ['G', '0', '5', ['R_airspeed < R_Vmin']], ['!', ['B_r_actuation']], ['!', ['B_X_Activation_Request']]]], ['F', '1', '2', ['R_function_status == 0']]],['->', ['&&', ['R_function_status == 1'], ['||', ['!', ['R_n_s == 1']], ['F', '0', '5', ['B_X_ch']], ['!', ['B_X_Activation_Request']], ['!', ['B_r_actuation']]]], ['F', '1', '2', ['R_function_status == 0']]],['->', ['&&', ['R_function_status == 0'], ['R_n_s == 1'], ['|R_X_c - R_X_b| > 5'], ['B_X_Activation_Request']], ['F', '1', '2', ['R_function_status == 1']]],['->', ['&&', ['R_function_status == 1'], ['!', ['B_X_over']], ['|R_X_c - R_X_b| <= 5'], ['G', '0', '5', ['R_airspeed >= R_Vmin']]], ['F', '1', '2', ['R_function_status == 2']]],['->', ['R_function_status == 2'], ['||', ['R_function_active_status == 0'], ['R_function_active_status == 1'], ['R_function_active_status == 2']]],['->', ['&&', ['R_function_active_status == 0'], ['!', ['B_X_over']], ['|R_Delta_T_Error_reference| < R_T_Error']], ['F', '1', '2', ['R_function_active_status == 1']]],['->', ['&&', ['R_function_active_status == 1'], ['!', ['B_X_over']], ['|R_T_Error| < 3'], ['|R_Roll_attitude| < 0.8'], ['|R_X_deviation| < 0.5'], ['|R_dalfadt| < 0.002'], ['!', ['B_h_on']], ['!', ['B_f_on']]], ['F', '1', '2', ['R_function_active_status == 2']]],['->', ['&&', ['R_function_active_status == 2'], ['!', ['B_X_over']], ['|R_T_Error| > 5'], ['|R_Roll_attitude| > 2.6'], ['|R_X_deviation| > 1.5'], ['|R_dalfadt| > 0.075'], ['||', ['B_h_on'], ['B_f_on']]], ['F', '1', '2', ['R_function_active_status == 1']]],['->', ['&&', ['R_function_status == 2'], ['!', ['B_X_over']]], ['F', '0', '5', ['R_LME_cr == 1']]],['->', ['R_function_status == 0'], ['F', '0', '5', ['R_LME_cr == 0']]],['->', ['R_function_status == 1'], ['F', '0', '5', ['R_LMA_cr == 1']]],['->', ['R_function_status == 2'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]],['->', ['R_function_status == 0'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]],['->', ['B_X_over'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]],['->', ['&&', ['B_X_over'], ['R_function_status == 2']], ['F', '0', '5', ['R_LME_cr == 1']]],['->', ['R_function_status == 2'], ['F', '0', '1', ['R_Y_pushbutton == 1']]],['->', ['R_function_status == 1'], ['F', '0', '1', ['R_Y_pushbutton == 2']]],['->', ['R_airspeed < R_Vmin'], ['F', '0', '5', ['B_LS_amr']]]]]
+
 parameter_ranges = [
     ['G', '0', T, ['&&', ['R_X_c >=0'], ['R_X_c <= 360']]],
     ['G', '0', T, ['&&', ['R_X_b >=0'], ['R_X_b <= 360']]],
@@ -245,18 +247,19 @@ def make_and(formulas):
 def check_dataset(dataset_name, dataset, max_depth, max_quantum, timeout):
     # Formula
     formula = make_and(dataset)
+    #formula = dataset
     parser = STLParser()
     parsed_formula = parser.parse_relational_exprs(formula)
     normalized_formula = normalize_bounds(parsed_formula, max_quantum)
 
     # Prima prova: SMT
     start_t = time.perf_counter()
-    res_smt = run_with_timeout(timeout, smt_check_consistency, normalized_formula, 'sat', False)
+    res_smt = run_with_timeout(timeout, smt_check_consistency, normalized_formula, 'strong_sat', False)
     elapsed_smt = time.perf_counter() - start_t
 
     # Seconda prova: Tableau
     start_t = time.perf_counter()
-    res_tableau = run_with_timeout(timeout, make_tableau, Node(*normalized_formula), max_depth, 'sat', False, False, False)
+    res_tableau = run_with_timeout(timeout, make_tableau, Node(*normalized_formula), max_depth, 'strong_sat', False, False, False)
     #res_tableau = make_tableau(Node(*normalized_formula), max_depth, 'sat', True, False, False)
     elapsed_tableau = time.perf_counter() - start_t
 
@@ -295,7 +298,8 @@ def pretty_print(results, ms, csvfile):
 # Esecuzione principale
 if __name__ == '__main__':
     datasets = {
-        #"avionics": requirements_riscritti,
+        "avionics": requirements_riscritti,
+        #"requirements_riscritti2": requirements_riscritti2
         #"parameter_ranges": parameter_ranges,
         #"cars": cars,
         #"thermostat": thermostat,
@@ -303,7 +307,7 @@ if __name__ == '__main__':
         #"railroad": railroad,
         #"batteries": batteries,
         #"railroad_merged": railroad_merged,
-        "pcv": pcv
+        #"pcv": pcv
         #"mtl_requirements": mtl_requirements,
         #"req_cps": req_cps
     }
