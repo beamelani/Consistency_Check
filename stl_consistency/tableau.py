@@ -664,6 +664,8 @@ def decompose_imply_classic(node, index):
 
 def decompose_imply_new(node, index):
     '''
+    ATTENZIONE: possibile problema, posso avere implicazioni che si attivano in istanti temporali successivi, quindi
+    il numero di implicazioni calcolato precedentemente risulta errato, pensare di aggiornarlo (ma come???)
     :return: decompone p->q come not(p) OR (p and q). Se ci sono più -> in and, viene rigettato il nodo in cui tutti
     gli antecedenti sono negati. Se c'è un solo -> viene rigettato il nodo con antecedente negato
     NB: non so se qui si può introdurre la semplificazione per creare meno elementi (verifica che satisfied implications venga comnque correttamente aggiornato)
@@ -679,7 +681,9 @@ def decompose_imply_new(node, index):
             node = count_implications(node)
         new_node2 = node.shallow_copy()
         new_node2.replace_operand(index, lhs, rhs)
-        new_node2.satisfied_implications.append(node.operands[index].identifier)
+        #NB: alcuni node.operands[index] non hanno identifier, forse si toglie in decompose_all_G_nodes, per ora faccio in modo che se è None non viene aggiunto
+        if node.operands[index].identifier is not None:
+            new_node2.satisfied_implications.append(node.operands[index].identifier)
         new_node1 = node.shallow_copy()
         if node.implications > 1:  # quando sono a 1 significa che quello che sto negando ora è l'ultimo e quindi li ho negati tutti
             new_node1.replace_operand(index, push_negation(Node('!', lhs)))
@@ -1014,7 +1018,8 @@ def add_children(tableau_data, local_solver, node, depth, last_spawned, max_dept
             return True
         elif mode == 'strong_sat':
             tableau_data.true_implications.update(node.satisfied_implications)
-            if len(tableau_data.true_implications) == tableau_data.number_of_implications:
+            #if len(tableau_data.true_implications) == tableau_data.number_of_implications: #NB tableau_data.number_of_implications non viene mai aggiornato
+            if len(tableau_data.true_implications) == node.implications:
                 return True
             else:
                 return False
