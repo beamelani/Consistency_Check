@@ -211,7 +211,6 @@ def decompose(tableau_data, local_solver, node, current_time):
     # fai qui il check accept/reject, se rigetti non serve andare avanti
     if not local_consistency_check(local_solver, node):
         return ['Rejected']
-
     res, has_decomposed = decompose_and(node)
     if has_decomposed:
         return res
@@ -661,15 +660,8 @@ def decompose_imply_classic(node, index):
     return new_node1, new_node2
 
 
-
+'''
 def decompose_imply_new(node, index):
-    '''
-    ATTENZIONE: possibile problema, posso avere implicazioni che si attivano in istanti temporali successivi, quindi
-    il numero di implicazioni calcolato precedentemente risulta errato, pensare di aggiornarlo (ma come???)
-    :return: decompone p->q come not(p) OR (p and q). Se ci sono più -> in and, viene rigettato il nodo in cui tutti
-    gli antecedenti sono negati. Se c'è un solo -> viene rigettato il nodo con antecedente negato
-    NB: non so se qui si può introdurre la semplificazione per creare meno elementi (verifica che satisfied implications venga comnque correttamente aggiornato)
-    '''
 
     imply_formula = node[index]
     lhs = imply_formula.operands[0]  # antecedente
@@ -698,7 +690,33 @@ def decompose_imply_new(node, index):
     # qui conviene restituire prima il ramo in cui antecedente è vero, perché tanto finché non sono tutti veri almeno
     #una volta non posso interrompere l'esplorazione
     return new_node2, new_node1
+'''
 
+def decompose_imply_new(node, index):
+    '''
+    ATTENZIONE: possibile problema, posso avere implicazioni che si attivano in istanti temporali successivi, quindi
+    il numero di implicazioni calcolato precedentemente risulta errato, pensare di aggiornarlo (ma come???)
+    :return: decompone p->q come not(p) OR (p and q). Se ci sono più -> in and, viene rigettato il nodo in cui tutti
+    gli antecedenti sono negati. Se c'è un solo -> viene rigettato il nodo con antecedente negato
+    NB: non so se qui si può introdurre la semplificazione per creare meno elementi (verifica che satisfied implications venga comnque correttamente aggiornato)
+    '''
+
+    imply_formula = node[index]
+    lhs = imply_formula.operands[0]  # antecedente
+    rhs = imply_formula.operands[1]  # conseguente
+
+    assert index >= 0 and node is not None
+    new_node2 = node.shallow_copy()
+    new_node2.replace_operand(index, lhs, rhs)
+    #NB: alcuni node.operands[index] non hanno identifier, forse si toglie in decompose_all_G_nodes, per ora faccio in modo che se è None non viene aggiunto
+    if node.operands[index].identifier is not None:
+        new_node2.satisfied_implications.append(node.operands[index].identifier)
+    new_node1 = node.shallow_copy()
+    new_node1.replace_operand(index, push_negation(Node('!', lhs)))
+    new_node1 = push_negation(new_node1)
+    # qui conviene restituire prima il ramo in cui antecedente è vero, perché tanto finché non sono tutti veri almeno
+    #una volta non posso interrompere l'esplorazione
+    return new_node2, new_node1
 
 def simplify_F(node):
     '''
@@ -927,23 +945,20 @@ def modify_U_R(node):
     return node
 
 
-def count_implications(formula):
-    counter = 1
-    if formula.operator in {'&&', ','}:
-        # Conta quante implicazioni ('->') ci sono tra gli operandi
-        implication_count = sum(1 for operand in formula.operands if operand.operator == '->')
-        # Aggiungi l'attributo 'implications' al nodo e assegna il conteggio
-        formula.implications = implication_count
-        for operand in formula.operands:
-            if operand.operator == '->':
-                operand.identifier = counter
-                counter += 1
+def count_implications(node, counter=[0]):
+    """
+    Conta tutte le implicazioni ('->') presenti nel nodo e nei suoi sotto-nodi,
+    assegnando a ciascuna un identificatore univoco.
+
+    """
+    if node.operator == '->':
+        node.identifier = counter[0]  # Assegna l'ID univoco all'implicazione
+        counter[0] += 1  # Incrementa il contatore
     else:
-        # Se il nodo non è un '&&', esplora ricorsivamente i suoi operandi
-        for operand in formula.operands:
-            if isinstance(operand, Node):
-                count_implications(operand)
-    return formula
+        for operand in node.operands:  # Ricorsione su tutti gli operandi
+            count_implications(operand, counter)
+
+    return counter[0]
 
 
 def assign_and_or_element(node):
@@ -1017,9 +1032,7 @@ def add_children(tableau_data, local_solver, node, depth, last_spawned, max_dept
         if mode in {'sat', 'complete'}:
             return True
         elif mode == 'strong_sat':
-            tableau_data.true_implications.update(node.satisfied_implications)
-            #if len(tableau_data.true_implications) == tableau_data.number_of_implications: #NB tableau_data.number_of_implications non viene mai aggiornato
-            if len(tableau_data.true_implications) == node.implications:
+            if len(node.satisfied_implications) == tableau_data.number_of_implications:
                 return True
             else:
                 return False
@@ -1144,9 +1157,9 @@ def build_decomposition_tree(tableau_data, root, max_depth):
 
 class TableauData:
 
-    def __init__(self, formula, mode, build_tree, parallel, verbose):
-        self.true_implications = set()
-        self.number_of_implications = formula.implications
+    def __init__(self, formula, number_of_implications, mode, build_tree, parallel, verbose):
+        #self.true_implications = set()
+        self.number_of_implications = number_of_implications
         self.build_tree = build_tree
         self.mode = mode
         self.parallel = parallel
@@ -1179,11 +1192,11 @@ def make_tableau(formula, max_depth, mode, build_tree, parallel, verbose, mltl=F
     assign_and_or_element(formula)
     formula = assign_identifier(formula)
     assign_real_expr_id(formula)
-    formula = count_implications(formula)
+    number_of_implications = count_implications(formula)
     set_initial_time(formula)
     formula = push_negation(formula)
 
-    tableau_data = TableauData(formula, mode, build_tree, parallel, verbose)
+    tableau_data = TableauData(formula, number_of_implications, mode, build_tree, parallel, verbose)
     return build_decomposition_tree(tableau_data, formula, max_depth)
 
 
