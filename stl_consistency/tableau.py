@@ -229,7 +229,8 @@ def decompose(tableau_data, local_solver, node, current_time):
                 if tableau_data.mode == 'complete' or tableau_data.mode == 'sat':
                     res = decompose_imply_classic(node, j)
                 else:
-                    res = decompose_imply_new(node, j)
+                    #res = decompose_imply_new(node, j)
+                    res = decompose_imply_classic(node, j, 'strong_sat', tableau_data.number_of_implications)
                 break
             case 'F':
                 if node.operands[j].lower == current_time:
@@ -246,8 +247,7 @@ def decompose(tableau_data, local_solver, node, current_time):
 
     if res is not None:
         for child in res:
-            if child != 'Rejected': #because decompose_imply_new puù restituire un ramo 'Rejected'
-                child.current_time = node.current_time
+            child.current_time = node.current_time
         return res
 
     # se arrivo qui vuol dire che non sono entrata in nessun return e quindi non c'era nulla da decomporre
@@ -602,7 +602,7 @@ def decompose_or(node, index):
     return res
 
 
-def decompose_imply_classic(node, index):
+def decompose_imply_classic(node, index, mode='sat', number_of_implications=None):
     '''
     :return: decompone p->q come not(p) OR (p and q), senza evitare il caso vacuously true
     '''
@@ -642,12 +642,16 @@ def decompose_imply_classic(node, index):
     if rhs.operator == 'G' and rhs.is_derived:
         new_rhs = merge_derived_g_nodes(rhs, new_node2)
     new_node2.replace_operand(index, *(x for x in [new_lhs, new_rhs] if x is not None))
-
+    if node.operands[index].identifier is not None and mode == 'strong_sat':
+        if imply_formula.identifier not in new_node2.satisfied_implications:
+            skip = False
+        else:
+            skip = True
+        new_node2.satisfied_implications.add(imply_formula.identifier)
     # euristica per ottimizzare, se nella formula ho già antecedente che deve essere vero
     # resituisco prima nodo in cui antecedente è vero, altrimenti il contrario
     def check_match(sub1, sub2):
         return sub1.operator == sub2.operator and ((sub1.operator == 'P' and sub1.operands == sub2.operands) or (sub1.operator == '!' and sub1[0].operands == sub2[0].operands))
-
     if lhs.operator in {'P', '!'}:
         for operand in node.operands:
             if check_match(lhs, operand):
@@ -657,40 +661,14 @@ def decompose_imply_classic(node, index):
             for operand in node.operands:
                 if check_match(element, operand):
                     return new_node2, new_node1
-    return new_node1, new_node2
+    if mode == 'sat' or new_node2.satisfied_implications == number_of_implications:
+        return new_node1, new_node2
+    elif mode == 'strong_sat' and skip: #se quella implicazione l'avevo già prec soddisfatta non mi interessa risoddisfarla
+        return new_node1, new_node2
+    else:
+        return new_node2, new_node1
 
 
-'''
-def decompose_imply_new(node, index):
-
-    imply_formula = node[index]
-    lhs = imply_formula.operands[0]  # antecedente
-    rhs = imply_formula.operands[1]  # conseguente
-
-    assert index >= 0 and node is not None
-    if len(node.operands) > 1:
-        if node.implications is None or node.implications == 0:  # non so perché a volte sia None, in attesa di trovare il problema uso questa soluzione
-            node = count_implications(node)
-        new_node2 = node.shallow_copy()
-        new_node2.replace_operand(index, lhs, rhs)
-        #NB: alcuni node.operands[index] non hanno identifier, forse si toglie in decompose_all_G_nodes, per ora faccio in modo che se è None non viene aggiunto
-        if node.operands[index].identifier is not None:
-            new_node2.satisfied_implications.append(node.operands[index].identifier)
-        new_node1 = node.shallow_copy()
-        if node.implications > 1:  # quando sono a 1 significa che quello che sto negando ora è l'ultimo e quindi li ho negati tutti
-            new_node1.replace_operand(index, push_negation(Node('!', lhs)))
-            new_node1.implications -= 1  # decremento di 1 ogni volta che passo dal ramo che nega l'antecedente per poter sapere quando li ho negati tutti
-            new_node1 = push_negation(new_node1)
-        else:
-            new_node1 = 'Rejected'
-    else:  # se l'imply non è in and con nulla posso direttamente rigettare il ramo negato
-        new_node1 = 'Rejected'
-        new_node2 = Node(',')
-        new_node2.operands = imply_formula.operands
-    # qui conviene restituire prima il ramo in cui antecedente è vero, perché tanto finché non sono tutti veri almeno
-    #una volta non posso interrompere l'esplorazione
-    return new_node2, new_node1
-'''
 
 def decompose_imply_new(node, index):
     '''
@@ -710,13 +688,13 @@ def decompose_imply_new(node, index):
     new_node2.replace_operand(index, lhs, rhs)
     #NB: alcuni node.operands[index] non hanno identifier, forse si toglie in decompose_all_G_nodes, per ora faccio in modo che se è None non viene aggiunto
     if node.operands[index].identifier is not None:
-        new_node2.satisfied_implications.append(node.operands[index].identifier)
+        new_node2.satisfied_implications.add(node.operands[index].identifier)
     new_node1 = node.shallow_copy()
     new_node1.replace_operand(index, push_negation(Node('!', lhs)))
     new_node1 = push_negation(new_node1)
     # qui conviene restituire prima il ramo in cui antecedente è vero, perché tanto finché non sono tutti veri almeno
     #una volta non posso interrompere l'esplorazione
-    return new_node2, new_node1
+    return new_node1, new_node2
 
 def simplify_F(node):
     '''
