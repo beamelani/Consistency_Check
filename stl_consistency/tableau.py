@@ -951,6 +951,8 @@ def count_implications(node, counter=[0]):
     assegnando a ciascuna un identificatore univoco.
 
     """
+    if not isinstance(node, Node):
+        return
     if node.operator == '->':
         node.identifier = counter[0]  # Assegna l'ID univoco all'implicazione
         counter[0] += 1  # Incrementa il contatore
