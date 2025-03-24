@@ -825,7 +825,7 @@ def decompose_jump(node):
         # We build a simplified node without complex nested operators that implies new_node
         simple_node_operands = list(filter(lambda n: not is_complex_temporal_operator(n), new_node.operands))
         
-        if len(simple_node_operands) == len(new_node.operands):
+        if len(simple_node_operands) == len(new_node.operands) or not simple_node_operands:
             return [new_node]
         else:
             simple_node = new_node.shallow_copy()
