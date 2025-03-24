@@ -30,7 +30,7 @@ def run_with_timeout(timeout, f, *args, **kwargs):
 
 # Benchmark: (avionics requirements)
 # 1) stabilire un time horizon (T)
-T = str(10)
+T = str(100)
 requirements = [
     ['G', '0', T, ['||', ['&&', ['B_active'], ['!', ['B_inactive']], ['!', ['B_armed']]], ['&&', ['B_inactive'], ['!', ['B_active']], ['!', ['B_armed']]], ['&&', ['B_armed'], ['!', ['B_inactive']], ['!', ['B_active']]]]],
     ['G', '0', T, ['->', ['&&', ['B_inactive'], ['R_n_s == 1'],  ['R_X_c-R_X_b <= 5'], ['R_X_c-R_X_b>= -5'], ['G', '0', '5', ['R_airspeed>= R_Vmin']], ['!', ['B_X_over']], ['B_X_Activation_Request']], ['F', '0', '2', ['&&', ['!', ['B_inactive']], ['B_active']]]]],
@@ -77,7 +77,7 @@ requirements_riscritti = [
     ['G', '0', T, ['->', ['R_airspeed < R_Vmin'], ['F', '0', '5', ['B_LS_amr']]]],
 ]
 
-requirements_riscritti2 = ['G', '0', T, ['&&', ['||', ['R_function_status == 0'], ['R_function_status == 1'], ['R_function_status == 2']],['->', ['&&', ['R_function_status == 0'], ['R_n_s == 1'],  ['|R_X_c - R_X_b| <= 5'], ['G', '0', '5', ['R_airspeed >= R_Vmin']], ['!', ['B_X_over']], ['B_X_Activation_Request']], ['F', '1', '2', ['R_function_status == 2']]],['->', ['&&', ['R_function_status == 2'], ['||', ['!', ['R_n_s == 1']], ['F', '0', '10', ['B_X_ch']], ['G', '0', '5', ['R_airspeed < R_Vmin']], ['!', ['B_r_actuation']], ['!', ['B_X_Activation_Request']]]], ['F', '1', '2', ['R_function_status == 0']]],['->', ['&&', ['R_function_status == 1'], ['||', ['!', ['R_n_s == 1']], ['F', '0', '5', ['B_X_ch']], ['!', ['B_X_Activation_Request']], ['!', ['B_r_actuation']]]], ['F', '1', '2', ['R_function_status == 0']]],['->', ['&&', ['R_function_status == 0'], ['R_n_s == 1'], ['|R_X_c - R_X_b| > 5'], ['B_X_Activation_Request']], ['F', '1', '2', ['R_function_status == 1']]],['->', ['&&', ['R_function_status == 1'], ['!', ['B_X_over']], ['|R_X_c - R_X_b| <= 5'], ['G', '0', '5', ['R_airspeed >= R_Vmin']]], ['F', '1', '2', ['R_function_status == 2']]],['->', ['R_function_status == 2'], ['||', ['R_function_active_status == 0'], ['R_function_active_status == 1'], ['R_function_active_status == 2']]],['->', ['&&', ['R_function_active_status == 0'], ['!', ['B_X_over']], ['|R_Delta_T_Error_reference| < R_T_Error']], ['F', '1', '2', ['R_function_active_status == 1']]],['->', ['&&', ['R_function_active_status == 1'], ['!', ['B_X_over']], ['|R_T_Error| < 3'], ['|R_Roll_attitude| < 0.8'], ['|R_X_deviation| < 0.5'], ['|R_dalfadt| < 0.002'], ['!', ['B_h_on']], ['!', ['B_f_on']]], ['F', '1', '2', ['R_function_active_status == 2']]],['->', ['&&', ['R_function_active_status == 2'], ['!', ['B_X_over']], ['|R_T_Error| > 5'], ['|R_Roll_attitude| > 2.6'], ['|R_X_deviation| > 1.5'], ['|R_dalfadt| > 0.075'], ['||', ['B_h_on'], ['B_f_on']]], ['F', '1', '2', ['R_function_active_status == 1']]],['->', ['&&', ['R_function_status == 2'], ['!', ['B_X_over']]], ['F', '0', '5', ['R_LME_cr == 1']]],['->', ['R_function_status == 0'], ['F', '0', '5', ['R_LME_cr == 0']]],['->', ['R_function_status == 1'], ['F', '0', '5', ['R_LMA_cr == 1']]],['->', ['R_function_status == 2'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]],['->', ['R_function_status == 0'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]],['->', ['B_X_over'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]],['->', ['&&', ['B_X_over'], ['R_function_status == 2']], ['F', '0', '5', ['R_LME_cr == 1']]],['->', ['R_function_status == 2'], ['F', '0', '1', ['R_Y_pushbutton == 1']]],['->', ['R_function_status == 1'], ['F', '0', '1', ['R_Y_pushbutton == 2']]],['->', ['R_airspeed < R_Vmin'], ['F', '0', '5', ['B_LS_amr']]]]]
+requirements_riscritti2 = [['G', '0', T, ['&&', ['||', ['R_function_status == 0'], ['R_function_status == 1'], ['R_function_status == 2']],['->', ['&&', ['R_function_status == 0'], ['R_n_s == 1'],  ['|R_X_c - R_X_b| <= 5'], ['G', '0', '5', ['R_airspeed >= R_Vmin']], ['!', ['B_X_over']], ['B_X_Activation_Request']], ['F', '1', '2', ['R_function_status == 2']]],['->', ['&&', ['R_function_status == 2'], ['||', ['!', ['R_n_s == 1']], ['F', '0', '10', ['B_X_ch']], ['G', '0', '5', ['R_airspeed < R_Vmin']], ['!', ['B_r_actuation']], ['!', ['B_X_Activation_Request']]]], ['F', '1', '2', ['R_function_status == 0']]],['->', ['&&', ['R_function_status == 1'], ['||', ['!', ['R_n_s == 1']], ['F', '0', '5', ['B_X_ch']], ['!', ['B_X_Activation_Request']], ['!', ['B_r_actuation']]]], ['F', '1', '2', ['R_function_status == 0']]],['->', ['&&', ['R_function_status == 0'], ['R_n_s == 1'], ['|R_X_c - R_X_b| > 5'], ['B_X_Activation_Request']], ['F', '1', '2', ['R_function_status == 1']]],['->', ['&&', ['R_function_status == 1'], ['!', ['B_X_over']], ['|R_X_c - R_X_b| <= 5'], ['G', '0', '5', ['R_airspeed >= R_Vmin']]], ['F', '1', '2', ['R_function_status == 2']]],['->', ['R_function_status == 2'], ['||', ['R_function_active_status == 0'], ['R_function_active_status == 1'], ['R_function_active_status == 2']]],['->', ['&&', ['R_function_active_status == 0'], ['!', ['B_X_over']], ['|R_Delta_T_Error_reference| < R_T_Error']], ['F', '1', '2', ['R_function_active_status == 1']]],['->', ['&&', ['R_function_active_status == 1'], ['!', ['B_X_over']], ['|R_T_Error| < 3'], ['|R_Roll_attitude| < 0.8'], ['|R_X_deviation| < 0.5'], ['|R_dalfadt| < 0.002'], ['!', ['B_h_on']], ['!', ['B_f_on']]], ['F', '1', '2', ['R_function_active_status == 2']]],['->', ['&&', ['R_function_active_status == 2'], ['!', ['B_X_over']], ['|R_T_Error| > 5'], ['|R_Roll_attitude| > 2.6'], ['|R_X_deviation| > 1.5'], ['|R_dalfadt| > 0.075'], ['||', ['B_h_on'], ['B_f_on']]], ['F', '1', '2', ['R_function_active_status == 1']]],['->', ['&&', ['R_function_status == 2'], ['!', ['B_X_over']]], ['F', '0', '5', ['R_LME_cr == 1']]],['->', ['R_function_status == 0'], ['F', '0', '5', ['R_LME_cr == 0']]],['->', ['R_function_status == 1'], ['F', '0', '5', ['R_LMA_cr == 1']]],['->', ['R_function_status == 2'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]],['->', ['R_function_status == 0'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]],['->', ['B_X_over'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]],['->', ['&&', ['B_X_over'], ['R_function_status == 2']], ['F', '0', '5', ['R_LME_cr == 1']]],['->', ['R_function_status == 2'], ['F', '0', '1', ['R_Y_pushbutton == 1']]],['->', ['R_function_status == 1'], ['F', '0', '1', ['R_Y_pushbutton == 2']]],['->', ['R_airspeed < R_Vmin'], ['F', '0', '5', ['B_LS_amr']]]]]]
 
 parameter_ranges = [
     ['G', '0', T, ['&&', ['R_X_c >=0'], ['R_X_c <= 360']]],
@@ -247,7 +247,6 @@ def make_and(formulas):
 def check_dataset(dataset_name, dataset, max_depth, max_quantum, timeout):
     # Formula
     formula = make_and(dataset)
-    #formula = dataset
     parser = STLParser()
     parsed_formula = parser.parse_relational_exprs(formula)
     normalized_formula = normalize_bounds(parsed_formula, max_quantum)
@@ -299,26 +298,26 @@ def pretty_print(results, ms, csvfile):
 if __name__ == '__main__':
     datasets = {
         "avionics": requirements_riscritti,
-        #"requirements_riscritti2": requirements_riscritti2
-        #"parameter_ranges": parameter_ranges,
-        #"cars": cars,
-        #"thermostat": thermostat,
-        #"watertank": watertank,
-        #"railroad": railroad,
-        #"batteries": batteries,
-        #"railroad_merged": railroad_merged,
-        #"pcv": pcv
-        #"mtl_requirements": mtl_requirements,
-        #"req_cps": req_cps
+        "requirements_riscritti2": requirements_riscritti2,
+        "parameter_ranges": parameter_ranges,
+        "cars": cars,
+        "thermostat": thermostat,
+        "watertank": watertank,
+        "railroad": railroad,
+        "batteries": batteries,
+        "railroad_merged": railroad_merged,
+        "pcv": pcv,
+        "mtl_requirements": mtl_requirements,
+        "req_cps": req_cps
     }
     #datasets = [cars, thermostat, watertank, batteries]
     sys.setrecursionlimit(1000000000)
     max_depth = 10000000
-    clock = 1 # Fraction(1,10)
-    timeout = 60 # in seconds
+    sampling_interval = Fraction(1,10)
+    timeout = 120 # in seconds
 
     #results = [check_dataset(ds, max_depth) for ds in datasets]
-    results = [check_dataset(name, data, max_depth, clock, timeout) for name, data in datasets.items()]
+    results = [check_dataset(name, data, max_depth, sampling_interval, timeout) for name, data in datasets.items()]
 
     print("Benchmark results:")
     pretty_print(results, ms=False, csvfile="results.csv")
