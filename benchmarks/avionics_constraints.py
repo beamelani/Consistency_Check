@@ -313,7 +313,7 @@ if __name__ == '__main__':
     #datasets = [cars, thermostat, watertank, batteries]
     sys.setrecursionlimit(1000000000)
     max_depth = 10000000
-    sampling_interval = Fraction(1,10)
+    sampling_interval = 1 # Fraction(1,10)
     timeout = 120 # in seconds
 
     #results = [check_dataset(ds, max_depth) for ds in datasets]
