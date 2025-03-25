@@ -233,16 +233,52 @@ class Node:
         return isinstance(other, Node) and (self.operator, self.lower, self.upper, self.operands) == (other.operator, other.lower, other.upper, other.operands)
 
     def __lt__(self, other):
-        return (self.operator, self.lower, self.upper, self.operands) < (other.operator, other.lower, other.upper, other.operands)
+        # TODO do something less ugly
+        if self.operator == 'P' and len(self.operands) > 1:
+            self_operands = [str(self.real_expr_id)]
+        else:
+            self_operands = self.operands
+        if other.operator == 'P' and len(other.operands) > 1:
+            other_operands = [str(other.real_expr_id)]
+        else:
+            other_operands = other.operands
+        return (self.operator, self.lower, self.upper, self_operands) < (other.operator, other.lower, other.upper, other_operands)
     
     def __le__(self, other):
-        return (self.operator, self.lower, self.upper, self.operands) <= (other.operator, other.lower, other.upper, other.operands)
+        # TODO do something less ugly
+        if self.operator == 'P' and len(self.operands) > 1:
+            self_operands = [str(self.real_expr_id)]
+        else:
+            self_operands = self.operands
+        if other.operator == 'P' and len(other.operands) > 1:
+            other_operands = [str(other.real_expr_id)]
+        else:
+            other_operands = other.operands
+        return (self.operator, self.lower, self.upper, self_operands) <= (other.operator, other.lower, other.upper, other_operands)
 
     def __gt__(self, other):
-        return (self.operator, self.lower, self.upper, self.operands) > (other.operator, other.lower, other.upper, other.operands)
+        # TODO do something less ugly
+        if self.operator == 'P' and len(self.operands) > 1:
+            self_operands = [str(self.real_expr_id)]
+        else:
+            self_operands = self.operands
+        if other.operator == 'P' and len(other.operands) > 1:
+            other_operands = [str(other.real_expr_id)]
+        else:
+            other_operands = other.operands
+        return (self.operator, self.lower, self.upper, self_operands) > (other.operator, other.lower, other.upper, other_operands)
     
     def __ge__(self, other):
-        return (self.operator, self.lower, self.upper, self.operands) >= (other.operator, other.lower, other.upper, other.operands)
+        # TODO do something less ugly
+        if self.operator == 'P' and len(self.operands) > 1:
+            self_operands = [str(self.real_expr_id)]
+        else:
+            self_operands = self.operands
+        if other.operator == 'P' and len(other.operands) > 1:
+            other_operands = [str(other.real_expr_id)]
+        else:
+            other_operands = other.operands
+        return (self.operator, self.lower, self.upper, self_operands) >= (other.operator, other.lower, other.upper, other_operands)
 
     def get_imply_sort_key(self, time=None):
         if time is None:
