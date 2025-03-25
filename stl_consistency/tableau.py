@@ -777,7 +777,7 @@ def decompose_jump(node):
             jump = 1
             node.jump1 = False
         else:
-            jump = [] 
+            must_jump_1 = False
             for and_operand in node.operands:
                 # Controllo prima gli operatori nested problematici perché il salto dipende da loro:
                 # verifico se ho raggiunto la threshold per cui posso saltare, se l'ho raggiunta cacolo il salto,
@@ -794,14 +794,13 @@ def decompose_jump(node):
                     elif o_operand.operator == 'R':
                         max_upper = o_operand.operands[1].get_max_upper()
 
-                    if max_upper != -1 and o_operand.lower >= o_operand.initial_time + max_upper:
-                        # se operatore interno è esaurito
-                        indice = bisect.bisect_right(time_instants, o_operand.lower) # trovo il primo numero maggiore dell'istante corrente di tempo
-                        jump.append(time_instants[indice] - o_operand.lower) # il jump che devo fare è l'istante in cui devo arrivare - quello corrente
-                    else:  # se sono qui non posso saltare, devo andare avanti di 1 in 1
-                        jump.append(1)
+                    must_jump_1 = max_upper == -1 or o_operand.lower < o_operand.initial_time + max_upper
 
-            jump = min(jump)
+            if must_jump_1:
+                jump = 1
+            else:
+                indice = bisect.bisect_right(time_instants, node.current_time) # trovo il primo numero maggiore dell'istante corrente di tempo
+                jump = time_instants[indice] - node.current_time # il jump che devo fare è l'istante in cui devo arrivare - quello corrente
         # Now we build the new node after the jump
         new_node_operands = []
         for and_operand in node.operands:
