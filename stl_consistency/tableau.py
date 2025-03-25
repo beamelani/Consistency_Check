@@ -28,6 +28,7 @@ import concurrent.futures as fs
 from stl_consistency.node import Node
 from stl_consistency.local_solver import LocalSolver
 
+trace_stack = []
 
 def push_negation(node):
     if node.operator == '!':
@@ -208,6 +209,7 @@ def decompose(tableau_data, local_solver, node, current_time):
     :param current_time: istante di tempo attuale, per capire quali operatori sono attivi e quali no
     :return: ritorna la lista decomposta (i.e. il successivo nodo del tree)
     """
+    global trace_stack
     # fai qui il check accept/reject, se rigetti non serve andare avanti
     if not local_consistency_check(local_solver, node):
         return ['Rejected']
@@ -732,6 +734,8 @@ def decompose_jump(node):
     NB: NON CONTARE I BOUND DEGLI OPERATORI DERIVED DAI NESTED
     '''
     assert node.operator == ','
+    global trace_stack
+    trace_stack.append([])
     flag = flagging(node)
     time_instants = extract_time_instants(node, flag)
     if not flag:  # non ci sono operatori probelmatici attivi
@@ -753,7 +757,10 @@ def decompose_jump(node):
                 sub_formula = and_operand.operands[0].shallow_copy()
                 sub_formula.lower = new_time
                 new_operands.append(sub_formula)
-        
+            elif and_operand.operator in {'P', '!'}:
+                trace_stack[-1].append(str(and_operand))
+        repetitions = new_time - node.current_time - 1 #-1 perché una volta l'ho già aggiunta prima
+        trace_stack.extend([trace_stack[-1]] * repetitions)
         if new_operands:
             new_node = node.shallow_copy()
             new_node.jump1 = False
@@ -800,6 +807,8 @@ def decompose_jump(node):
         for and_operand in node.operands:
             if and_operand.operator in {'F', 'G', 'U', 'R'} and (jump == 1 or not and_operand.is_derived):
                 new_node_operands.append(and_operand)
+            elif and_operand.operator in {'P', '!'}:
+                trace_stack[-1].append(str(and_operand))
             elif and_operand.operator == 'O' and and_operand.operands[0].lower < and_operand.operands[0].upper:
                 if jump == 1:
                     sub_formula = and_operand.operands[0].shallow_copy() # argomento di 'O'
@@ -815,7 +824,7 @@ def decompose_jump(node):
                         sub_formula = and_operand.operands[0].shallow_copy()
                         sub_formula.lower = sub_formula.lower + jump
                         new_node_operands.append(sub_formula)
-
+        trace_stack.extend([trace_stack[-1]] * (jump - 1)) #aggiungo alla traccia gli atomi dell'ultimo nodo tot volte a seconda di quanto salto
         new_node = node.shallow_copy()
         new_node.operands = new_node_operands
         new_node.current_time = node.current_time + jump
@@ -1009,6 +1018,9 @@ def add_children(tableau_data, local_solver, node, depth, last_spawned, max_dept
         local_solver.pop()
         if tableau_data.verbose:
             print('No more children in this branch')
+        for element in node.operands: #altrimenti l'ultimo elemento non viene aggiunto perché non si passa dal jump (è sempre vero??)
+            if element.operator in {'P', '!'}:
+                trace_stack[-1].append(str(element))
         if mode in {'sat', 'complete'}:
             return True
         elif mode == 'strong_sat':
@@ -1114,6 +1126,7 @@ def build_decomposition_tree(tableau_data, root, max_depth):
             False if the tableau has only rejected branches rooted at node,
             None if we reached max_dept without finding an accepting branch
     """
+    global trace_stack
     root.current_time = 0
     root.jump1 = root.check_boolean_closure(lambda n: n.operator == 'P')
 
@@ -1128,6 +1141,7 @@ def build_decomposition_tree(tableau_data, root, max_depth):
 
     if res and tableau_data.mode in {'sat', 'strong_sat'} and tableau_data.verbose:
         print("The requirement set is consistent")
+        print(f"A trace satisfying the requirements is: " + str([item for sublist in trace_stack for item in sublist]))
     elif not res and tableau_data.mode in {'sat', 'strong_sat'}:
         print("The requirement set is not consistent")
     if tableau_data.build_tree:
@@ -1168,7 +1182,7 @@ def make_tableau(formula, max_depth, mode, build_tree, parallel, verbose, mltl=F
 
     if not mltl:
         formula = modify_U_R(formula)
-    formula = decompose_and(formula)[0][0] # perché funzione sopra può aggiungere && di troppo
+        formula = decompose_and(formula)[0][0] # perché funzione sopra può aggiungere && di troppo
     assign_and_or_element(formula)
     formula = assign_identifier(formula)
     assign_real_expr_id(formula)
@@ -1178,6 +1192,7 @@ def make_tableau(formula, max_depth, mode, build_tree, parallel, verbose, mltl=F
 
     tableau_data = TableauData(formula, number_of_implications, mode, build_tree, parallel, verbose)
     return build_decomposition_tree(tableau_data, formula, max_depth)
+
 
 
 '''
