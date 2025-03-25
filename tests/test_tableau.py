@@ -81,5 +81,8 @@ class TestTableau(unittest.TestCase):
     def test_jump1_U(self):
         self.make_test("b U[0,10] !a && G[0,9] a && F[10,20] a && G[15,20] !a", 200, True)
 
+    def test_G_is_derived(self):
+        self.make_test("G[0,6]  (! (a0 U[2,10] (F[0,6] (! a0))))", 500, True, mltl=True)
+
 if __name__ == '__main__':
     unittest.main()

@@ -334,6 +334,13 @@ def decompose_all_G_nodes(outer_node, current_time):
                 if (operand[0].check_boolean_closure(lambda n: n.operator == 'P') and
                     any(other.lower_bound() == operand.lower for j, other in enumerate(outer_node.operands) if (j != i and other is not None))):
                     outer_node.jump1 = True
+                # Set is_derived to false
+                for j, other in enumerate(outer_node.operands):
+                    if j != i and other is not None:
+                        if other.operator in {'G', 'U', 'R', 'F'} and other.is_derived and other.identifier == operand.identifier:
+                            other.is_derived = False
+                        elif other.operator == 'O' and other.operands[0].operator in {'U', 'R', 'F'} and other.operands[0].is_derived and other.operands[0].identifier == operand.identifier:
+                            other.operands[0].is_derived = False
                 # Elimino l'elemento se a == b
                 outer_node.operands[i] = None
     outer_node.operands = [x for x in outer_node.operands if x is not None]
