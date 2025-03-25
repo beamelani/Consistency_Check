@@ -115,31 +115,31 @@ def extract_time_instants(formula, flag):
     return time_instants
 
 
-def assign_identifier(formula):
+def assign_identifier(node):
     '''
-    :param formula:
-    :return: la formula assegna un identificatore agli operatori nested, in modo che nella decomposizione gli operatori
+    :param node:
+    :return: la funzione assegna un identificatore agli operatori nested, in modo che nella decomposizione gli operatori
     derivati dalla decomposizione di un nested siano riconducibili all'operatore originario
     '''
-    counter = 0
-    if formula.operator in {'&&', '||', ',', '->'}:
-        for operand in formula.operands:
-            if operand.operator in {'G', 'F'} and operand.operands[0].operator not in {'P', '!'}:
-                operand.identifier = counter
-                counter += 1
-            elif operand.operator in {'U', 'R'} and (
-                    operand.operands[0].operator not in {'P', '!'} or operand.operands[1].operator not in {'P', '!'}):
-                operand.identifier = counter
-                counter += 1
-    elif formula.operator in {'G', 'F', 'U', 'R'}:
-        if formula.operator in {'G', 'F'} and formula.operands[0].operator not in {'P', '!'}:
-            formula.identifier = counter
-            counter += 1
-        elif formula.operator in {'U', 'R'} and (
-                formula.operands[0].operator not in {'P', '!'} or formula.operands[1].operator not in {'P', '!'}):
-            formula.identifier = counter
-            counter += 1
-    return formula
+    id_counter = 0
+
+    def do_assign(node):
+        nonlocal id_counter
+        match node.operator:
+            case '&&' | '||' | ',' | '->':
+                for operand in node.operands:
+                    do_assign(operand)
+            case 'G' | 'F':
+                if node.operands[0].operator not in {'P', '!'}:
+                    node.identifier = id_counter
+                    id_counter += 1
+            case 'U' | 'R':
+                if node.operands[0].operator not in {'P', '!'} or node.operands[1].operator not in {'P', '!'}:
+                    node.identifier = id_counter
+                    id_counter += 1
+
+    do_assign(node)
+
 
 # TODO Can we merge this with assign_identifier?
 def assign_real_expr_id(node):
@@ -1170,11 +1170,11 @@ def make_tableau(formula, max_depth, mode, build_tree, parallel, verbose, mltl=F
         formula = modify_U_R(formula)
     formula = decompose_and(formula)[0][0] # perché funzione sopra può aggiungere && di troppo
     assign_and_or_element(formula)
-    formula = assign_identifier(formula)
     assign_real_expr_id(formula)
     number_of_implications = count_implications(formula)
     set_initial_time(formula)
     formula = push_negation(formula)
+    assign_identifier(formula)
 
     tableau_data = TableauData(formula, number_of_implications, mode, build_tree, parallel, verbose)
     return build_decomposition_tree(tableau_data, formula, max_depth)
