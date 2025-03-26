@@ -453,7 +453,10 @@ def decompose_U(formula, index):
         U_formula[1].check_boolean_closure(lambda n: n.operator == 'P') and
         any(other.lower_bound() == U_formula.lower for j, other in enumerate(formula.operands) if j != index)):
         new_node2.jump1 = True
-
+    if U_formula.lower == U_formula.upper:
+        for operand in new_node1.operands:  # quando U va via tolgo is_derived dagli operatori
+            if operand.is_derived and operand.identifier == U_formula.identifier:
+                operand.is_derived = False
     return [new_node2, new_node1]
 
 
