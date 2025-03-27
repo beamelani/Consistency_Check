@@ -30,7 +30,7 @@ def run_with_timeout(timeout, f, *args, **kwargs):
 
 # Benchmark: (avionics requirements)
 # 1) stabilire un time horizon (T)
-T = str(100)
+T = str(1000)
 requirements = [
     ['G', '0', T, ['||', ['&&', ['B_active'], ['!', ['B_inactive']], ['!', ['B_armed']]], ['&&', ['B_inactive'], ['!', ['B_active']], ['!', ['B_armed']]], ['&&', ['B_armed'], ['!', ['B_inactive']], ['!', ['B_active']]]]],
     ['G', '0', T, ['->', ['&&', ['B_inactive'], ['R_n_s == 1'],  ['R_X_c-R_X_b <= 5'], ['R_X_c-R_X_b>= -5'], ['G', '0', '5', ['R_airspeed>= R_Vmin']], ['!', ['B_X_over']], ['B_X_Activation_Request']], ['F', '0', '2', ['&&', ['!', ['B_inactive']], ['B_active']]]]],
@@ -300,6 +300,7 @@ if __name__ == '__main__':
         "avionics": requirements_riscritti,
         "requirements_riscritti2": requirements_riscritti2,
         "parameter_ranges": parameter_ranges,
+        "avionics_parameter_ranges": requirements_riscritti2 + parameter_ranges,
         "cars": cars,
         "thermostat": thermostat,
         "watertank": watertank,
