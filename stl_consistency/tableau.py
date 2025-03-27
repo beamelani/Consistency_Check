@@ -652,12 +652,14 @@ def decompose_imply_classic(node, index, mode='sat', number_of_implications=None
     if rhs.operator == 'G' and rhs.is_derived:
         new_rhs = merge_derived_g_nodes(rhs, new_node2)
     new_node2.replace_operand(index, *(x for x in [new_lhs, new_rhs] if x is not None))
-    if node.operands[index].identifier is not None and mode == 'strong_sat':
-        if imply_formula.identifier not in new_node2.satisfied_implications:
-            skip = False
-        else:
-            skip = True
+
+    if imply_formula.identifier is not None and mode == 'strong_sat':
+        skip = imply_formula.identifier in new_node2.satisfied_implications
         new_node2.satisfied_implications.add(imply_formula.identifier)
+    else:
+        # TODO this is needed because sometimes imply_formula.identifier is None (req_cps): find out why and fix it
+        skip = True
+
     # euristica per ottimizzare, se nella formula ho già antecedente che deve essere vero
     # resituisco prima nodo in cui antecedente è vero, altrimenti il contrario
     def check_match(sub1, sub2):
@@ -671,9 +673,9 @@ def decompose_imply_classic(node, index, mode='sat', number_of_implications=None
             for operand in node.operands:
                 if check_match(element, operand):
                     return new_node2, new_node1
-    if mode == 'sat' or new_node2.satisfied_implications == number_of_implications:
-        return new_node1, new_node2
-    elif mode == 'strong_sat' and skip: #se quella implicazione l'avevo già prec soddisfatta non mi interessa risoddisfarla
+
+    if mode == 'sat' or new_node2.satisfied_implications == number_of_implications or (mode == 'strong_sat' and skip):
+        # in strong_sat, se quella implicazione l'avevo già prec soddisfatta non mi interessa risoddisfarla
         return new_node1, new_node2
     else:
         return new_node2, new_node1
@@ -1021,10 +1023,7 @@ def add_children(tableau_data, local_solver, node, depth, last_spawned, max_dept
         if mode in {'sat', 'complete'}:
             return True
         elif mode == 'strong_sat':
-            if len(node.satisfied_implications) == tableau_data.number_of_implications:
-                return True
-            else:
-                return False
+            return len(node.satisfied_implications) == tableau_data.number_of_implications
     if tableau_data.verbose:
         for child in children:
             print(child)
