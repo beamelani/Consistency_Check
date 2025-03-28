@@ -316,9 +316,9 @@ class Node:
             return False
         match self.operator:
             case 'F':
-                return self.operands[0] == other.operands[0] and other.lower - time_other <= self.lower - time_self and other.upper - time_other >= self.upper - time_self
+                return other.lower - time_other <= self.lower - time_self and other.upper - time_other >= self.upper - time_self and self.operands[0] == other.operands[0]
             case 'G':
-                return self.operands[0] == other.operands[0] and self.lower - time_self <= other.lower - time_other and self.upper - time_self >= other.upper - time_other
+                return self.lower - time_self <= other.lower - time_other and self.upper - time_self >= other.upper - time_other and self.operands[0] == other.operands[0]
             case 'P':
                 return self.operands[0] == other.operands[0]
             case '!':
