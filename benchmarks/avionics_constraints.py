@@ -244,7 +244,7 @@ def make_and(formulas):
 
 
 # Funzione per eseguire entrambi i test su un dataset
-def check_dataset(dataset_name, dataset, max_depth, mode, max_quantum, timeout):
+def check_dataset(dataset_name, dataset, max_depth, mode, max_quantum, timeout, iters):
     # Formula
     formula = make_and(dataset)
     parser = STLParser()
@@ -253,15 +253,25 @@ def check_dataset(dataset_name, dataset, max_depth, mode, max_quantum, timeout):
 
     # Prima prova: SMT
     start_t = time.perf_counter()
-    res_smt = run_with_timeout(timeout, smt_check_consistency, normalized_formula, mode, False)
-    elapsed_smt = time.perf_counter() - start_t
+    for _ in range(iters):
+        res_smt = run_with_timeout(timeout, smt_check_consistency, normalized_formula, mode, False)
+        if res_smt == 'timeout':
+            elapsed_smt = timeout
+            break
+    else:
+        elapsed_smt = (time.perf_counter() - start_t) / iters
 
     # Seconda prova: Tableau
     start_t = time.perf_counter()
-    res_tableau = run_with_timeout(timeout, make_tableau, Node(*normalized_formula), max_depth, mode, False, False, False)
-    # res_tableau = make_tableau(Node(*normalized_formula), max_depth, mode, False, False, False)
-    elapsed_tableau = time.perf_counter() - start_t
-
+    for _ in range(iters):
+        res_tableau = run_with_timeout(timeout, make_tableau, Node(*normalized_formula), max_depth, mode, False, False, False)
+        # res_tableau = make_tableau(Node(*normalized_formula), max_depth, mode, False, False, False)
+        if res_tableau == 'timeout':
+            elapsed_tableau = timeout
+            break
+    else:
+        elapsed_tableau = (time.perf_counter() - start_t) / iters
+    
     # print(len(res_tableau[0]))
     # nx.drawing.nx_pydot.write_dot(res_tableau[0], './rr1_2.dot')
 
@@ -314,9 +324,10 @@ if __name__ == '__main__':
     mode = 'sat' # 'strong_sat'
     sampling_interval = 1 # Fraction(1,10)
     timeout = 120 # in seconds
+    iterations = 1
 
     #results = [check_dataset(ds, max_depth) for ds in datasets]
-    results = [check_dataset(name, data, max_depth, mode, sampling_interval, timeout) for name, data in datasets.items()]
+    results = [check_dataset(name, data, max_depth, mode, sampling_interval, timeout, iterations) for name, data in datasets.items()]
 
     print("Benchmark results:")
     pretty_print(results, ms=False, csvfile="results.csv")
