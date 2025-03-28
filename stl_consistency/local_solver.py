@@ -35,6 +35,12 @@ class LocalSolver:
         # Cache for result of self.solver.check(). To be invalidated after every self.solver.assert_exprs
         self.check_result = True
 
+    def get_empty_solver(self):
+        new_solver = LocalSolver()
+        new_solver.z3_variables = self.z3_variables
+        new_solver.z3_ast_cache = self.z3_ast_cache
+        return new_solver
+
     def add_boolean_constraint(self, negated, prop):
         entry = (negated, prop)
         if entry not in self.current_assertions:

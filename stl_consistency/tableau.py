@@ -1124,7 +1124,7 @@ def add_children(tableau_data, local_solver, node, depth, last_spawned, max_dept
         max_depth_reached = False
         for child in child_queue:
             # If the child comes from a temporal jump, we need a new, empty solver
-            child_solver = local_solver if child.current_time == current_time else LocalSolver()
+            child_solver = local_solver if child.current_time == current_time else local_solver.get_empty_solver()
             child_res = add_children(tableau_data, child_solver, child, depth + 1, last_spawned, max_depth, current_time)
             if child_res:
                 if not child.siblings_imply:
