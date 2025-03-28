@@ -78,6 +78,44 @@ def push_negation(node):
         new_node.operands = [push_negation(op) for op in node.operands]
         return new_node
 
+def shift_bounds(node):
+    def shift_backward(f, shift_amount):
+        match f.operator:
+            case '&&' | '||' | ',' | '->' | '!':
+                for operand in f:
+                    shift_backward(operand, shift_amount)
+            case 'G' | 'F' | 'U' | 'R':
+                f.lower -= shift_amount
+                f.upper -= shift_amount
+            case _:
+                raise RuntimeError('Trying to shift bounds of proposition')
+
+    match node.operator:
+        case '&&' | '||' | ',' | '->' | '!':
+            for operand in node:
+                shift_bounds(operand)
+        case 'G' | 'F':
+            shift_bounds(node[0])
+            shift_amount = node[0].get_min_lower(False)
+            # If get_min_lower is -1, we can't shift because there are props at the first level
+            if shift_amount > 0:
+                shift_backward(node[0], shift_amount)
+                node.lower += shift_amount
+                node.upper += shift_amount
+        case 'U' | 'R':
+            shift_bounds(node[0])
+            shift_bounds(node[1])
+            shift_amount0 = node[0].get_min_lower(False)
+            shift_amount1 = node[1].get_min_lower(False)
+            shift_amount = min(shift_amount0, shift_amount1)
+            # If get_min_lower is -1, we can't shift because there are props at the first level
+            if shift_amount > 0:
+                shift_backward(node[0], shift_amount)
+                shift_backward(node[1], shift_amount)
+                node.lower += shift_amount
+                node.upper += shift_amount
+
+
 def extract_time_instants(formula, flag):
     """
     :return: funzione che restituisce gli estremi di tutti gli intervalli della formula in un vettore ordinato
@@ -1150,7 +1188,6 @@ def build_decomposition_tree(tableau_data, root, max_depth):
 class TableauData:
 
     def __init__(self, formula, number_of_implications, mode, build_tree, parallel, verbose):
-        #self.true_implications = set()
         self.number_of_implications = number_of_implications
         self.build_tree = build_tree
         self.mode = mode
@@ -1180,12 +1217,14 @@ def make_tableau(formula, max_depth, mode, build_tree, parallel, verbose, mltl=F
 
     if not mltl:
         formula = modify_U_R(formula)
-    formula = decompose_and(formula)[0][0] # perché funzione sopra può aggiungere && di troppo
+        formula = decompose_and(formula)[0][0] # perché funzione sopra può aggiungere && di troppo
+    
+    formula = push_negation(formula)
+    shift_bounds(formula)
     assign_and_or_element(formula)
     assign_real_expr_id(formula)
     number_of_implications = count_implications(formula)
     set_initial_time(formula)
-    formula = push_negation(formula)
     assign_identifier(formula)
 
     tableau_data = TableauData(formula, number_of_implications, mode, build_tree, parallel, verbose)

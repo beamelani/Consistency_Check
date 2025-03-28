@@ -113,7 +113,7 @@ class Node:
             new.real_expr_id = self.real_expr_id
         return new
 
-    def __list__(self):
+    def to_list(self):
         '''
         Convert node to list representation
         '''
@@ -155,6 +155,18 @@ class Node:
                 raise ValueError(f'Operator {self.operator} not handled')
         self.current_time = min_time
         return min_time
+
+    def get_min_lower(self, ignore_prop=True):
+        '''
+        :return: the minimum lower bound from temporal operators in the first-level
+                 boolean closure of self, and -1 if self is purely propositional
+        '''
+        match self.operator:
+            case '&&' | '||' | ',' | '->' | '!':
+                return min(filter(lambda x: not ignore_prop or x >= 0, (op.get_min_lower(ignore_prop) for op in self.operands)))
+            case _:
+                # Works because in all non-temporal operators self.lower == -1
+                return self.lower
 
     def get_max_upper(self):
         '''
