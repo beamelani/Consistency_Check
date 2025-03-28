@@ -232,18 +232,22 @@ def decompose(tableau_data, local_solver, node, current_time):
                     #res = decompose_imply_new(node, j)
                     res = decompose_imply_classic(node, j, 'strong_sat', tableau_data.number_of_implications)
                 break
-            case 'F':
-                if node.operands[j].lower == current_time:
-                    res = decompose_F(node, j)
-                    break
-            case 'U':
-                if node.operands[j].lower == current_time:
-                    res = decompose_U(node, j)
-                    break
-            case 'R':
-                if node.operands[j].lower == current_time:
-                    res = decompose_R(node, j)
-                    break
+
+    if res is None:
+        for j in range(len(node.operands)):
+            match node.operands[j].operator:
+                case 'F':
+                    if node.operands[j].lower == current_time:
+                        res = decompose_F(node, j)
+                        break
+                case 'U':
+                    if node.operands[j].lower == current_time:
+                        res = decompose_U(node, j)
+                        break
+                case 'R':
+                    if node.operands[j].lower == current_time:
+                        res = decompose_R(node, j)
+                        break
 
     if res is not None:
         for child in res:
