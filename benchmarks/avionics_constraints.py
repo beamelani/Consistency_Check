@@ -221,13 +221,13 @@ batteries = [
 # Test stuff (do not remove pls!)
 
 # railroad = [
-#     ['G', '0', '50', ['F', '5', '20', ['B_a']]],
-#     ['G', '5', '60', ['->', ['B_a'], ['G', '20', '40', ['!', ['B_a']]]]]
+#     ['G', '3', '50', ['F', '5', '20', ['B_a']]],
+#     ['G', '10', '60', ['->', ['B_a'], ['G', '20', '40', ['!', ['B_a']]]]]
 # ]
 
 # railroad = [
-#     ['G', '0', '5', ['F', '1', '2', ['B_a']]],
-#     ['G', '1', '6', ['->', ['B_a'], ['G', '2', '4', ['!', ['B_a']]]]]
+#     ['G', '0', '10', ['F', '0', '5', ['B_a']]],
+#     ['G', '0', '6', ['->', ['B_a'], ['G', '3', '8', ['!', ['B_a']]]]]
 # ]
 
 railroad_merged = [
@@ -244,7 +244,7 @@ def make_and(formulas):
 
 
 # Funzione per eseguire entrambi i test su un dataset
-def check_dataset(dataset_name, dataset, max_depth, max_quantum, timeout):
+def check_dataset(dataset_name, dataset, max_depth, mode, max_quantum, timeout):
     # Formula
     formula = make_and(dataset)
     parser = STLParser()
@@ -253,16 +253,17 @@ def check_dataset(dataset_name, dataset, max_depth, max_quantum, timeout):
 
     # Prima prova: SMT
     start_t = time.perf_counter()
-    res_smt = run_with_timeout(timeout, smt_check_consistency, normalized_formula, 'sat', False)
+    res_smt = run_with_timeout(timeout, smt_check_consistency, normalized_formula, mode, False)
     elapsed_smt = time.perf_counter() - start_t
 
     # Seconda prova: Tableau
     start_t = time.perf_counter()
-    res_tableau = run_with_timeout(timeout, make_tableau, Node(*normalized_formula), max_depth, 'sat', False, False, False)
-    #res_tableau = make_tableau(Node(*normalized_formula), max_depth, 'sat', True, False, False)
+    res_tableau = run_with_timeout(timeout, make_tableau, Node(*normalized_formula), max_depth, mode, False, False, False)
+    # res_tableau = make_tableau(Node(*normalized_formula), max_depth, mode, False, False, False)
     elapsed_tableau = time.perf_counter() - start_t
 
-    #nx.drawing.nx_pydot.write_dot(res_tableau[0], './bug.dot')
+    # print(len(res_tableau[0]))
+    # nx.drawing.nx_pydot.write_dot(res_tableau[0], './rr1_2.dot')
 
     # Dizionario con i risultati
     return {
@@ -297,28 +298,25 @@ def pretty_print(results, ms, csvfile):
 # Esecuzione principale
 if __name__ == '__main__':
     datasets = {
-        "avionics": requirements_riscritti,
-        "requirements_riscritti2": requirements_riscritti2,
-        "parameter_ranges": parameter_ranges,
-        "avionics_parameter_ranges": requirements_riscritti2 + parameter_ranges,
         "cars": cars,
         "thermostat": thermostat,
         "watertank": watertank,
         "railroad": railroad,
         "batteries": batteries,
-        "railroad_merged": railroad_merged,
         "pcv": pcv,
         "mtl_requirements": mtl_requirements,
-        "req_cps": req_cps
+        "req_cps": req_cps,
+        "avionics": requirements_riscritti2 + parameter_ranges,
     }
     #datasets = [cars, thermostat, watertank, batteries]
     sys.setrecursionlimit(1000000000)
     max_depth = 10000000
+    mode = 'sat' # 'strong_sat'
     sampling_interval = 1 # Fraction(1,10)
     timeout = 120 # in seconds
 
     #results = [check_dataset(ds, max_depth) for ds in datasets]
-    results = [check_dataset(name, data, max_depth, sampling_interval, timeout) for name, data in datasets.items()]
+    results = [check_dataset(name, data, max_depth, mode, sampling_interval, timeout) for name, data in datasets.items()]
 
     print("Benchmark results:")
     pretty_print(results, ms=False, csvfile="results.csv")
