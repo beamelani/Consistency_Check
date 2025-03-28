@@ -32,65 +32,65 @@ def run_with_timeout(timeout, f, *args, **kwargs):
 # 1) stabilire un time horizon (T)
 T = str(1000)
 requirements = [
-    ['G', '0', T, ['||', ['&&', ['B_active'], ['!', ['B_inactive']], ['!', ['B_armed']]], ['&&', ['B_inactive'], ['!', ['B_active']], ['!', ['B_armed']]], ['&&', ['B_armed'], ['!', ['B_inactive']], ['!', ['B_active']]]]],
-    ['G', '0', T, ['->', ['&&', ['B_inactive'], ['R_n_s == 1'],  ['R_X_c-R_X_b <= 5'], ['R_X_c-R_X_b>= -5'], ['G', '0', '5', ['R_airspeed>= R_Vmin']], ['!', ['B_X_over']], ['B_X_Activation_Request']], ['F', '0', '2', ['&&', ['!', ['B_inactive']], ['B_active']]]]],
-    ['G', '0', T, ['->', ['&&', ['B_active'], ['||', ['!', ['R_n_s == 1']], ['F', '0', '10', ['B_X_ch']], ['G', '0', '5', ['R_airspeed < R_Vmin']],  ['!', ['B_r_actuation']], ['!', ['B_X_Activation_Request']]]], ['F', '0', '2', ['&&', ['!', ['B_active']], ['B_inactive']]]]],
-    ['G', '0', T, ['->', ['&&', ['B_armed'], ['||', ['!', ['R_n_s ==1']], ['F', '0', '5', ['B_X_ch']], ['!', ['B_X_Activation_Request']], ['!', ['B_r_actuation']]]], ['F', '0', '2', ['&&', ['!', ['B_armed']], ['B_inactive']]]]],
-    ['G', '0', T, ['->', ['&&', ['B_inactive'], ['R_n_s ==1'], ['||', ['R_X_c - R_X_b >5'], ['R_X_c - R_X_b <-5']], ['B_X_Activation_Request']], ['F', '0', '2', ['&&', ['!', ['B_inactive']], ['B_armed']]]]],
-    ['G', '0', T, ['->', ['&&', ['B_armed'], ['!', ['B_X_over']], ['R_X_c - R_X_b <=5'], ['R_X_c - R_X_b >=-5'], ['G', '0', '5', ['R_airspeed >= R_Vmin']]], ['F', '0', '2', ['&&', ['!', ['B_armed']], ['B_active']]]]], #DOPPIONE (dovrebbe essere stato corretto=
-    ['G', '0', T, ['||', ['&&', ['B_active'], ['B_A']], ['&&', ['B_active'], ['B_B']], ['&&', ['B_active'], ['B_C']]]],
-    ['G', '0', T, ['->', ['&&', ['B_active'], ['B_A'], ['!', ['B_X_over']], ['R_Delta_T_Error_reference < R_T_Error'], ['R_Delta_T_Error_reference > 0 - R_T_Error']], ['F', '0', '1', ['&&', ['!', ['B_A']], ['B_B']]]]],
-    ['G', '0', T, ['->', ['&&', ['B_active'], ['B_B'], ['!', ['B_X_over']], ['R_T_Error < 3'], ['R_T_Error  > -3'],  ['R_Roll_attitude < 0.8'], ['R_Roll_attitude > -0.8'],  ['R_X_deviation < 0.5'], ['R_X_deviation > -0.5'], ['R_dalfadt < 0.002'], ['R_dalfadt > -0.002'], ['!', ['B_h_on']], ['!', ['B_f_on']]], ['F', '0', '1', ['&&', ['!', ['B_B']], ['B_C']]]]],
-    ['G', '0', T, ['->', ['&&', ['B_active'], ['B_C'], ['!', ['B_X_over']], ['||', ['R_T_Error > 5'], ['R_T_Error < -5']], ['||', ['R_Roll_attitude > 2.6'], ['R_Roll_attitude < -2.6']], ['||', ['R_X_deviation > 1.5'], ['R_X_deviation < -1.5']], ['||', ['R_dalfadt > 0.075'], ['R_dalfadt < -0.075']], ['||', ['B_h_on'], ['B_f_on']]], ['F', '0', '1', ['&&', ['!', ['B_C']], ['B_B']]]]],
-    ['G', '0', T, ['->', ['&&', ['B_active'], ['!', ['B_X_over']]], ['F', '0', '5', ['R_LME_cr == 1']]]],
-    ['G', '0', T, ['->', ['B_inactive'], ['F', '0', '5', ['R_LME_cr == 0']]]],
-    ['G', '0', T, ['->', ['B_armed'], ['F', '0', '5', ['R_LMA_cr == 1']]]],
-    ['G', '0', T, ['->', ['B_active'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]],
-    ['G', '0', T, ['->', ['B_inactive'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]],
-    ['G', '0', T, ['->', ['B_X_over'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]],
-    ['G', '0', T, ['->', ['&&', ['B_X_over'], ['B_active']], ['F', '0', '5', ['R_LME_cr == 1']]]],
-    ['G', '0', T, ['->', ['B_active'], ['F', '0', '1', ['R_Y_pushbutton == 1']]]],
-    ['G', '0', T, ['->', ['B_armed'], ['F', '0', '1', ['R_Y_pushbutton == 2']]]],
-    ['G', '0', T, ['->', ['R_airspeed < R_Vmin'], ['F', '0', '5', ['B_LS_amr']]]],
+    ['G', '0', T, ['||', ['&&', ['active'], ['!', ['inactive']], ['!', ['armed']]], ['&&', ['inactive'], ['!', ['active']], ['!', ['armed']]], ['&&', ['armed'], ['!', ['inactive']], ['!', ['active']]]]],
+    ['G', '0', T, ['->', ['&&', ['inactive'], ['n_s == 1'],  ['X_c-X_b <= 5'], ['X_c-X_b>= -5'], ['G', '0', '5', ['airspeed>= Vmin']], ['!', ['X_over']], ['X_Activation_Request']], ['F', '0', '2', ['&&', ['!', ['inactive']], ['active']]]]],
+    ['G', '0', T, ['->', ['&&', ['active'], ['||', ['!', ['n_s == 1']], ['F', '0', '10', ['X_ch']], ['G', '0', '5', ['airspeed < Vmin']],  ['!', ['r_actuation']], ['!', ['X_Activation_Request']]]], ['F', '0', '2', ['&&', ['!', ['active']], ['inactive']]]]],
+    ['G', '0', T, ['->', ['&&', ['armed'], ['||', ['!', ['n_s ==1']], ['F', '0', '5', ['X_ch']], ['!', ['X_Activation_Request']], ['!', ['r_actuation']]]], ['F', '0', '2', ['&&', ['!', ['armed']], ['inactive']]]]],
+    ['G', '0', T, ['->', ['&&', ['inactive'], ['n_s ==1'], ['||', ['X_c - X_b >5'], ['X_c - X_b <-5']], ['X_Activation_Request']], ['F', '0', '2', ['&&', ['!', ['inactive']], ['armed']]]]],
+    ['G', '0', T, ['->', ['&&', ['armed'], ['!', ['X_over']], ['X_c - X_b <=5'], ['X_c - X_b >=-5'], ['G', '0', '5', ['airspeed >= Vmin']]], ['F', '0', '2', ['&&', ['!', ['armed']], ['active']]]]], #DOPPIONE (dovrebbe essere stato corretto=
+    ['G', '0', T, ['||', ['&&', ['active'], ['A']], ['&&', ['active'], ['B']], ['&&', ['active'], ['C']]]],
+    ['G', '0', T, ['->', ['&&', ['active'], ['A'], ['!', ['X_over']], ['Delta_T_Error_reference < T_Error'], ['Delta_T_Error_reference > 0 - T_Error']], ['F', '0', '1', ['&&', ['!', ['A']], ['B']]]]],
+    ['G', '0', T, ['->', ['&&', ['active'], ['B'], ['!', ['X_over']], ['T_Error < 3'], ['T_Error  > -3'],  ['Roll_attitude < 0.8'], ['Roll_attitude > -0.8'],  ['X_deviation < 0.5'], ['X_deviation > -0.5'], ['dalfadt < 0.002'], ['dalfadt > -0.002'], ['!', ['h_on']], ['!', ['f_on']]], ['F', '0', '1', ['&&', ['!', ['B']], ['C']]]]],
+    ['G', '0', T, ['->', ['&&', ['active'], ['C'], ['!', ['X_over']], ['||', ['T_Error > 5'], ['T_Error < -5']], ['||', ['Roll_attitude > 2.6'], ['Roll_attitude < -2.6']], ['||', ['X_deviation > 1.5'], ['X_deviation < -1.5']], ['||', ['dalfadt > 0.075'], ['dalfadt < -0.075']], ['||', ['h_on'], ['f_on']]], ['F', '0', '1', ['&&', ['!', ['C']], ['B']]]]],
+    ['G', '0', T, ['->', ['&&', ['active'], ['!', ['X_over']]], ['F', '0', '5', ['LME_cr == 1']]]],
+    ['G', '0', T, ['->', ['inactive'], ['F', '0', '5', ['LME_cr == 0']]]],
+    ['G', '0', T, ['->', ['armed'], ['F', '0', '5', ['LMA_cr == 1']]]],
+    ['G', '0', T, ['->', ['active'], ['F', '0', '5', ['&&', ['LMT_ar'], ['a_tone']]]]],
+    ['G', '0', T, ['->', ['inactive'], ['F', '0', '5', ['&&', ['LMT_ar'], ['a_tone']]]]],
+    ['G', '0', T, ['->', ['X_over'], ['F', '0', '5', ['&&', ['LMT_ar'], ['a_tone']]]]],
+    ['G', '0', T, ['->', ['&&', ['X_over'], ['active']], ['F', '0', '5', ['LME_cr == 1']]]],
+    ['G', '0', T, ['->', ['active'], ['F', '0', '1', ['Y_pushbutton == 1']]]],
+    ['G', '0', T, ['->', ['armed'], ['F', '0', '1', ['Y_pushbutton == 2']]]],
+    ['G', '0', T, ['->', ['airspeed < Vmin'], ['F', '0', '5', ['LS_amr']]]],
 ]
 
 requirements_riscritti = [
-    ['G', '0', T, ['||', ['R_function_status == 0'], ['R_function_status == 1'], ['R_function_status == 2']]], #where 0 == inactive, 1==armed, 2==active
-    ['G', '0', T, ['->', ['&&', ['R_function_status == 0'], ['R_n_s == 1'],  ['|R_X_c - R_X_b| <= 5'], ['G', '0', '5', ['R_airspeed >= R_Vmin']], ['!', ['B_X_over']], ['B_X_Activation_Request']], ['F', '1', '2', ['R_function_status == 2']]]],
-    ['G', '0', T, ['->', ['&&', ['R_function_status == 2'], ['||', ['!', ['R_n_s == 1']], ['F', '0', '10', ['B_X_ch']], ['G', '0', '5', ['R_airspeed < R_Vmin']], ['!', ['B_r_actuation']], ['!', ['B_X_Activation_Request']]]], ['F', '1', '2', ['R_function_status == 0']]]],
-    ['G', '0', T, ['->', ['&&', ['R_function_status == 1'], ['||', ['!', ['R_n_s == 1']], ['F', '0', '5', ['B_X_ch']], ['!', ['B_X_Activation_Request']], ['!', ['B_r_actuation']]]], ['F', '1', '2', ['R_function_status == 0']]]],
-    ['G', '0', T, ['->', ['&&', ['R_function_status == 0'], ['R_n_s == 1'], ['|R_X_c - R_X_b| > 5'], ['B_X_Activation_Request']], ['F', '1', '2', ['R_function_status == 1']]]],
-    ['G', '0', T, ['->', ['&&', ['R_function_status == 1'], ['!', ['B_X_over']], ['|R_X_c - R_X_b| <= 5'], ['G', '0', '5', ['R_airspeed >= R_Vmin']]], ['F', '1', '2', ['R_function_status == 2']]]],
-    ['G', '0', T, ['->', ['R_function_status == 2'], ['||', ['R_function_active_status == 0'], ['R_function_active_status == 1'], ['R_function_active_status == 2']]]],
-    ['G', '0', T, ['->', ['&&', ['R_function_active_status == 0'], ['!', ['B_X_over']], ['|R_Delta_T_Error_reference| < R_T_Error']], ['F', '1', '2', ['R_function_active_status == 1']]]],
-    ['G', '0', T, ['->', ['&&', ['R_function_active_status == 1'], ['!', ['B_X_over']], ['|R_T_Error| < 3'], ['|R_Roll_attitude| < 0.8'], ['|R_X_deviation| < 0.5'], ['|R_dalfadt| < 0.002'], ['!', ['B_h_on']], ['!', ['B_f_on']]], ['F', '1', '2', ['R_function_active_status == 2']]]],
-    ['G', '0', T, ['->', ['&&', ['R_function_active_status == 2'], ['!', ['B_X_over']], ['|R_T_Error| > 5'], ['|R_Roll_attitude| > 2.6'], ['|R_X_deviation| > 1.5'], ['|R_dalfadt| > 0.075'], ['||', ['B_h_on'], ['B_f_on']]], ['F', '1', '2', ['R_function_active_status == 1']]]],
-    ['G', '0', T, ['->', ['&&', ['R_function_status == 2'], ['!', ['B_X_over']]], ['F', '0', '5', ['R_LME_cr == 1']]]],
-    ['G', '0', T, ['->', ['R_function_status == 0'], ['F', '0', '5', ['R_LME_cr == 0']]]],
-    ['G', '0', T, ['->', ['R_function_status == 1'], ['F', '0', '5', ['R_LMA_cr == 1']]]],
-    ['G', '0', T, ['->', ['R_function_status == 2'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]],
-    ['G', '0', T, ['->', ['R_function_status == 0'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]],
-    ['G', '0', T, ['->', ['B_X_over'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]]],
-    ['G', '0', T, ['->', ['&&', ['B_X_over'], ['R_function_status == 2']], ['F', '0', '5', ['R_LME_cr == 1']]]],
-    ['G', '0', T, ['->', ['R_function_status == 2'], ['F', '0', '1', ['R_Y_pushbutton == 1']]]],
-    ['G', '0', T, ['->', ['R_function_status == 1'], ['F', '0', '1', ['R_Y_pushbutton == 2']]]],
-    ['G', '0', T, ['->', ['R_airspeed < R_Vmin'], ['F', '0', '5', ['B_LS_amr']]]],
+    ['G', '0', T, ['||', ['function_status == 0'], ['function_status == 1'], ['function_status == 2']]], #where 0 == inactive, 1==armed, 2==active
+    ['G', '0', T, ['->', ['&&', ['function_status == 0'], ['n_s == 1'],  ['|X_c - X_b| <= 5'], ['G', '0', '5', ['airspeed >= Vmin']], ['!', ['X_over']], ['X_Activation_Request']], ['F', '1', '2', ['function_status == 2']]]],
+    ['G', '0', T, ['->', ['&&', ['function_status == 2'], ['||', ['!', ['n_s == 1']], ['F', '0', '10', ['X_ch']], ['G', '0', '5', ['airspeed < Vmin']], ['!', ['r_actuation']], ['!', ['X_Activation_Request']]]], ['F', '1', '2', ['function_status == 0']]]],
+    ['G', '0', T, ['->', ['&&', ['function_status == 1'], ['||', ['!', ['n_s == 1']], ['F', '0', '5', ['X_ch']], ['!', ['X_Activation_Request']], ['!', ['r_actuation']]]], ['F', '1', '2', ['function_status == 0']]]],
+    ['G', '0', T, ['->', ['&&', ['function_status == 0'], ['n_s == 1'], ['|X_c - X_b| > 5'], ['X_Activation_Request']], ['F', '1', '2', ['function_status == 1']]]],
+    ['G', '0', T, ['->', ['&&', ['function_status == 1'], ['!', ['X_over']], ['|X_c - X_b| <= 5'], ['G', '0', '5', ['airspeed >= Vmin']]], ['F', '1', '2', ['function_status == 2']]]],
+    ['G', '0', T, ['->', ['function_status == 2'], ['||', ['function_active_status == 0'], ['function_active_status == 1'], ['function_active_status == 2']]]],
+    ['G', '0', T, ['->', ['&&', ['function_active_status == 0'], ['!', ['X_over']], ['|Delta_T_Error_reference| < T_Error']], ['F', '1', '2', ['function_active_status == 1']]]],
+    ['G', '0', T, ['->', ['&&', ['function_active_status == 1'], ['!', ['X_over']], ['|T_Error| < 3'], ['|Roll_attitude| < 0.8'], ['|X_deviation| < 0.5'], ['|dalfadt| < 0.002'], ['!', ['h_on']], ['!', ['f_on']]], ['F', '1', '2', ['function_active_status == 2']]]],
+    ['G', '0', T, ['->', ['&&', ['function_active_status == 2'], ['!', ['X_over']], ['|T_Error| > 5'], ['|Roll_attitude| > 2.6'], ['|X_deviation| > 1.5'], ['|dalfadt| > 0.075'], ['||', ['h_on'], ['f_on']]], ['F', '1', '2', ['function_active_status == 1']]]],
+    ['G', '0', T, ['->', ['&&', ['function_status == 2'], ['!', ['X_over']]], ['F', '0', '5', ['LME_cr == 1']]]],
+    ['G', '0', T, ['->', ['function_status == 0'], ['F', '0', '5', ['LME_cr == 0']]]],
+    ['G', '0', T, ['->', ['function_status == 1'], ['F', '0', '5', ['LMA_cr == 1']]]],
+    ['G', '0', T, ['->', ['function_status == 2'], ['F', '0', '5', ['&&', ['LMT_ar'], ['a_tone']]]]],
+    ['G', '0', T, ['->', ['function_status == 0'], ['F', '0', '5', ['&&', ['LMT_ar'], ['a_tone']]]]],
+    ['G', '0', T, ['->', ['X_over'], ['F', '0', '5', ['&&', ['LMT_ar'], ['a_tone']]]]],
+    ['G', '0', T, ['->', ['&&', ['X_over'], ['function_status == 2']], ['F', '0', '5', ['LME_cr == 1']]]],
+    ['G', '0', T, ['->', ['function_status == 2'], ['F', '0', '1', ['Y_pushbutton == 1']]]],
+    ['G', '0', T, ['->', ['function_status == 1'], ['F', '0', '1', ['Y_pushbutton == 2']]]],
+    ['G', '0', T, ['->', ['airspeed < Vmin'], ['F', '0', '5', ['LS_amr']]]],
 ]
 
-requirements_riscritti2 = [['G', '0', T, ['&&', ['||', ['R_function_status == 0'], ['R_function_status == 1'], ['R_function_status == 2']],['->', ['&&', ['R_function_status == 0'], ['R_n_s == 1'],  ['|R_X_c - R_X_b| <= 5'], ['G', '0', '5', ['R_airspeed >= R_Vmin']], ['!', ['B_X_over']], ['B_X_Activation_Request']], ['F', '1', '2', ['R_function_status == 2']]],['->', ['&&', ['R_function_status == 2'], ['||', ['!', ['R_n_s == 1']], ['F', '0', '10', ['B_X_ch']], ['G', '0', '5', ['R_airspeed < R_Vmin']], ['!', ['B_r_actuation']], ['!', ['B_X_Activation_Request']]]], ['F', '1', '2', ['R_function_status == 0']]],['->', ['&&', ['R_function_status == 1'], ['||', ['!', ['R_n_s == 1']], ['F', '0', '5', ['B_X_ch']], ['!', ['B_X_Activation_Request']], ['!', ['B_r_actuation']]]], ['F', '1', '2', ['R_function_status == 0']]],['->', ['&&', ['R_function_status == 0'], ['R_n_s == 1'], ['|R_X_c - R_X_b| > 5'], ['B_X_Activation_Request']], ['F', '1', '2', ['R_function_status == 1']]],['->', ['&&', ['R_function_status == 1'], ['!', ['B_X_over']], ['|R_X_c - R_X_b| <= 5'], ['G', '0', '5', ['R_airspeed >= R_Vmin']]], ['F', '1', '2', ['R_function_status == 2']]],['->', ['R_function_status == 2'], ['||', ['R_function_active_status == 0'], ['R_function_active_status == 1'], ['R_function_active_status == 2']]],['->', ['&&', ['R_function_active_status == 0'], ['!', ['B_X_over']], ['|R_Delta_T_Error_reference| < R_T_Error']], ['F', '1', '2', ['R_function_active_status == 1']]],['->', ['&&', ['R_function_active_status == 1'], ['!', ['B_X_over']], ['|R_T_Error| < 3'], ['|R_Roll_attitude| < 0.8'], ['|R_X_deviation| < 0.5'], ['|R_dalfadt| < 0.002'], ['!', ['B_h_on']], ['!', ['B_f_on']]], ['F', '1', '2', ['R_function_active_status == 2']]],['->', ['&&', ['R_function_active_status == 2'], ['!', ['B_X_over']], ['|R_T_Error| > 5'], ['|R_Roll_attitude| > 2.6'], ['|R_X_deviation| > 1.5'], ['|R_dalfadt| > 0.075'], ['||', ['B_h_on'], ['B_f_on']]], ['F', '1', '2', ['R_function_active_status == 1']]],['->', ['&&', ['R_function_status == 2'], ['!', ['B_X_over']]], ['F', '0', '5', ['R_LME_cr == 1']]],['->', ['R_function_status == 0'], ['F', '0', '5', ['R_LME_cr == 0']]],['->', ['R_function_status == 1'], ['F', '0', '5', ['R_LMA_cr == 1']]],['->', ['R_function_status == 2'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]],['->', ['R_function_status == 0'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]],['->', ['B_X_over'], ['F', '0', '5', ['&&', ['B_LMT_ar'], ['B_a_tone']]]],['->', ['&&', ['B_X_over'], ['R_function_status == 2']], ['F', '0', '5', ['R_LME_cr == 1']]],['->', ['R_function_status == 2'], ['F', '0', '1', ['R_Y_pushbutton == 1']]],['->', ['R_function_status == 1'], ['F', '0', '1', ['R_Y_pushbutton == 2']]],['->', ['R_airspeed < R_Vmin'], ['F', '0', '5', ['B_LS_amr']]]]]]
+requirements_riscritti2 = [['G', '0', T, ['&&', ['||', ['function_status == 0'], ['function_status == 1'], ['function_status == 2']],['->', ['&&', ['function_status == 0'], ['n_s == 1'],  ['|X_c - X_b| <= 5'], ['G', '0', '5', ['airspeed >= Vmin']], ['!', ['X_over']], ['X_Activation_Request']], ['F', '1', '2', ['function_status == 2']]],['->', ['&&', ['function_status == 2'], ['||', ['!', ['n_s == 1']], ['F', '0', '10', ['X_ch']], ['G', '0', '5', ['airspeed < Vmin']], ['!', ['r_actuation']], ['!', ['X_Activation_Request']]]], ['F', '1', '2', ['function_status == 0']]],['->', ['&&', ['function_status == 1'], ['||', ['!', ['n_s == 1']], ['F', '0', '5', ['X_ch']], ['!', ['X_Activation_Request']], ['!', ['r_actuation']]]], ['F', '1', '2', ['function_status == 0']]],['->', ['&&', ['function_status == 0'], ['n_s == 1'], ['|X_c - X_b| > 5'], ['X_Activation_Request']], ['F', '1', '2', ['function_status == 1']]],['->', ['&&', ['function_status == 1'], ['!', ['X_over']], ['|X_c - X_b| <= 5'], ['G', '0', '5', ['airspeed >= Vmin']]], ['F', '1', '2', ['function_status == 2']]],['->', ['function_status == 2'], ['||', ['function_active_status == 0'], ['function_active_status == 1'], ['function_active_status == 2']]],['->', ['&&', ['function_active_status == 0'], ['!', ['X_over']], ['|Delta_T_Error_reference| < T_Error']], ['F', '1', '2', ['function_active_status == 1']]],['->', ['&&', ['function_active_status == 1'], ['!', ['X_over']], ['|T_Error| < 3'], ['|Roll_attitude| < 0.8'], ['|X_deviation| < 0.5'], ['|dalfadt| < 0.002'], ['!', ['h_on']], ['!', ['f_on']]], ['F', '1', '2', ['function_active_status == 2']]],['->', ['&&', ['function_active_status == 2'], ['!', ['X_over']], ['|T_Error| > 5'], ['|Roll_attitude| > 2.6'], ['|X_deviation| > 1.5'], ['|dalfadt| > 0.075'], ['||', ['h_on'], ['f_on']]], ['F', '1', '2', ['function_active_status == 1']]],['->', ['&&', ['function_status == 2'], ['!', ['X_over']]], ['F', '0', '5', ['LME_cr == 1']]],['->', ['function_status == 0'], ['F', '0', '5', ['LME_cr == 0']]],['->', ['function_status == 1'], ['F', '0', '5', ['LMA_cr == 1']]],['->', ['function_status == 2'], ['F', '0', '5', ['&&', ['LMT_ar'], ['a_tone']]]],['->', ['function_status == 0'], ['F', '0', '5', ['&&', ['LMT_ar'], ['a_tone']]]],['->', ['X_over'], ['F', '0', '5', ['&&', ['LMT_ar'], ['a_tone']]]],['->', ['&&', ['X_over'], ['function_status == 2']], ['F', '0', '5', ['LME_cr == 1']]],['->', ['function_status == 2'], ['F', '0', '1', ['Y_pushbutton == 1']]],['->', ['function_status == 1'], ['F', '0', '1', ['Y_pushbutton == 2']]],['->', ['airspeed < Vmin'], ['F', '0', '5', ['LS_amr']]]]]]
 
 parameter_ranges = [
-    ['G', '0', T, ['&&', ['R_X_c >=0'], ['R_X_c <= 360']]],
-    ['G', '0', T, ['&&', ['R_X_b >=0'], ['R_X_b <= 360']]],
-    ['G', '0', T, ['&&', ['R_airspeed >=0'], ['R_airspeed <= 200']]],
-    ['G', '0', T, ['&&', ['R_a >= 0'], ['R_a <= 360']]],
-    ['G', '0', T, ['||', ['R_n_s == 0'], ['R_n_s == 1'], ['R_n_s == 2']]],
-    ['G', '0', T, ['|R_T_Error| <= 180']],
-    ['G', '0', T, ['|R_Roll_attitude| <= 50']],
-    ['G', '0', T, ['|R_X_deviation| <= 180']],
-    ['G', '0', T, ['||', ['R_LME_cr == 0'], ['R_LME_cr == 1'], ['R_LME_cr == 2']]],
-    ['G', '0', T, ['||', ['R_LMA_cr == 0'], ['R_LMA_cr == 1'], ['R_LMA_cr == 2']]],
-    ['G', '0', T, ['||', ['R_Y_pushbutton == 0'], ['R_Y_pushbutton == 1'], ['R_Y_pushbutton == 2']]],
+    ['G', '0', T, ['&&', ['X_c >=0'], ['X_c <= 360']]],
+    ['G', '0', T, ['&&', ['X_b >=0'], ['X_b <= 360']]],
+    ['G', '0', T, ['&&', ['airspeed >=0'], ['airspeed <= 200']]],
+    ['G', '0', T, ['&&', ['a >= 0'], ['a <= 360']]],
+    ['G', '0', T, ['||', ['n_s == 0'], ['n_s == 1'], ['n_s == 2']]],
+    ['G', '0', T, ['|T_Error| <= 180']],
+    ['G', '0', T, ['|Roll_attitude| <= 50']],
+    ['G', '0', T, ['|X_deviation| <= 180']],
+    ['G', '0', T, ['||', ['LME_cr == 0'], ['LME_cr == 1'], ['LME_cr == 2']]],
+    ['G', '0', T, ['||', ['LMA_cr == 0'], ['LMA_cr == 1'], ['LMA_cr == 2']]],
+    ['G', '0', T, ['||', ['Y_pushbutton == 0'], ['Y_pushbutton == 1'], ['Y_pushbutton == 2']]],
 ]
 
 
@@ -98,16 +98,16 @@ parameter_ranges = [
 t = '10' #alcuni requisiti sono da 0 a un tempo t (nel paper)
 T1 = '1000' #quando il requisito ha unboundend operators ho aggiunto bound T1
 mtl_requirements = [
-    ['G', '0', T1, ['&&', ['R_omega < R_omega_hat'], ['R_v < R_v_hat']]],
-    ['G', '0', T1, ['->', ['&&', ['B_g2'], ['G', '1', '1', ['B_g1']]], ['G', '0.5', '2.5', ['!', ['B_g2']]]]],
-    ['G', '0', T1, ['->', ['&&', ['!', ['B_g1']], ['G', '1', '1', ['B_g1']]], ['G', '0.5', '2.5', ['B_g1']]]],
-    ['G', '0', T1, ['->', ['&&', ['!', ['B_g2']], ['G', '1', '1', ['B_g2']]], ['G', '0.5', '2.5', ['B_g2']]]],
-    ['G', '0', T1, ['->', ['&&', ['!', ['B_g3']], ['G', '1', '1', ['B_g3']]], ['G', '0.5', '2.5', ['B_g3']]]],
-    ['G', '0', T1, ['->', ['&&', ['!', ['B_g4']], ['G', '1', '1', ['B_g4']]], ['G', '0.5', '2.5', ['B_g4']]]],
-    ['!', ['&&', ['F', '0', t, ['R_v > R_v_hat']], ['G', '0', T1, ['R_omega < R_omega_hat']]]],
-    ['F', '0', t, ['&&', ['R_v >= R_v_hat'], ['G', '0', T1, ['R_omega < R_omega_hat']]]],
-    ['F', '0', '100', ['G', '0', '1', ['!', ['R_Fuel_Flow_Rate == 0']]]],
-    ['G', '0', T1, ['->', ['B_lambda_OOB'], ['F', '0', '1', ['G', '0', '1', ['!', ['B_lambda_OOB']]]]]]
+    ['G', '0', T1, ['&&', ['omega < omega_hat'], ['v < v_hat']]],
+    ['G', '0', T1, ['->', ['&&', ['g2'], ['G', '1', '1', ['g1']]], ['G', '0.5', '2.5', ['!', ['g2']]]]],
+    ['G', '0', T1, ['->', ['&&', ['!', ['g1']], ['G', '1', '1', ['g1']]], ['G', '0.5', '2.5', ['g1']]]],
+    ['G', '0', T1, ['->', ['&&', ['!', ['g2']], ['G', '1', '1', ['g2']]], ['G', '0.5', '2.5', ['g2']]]],
+    ['G', '0', T1, ['->', ['&&', ['!', ['g3']], ['G', '1', '1', ['g3']]], ['G', '0.5', '2.5', ['g3']]]],
+    ['G', '0', T1, ['->', ['&&', ['!', ['g4']], ['G', '1', '1', ['g4']]], ['G', '0.5', '2.5', ['g4']]]],
+    ['!', ['&&', ['F', '0', t, ['v > v_hat']], ['G', '0', T1, ['omega < omega_hat']]]],
+    ['F', '0', t, ['&&', ['v >= v_hat'], ['G', '0', T1, ['omega < omega_hat']]]],
+    ['F', '0', '100', ['G', '0', '1', ['!', ['Fuel_Flow_Rate == 0']]]],
+    ['G', '0', T1, ['->', ['lambda_OOB'], ['F', '0', '1', ['G', '0', '1', ['!', ['lambda_OOB']]]]]]
 
 ]
 
@@ -120,120 +120,120 @@ eta = '1'
 zeta_mezzi = '10'#zeta è il periodo del pulse train signal
 pcv = [
     # normal mode
-    ['G', '0', T3, ['->', ['B_normal_mode'], ['&&', ['R_a > 8.8'], ['R_a < 70']]]],
-    ['G', t_s, T3, ['->', ['B_normal_mode'], ['|R_mu| < 0.05']]],
-    ['G', t_s, T3, ['->', ['||', ['&&', ['R_theta == 8.8'], ['F', '0', epsilon, ['R_theta == R_a']]], ['&&', ['R_theta == R_a'], ['F', '0', epsilon, ['R_theta == 8.8']]]], ['G', eta, zeta_mezzi, ['|R_mu| < 0.02']]]],
-    ['F', T3, T3, ['->', ['B_normal_mode'], ['R_xrms < 0.05']]],
-    ['G', t_s, T3, ['->', ['B_normal_mode'], ['|R_mu| < 0.1']]],
+    ['G', '0', T3, ['->', ['normal_mode'], ['&&', ['a > 8.8'], ['a < 70']]]],
+    ['G', t_s, T3, ['->', ['normal_mode'], ['|mu| < 0.05']]],
+    ['G', t_s, T3, ['->', ['||', ['&&', ['theta == 8.8'], ['F', '0', epsilon, ['theta == a']]], ['&&', ['theta == a'], ['F', '0', epsilon, ['theta == 8.8']]]], ['G', eta, zeta_mezzi, ['|mu| < 0.02']]]],
+    ['F', T3, T3, ['->', ['normal_mode'], ['xrms < 0.05']]],
+    ['G', t_s, T3, ['->', ['normal_mode'], ['|mu| < 0.1']]],
     #power mode
-    ['G', '0', T3, ['->', ['B_power_mode'], ['&&', ['R_a >= 8.8'], ['R_a <= 90']]]],
-    ['G', t_s, T3, ['->', ['&&', ['B_power_mode'], ['F', '0', epsilon, ['B_normal_mode']]], ['G', eta, zeta_mezzi, ['|R_mu| < 0.02']]]],
-    ['G', t_s, T3, ['->', ['B_power_mode'], ['|R_mu_p| < 0.2']]],
+    ['G', '0', T3, ['->', ['power_mode'], ['&&', ['a >= 8.8'], ['a <= 90']]]],
+    ['G', t_s, T3, ['->', ['&&', ['power_mode'], ['F', '0', epsilon, ['normal_mode']]], ['G', eta, zeta_mezzi, ['|mu| < 0.02']]]],
+    ['G', t_s, T3, ['->', ['power_mode'], ['|mu_p| < 0.2']]],
     # startup and sensor fail mode
-    ['G', '0', T3, ['->', ['&&', ['||', ['B_startup_mode'], ['B_sensor_fail_mode']], ['||', ['&&', ['R_theta == 8.8'], ['F', '0', epsilon, ['R_theta == R_a']]], ['&&', ['R_theta == R_a'], ['F', '0', epsilon, ['R_theta == 8.8']]]]], ['G', eta, zeta_mezzi, ['|R_mu| < 0.1']]]]
+    ['G', '0', T3, ['->', ['&&', ['||', ['startup_mode'], ['sensor_fail_mode']], ['||', ['&&', ['theta == 8.8'], ['F', '0', epsilon, ['theta == a']]], ['&&', ['theta == a'], ['F', '0', epsilon, ['theta == 8.8']]]]], ['G', eta, zeta_mezzi, ['|mu| < 0.1']]]]
 ]
 
 #requisiti da Signal-Based Properties of Cyber-Physical Systems: Taxonomy and Logic-based Characterization
 T2 = '3000'
 req_cps = [
-    ['G', '0', T2, ['||', ['R_currentADCSMode == 0'], ['R_currentADCSMode == 1'], ['R_currentADCSMode == 2']]], # P1 where 0 == NMC, 1== NMF, 2== SM
+    ['G', '0', T2, ['||', ['currentADCSMode == 0'], ['currentADCSMode == 1'], ['currentADCSMode == 2']]], # P1 where 0 == NMC, 1== NMF, 2== SM
     # P2: non serve, basta definire il segnale come bool
     # P3: non serve, basta definire il segnale come bool
-    ['G', '0', T2, ['R_RWs_angular_velocity == 816.814']], # P4
-    ['G', '2000', T2, ['R_pointing_error < 2']], # P5
-    ['G', '1500', '2000', ['R_RWs_angular_momentum < 0.35']], # P6
-    ['G', '2000', '2000', ['&&', ['R_pointing_error > 0'], ['R_pointing_error < R_delta']]], # P7 delta???
-    ['F', '2000', '7400', ['&&', ['R_pointing_error < R_k'], ['U', '2', '22', ['R_pointing_error >= R_k'], ['R_pointing_error < R_k']]]], # P8 SPIKE
+    ['G', '0', T2, ['RWs_angular_velocity == 816.814']], # P4
+    ['G', '2000', T2, ['pointing_error < 2']], # P5
+    ['G', '1500', '2000', ['RWs_angular_momentum < 0.35']], # P6
+    ['G', '2000', '2000', ['&&', ['pointing_error > 0'], ['pointing_error < delta']]], # P7 delta???
+    ['F', '2000', '7400', ['&&', ['pointing_error < k'], ['U', '2', '22', ['pointing_error >= k'], ['pointing_error < k']]]], # P8 SPIKE
     #[], # P9 OSCILLATION
-    ['G', '0', T2, ['|R_sat_init_angular_velocity_degree| <= 3']], # P10
-    ['G', '2000', T2, ['|R_sat_real_angular_velocity| <= 1.5']], # P11
-    ['G', '0', T2, ['||', ['R_sat_target_attitude == 1'], ['R_sat_target_attitude == -1']]], # P12
-    ['G', '2000', T2, ['|R_sat_target_angular_velocity| <= 1.5']], # P13
-    ['G', '0', T2, ['||', ['R_sat_estimated_attitude == 1'], ['R_sat_estimated_attitude == -1']]], # P14
-    ['G', '2000', T2, ['|R_sat_estimated_angular_velocity| <= 1.5']], # P15
-    ['G', '2000', T2, ['|R_sat_angular_velocity_measured| <= 1.5']], # P16
-    ['G', '0', T2, ['|R_earth_mag_field_in_body_measured| <= 60000']], # P17
-    ['G', '0', T2, ['||', ['R_sun_direction_ECI == 1'], ['R_sun_direction_ECI == -1']]], # P18
-    ['G', '2000', T2, ['|R_sat_target_angular_velocity_safe_spin_mode| <= 1.5']], # P19
-    ['G', '0', T2, ['|R_RWs_torque| <= 0.015']], # P20
-    ['G', '0', T2, ['R_sun_sensor_availability <= 3']], # P21 traduzioe non perfetta, ma good enough
-    ['G', '2000', '2000', ['&&', ['R_q_real - R_q_estimate_attitude > 0'], ['R_q_real - R_q_estimate_attitude < R_delta']]], # P22
-    ['G', '2000', '2000', ['&&', ['R_q_target_attitude - R_q_estimate > 0'], ['R_q_target_attitude - R_q_estimate < R_delta']]], # P23
-    ['G', '0', T2, ['&&', ['R_sat_estimated_angular_velocity - R_sat_real_angular_velocity > 0'], ['R_sat_estimated_angular_velocity - R_sat_real_angular_velocity < R_delta']]], # P24
-    ['G', '0', T2, ['&&', ['R_sat_angular_velocity_measured - R_sat_real_angular_velocity > 0'], ['R_sat_angular_velocity_measured - R_sat_real_angular_velocity < R_delta']]], # P25
+    ['G', '0', T2, ['|sat_init_angular_velocity_degree| <= 3']], # P10
+    ['G', '2000', T2, ['|sat_real_angular_velocity| <= 1.5']], # P11
+    ['G', '0', T2, ['||', ['sat_target_attitude == 1'], ['sat_target_attitude == -1']]], # P12
+    ['G', '2000', T2, ['|sat_target_angular_velocity| <= 1.5']], # P13
+    ['G', '0', T2, ['||', ['sat_estimated_attitude == 1'], ['sat_estimated_attitude == -1']]], # P14
+    ['G', '2000', T2, ['|sat_estimated_angular_velocity| <= 1.5']], # P15
+    ['G', '2000', T2, ['|sat_angular_velocity_measured| <= 1.5']], # P16
+    ['G', '0', T2, ['|earth_mag_field_in_body_measured| <= 60000']], # P17
+    ['G', '0', T2, ['||', ['sun_direction_ECI == 1'], ['sun_direction_ECI == -1']]], # P18
+    ['G', '2000', T2, ['|sat_target_angular_velocity_safe_spin_mode| <= 1.5']], # P19
+    ['G', '0', T2, ['|RWs_torque| <= 0.015']], # P20
+    ['G', '0', T2, ['sun_sensor_availability <= 3']], # P21 traduzioe non perfetta, ma good enough
+    ['G', '2000', '2000', ['&&', ['q_real - q_estimate_attitude > 0'], ['q_real - q_estimate_attitude < delta']]], # P22
+    ['G', '2000', '2000', ['&&', ['q_target_attitude - q_estimate > 0'], ['q_target_attitude - q_estimate < delta']]], # P23
+    ['G', '0', T2, ['&&', ['sat_estimated_angular_velocity - sat_real_angular_velocity > 0'], ['sat_estimated_angular_velocity - sat_real_angular_velocity < delta']]], # P24
+    ['G', '0', T2, ['&&', ['sat_angular_velocity_measured - sat_real_angular_velocity > 0'], ['sat_angular_velocity_measured - sat_real_angular_velocity < delta']]], # P25
     #[], # P26 derivative?
-    ['G', '0', T2, ['->', ['!', ['B_not_Eclipse']], ['!', ['B_sun_currents']]]], # P27
-    ['G', '0', T2, ['->', ['B_pointing_error_under_15'], ['!', ['B_pointing_error_above_20']]]], # P28
-    ['G', '0', T2, ['->', ['B_pointing_error_above_20'], ['!', ['B_pointing_error_under_15']]]], # P29
-    ['G', '0', T2, ['->', ['R_RWs_command == 0'], ['F', '0', '60', ['RWs_angular_velocity == 0']]]], # P30 monotonically decreasing come lo esprimo??
-    ['G', '0', T2, ['->', ['R_RWs_angular_momentum > 0.35'], ['R_RWs_torque == 0']]], # P31
-    ['G', '0', T2, ['->', ['R_currentADCSMode == 0'], ['R_control_error >= 10']]], # P32
-    ['G', '0', T2, ['->', ['R_control_error < 10'], ['R_currentADCSMode == 1']]], # P33
-    ['G', '0', T2, ['->', ['R_currentADCSMode == 1'], ['R_control_error <= 15']]], # P34
-    ['G', '0', T2, ['->', ['R_currentADCSMode == 1'], ['->', ['R_RWs_command > 0'], ['F', '0', '180', ['R_pointing_error < 2']]]]], # P35
-    ['G', '0', T2, ['->', ['R_currentADCSMode == 1'], ['->', ['R_RWs_command > 0'], ['F', '0', '180', ['R_control_error < 0.5']]]]], # P36
-    ['G', '0', T2, ['->', ['R_currentADCSMode == 1'], ['->', ['B_not_Eclipse'], ['F', '0', '900', ['R_knowledge_error < 1']]]]], # P37
-    ['G', '0', T2, ['->', ['R_currentADCSMode == 2'], ['->', ['R_RWs_command > 0'], ['F', '0', '900', ['R_RWs_angular_momentum < 0.25']]]]], # P38
-    ['G', '0', T2, ['->', ['R_currentADCSMode == 2'], ['F', '0', '10799', ['R_real_Omega - R_signal_target_Omega == 0']]]], # P39
-    ['G', '0', T2, ['->', ['B_not_Eclipse'], ['R_sun_angle < 45']]], # P40
-    # intervallo molto lungo ['G', '16200', T2, ['->', ['R_pointing_error < 2'], ['F', '0', '5400', ['&&', ['R_pointing_error < R_k2'], ['U', '0', '600', ['R_pointing_error >= R_k'], ['R_pointing_error < R_k2']]]]]] # P41
-    ['G', '1600', T2, ['->', ['R_pointing_error < 2'], ['F', '0', '5400', ['&&', ['R_pointing_error < R_k2'], ['U', '0', '600', ['R_pointing_error >= R_k'], ['R_pointing_error < R_k2']]]]]] # P41
+    ['G', '0', T2, ['->', ['!', ['not_Eclipse']], ['!', ['sun_currents']]]], # P27
+    ['G', '0', T2, ['->', ['pointing_error_under_15'], ['!', ['pointing_error_above_20']]]], # P28
+    ['G', '0', T2, ['->', ['pointing_error_above_20'], ['!', ['pointing_error_under_15']]]], # P29
+    ['G', '0', T2, ['->', ['RWs_command == 0'], ['F', '0', '60', ['RWs_angular_velocity == 0']]]], # P30 monotonically decreasing come lo esprimo??
+    ['G', '0', T2, ['->', ['RWs_angular_momentum > 0.35'], ['RWs_torque == 0']]], # P31
+    ['G', '0', T2, ['->', ['currentADCSMode == 0'], ['control_error >= 10']]], # P32
+    ['G', '0', T2, ['->', ['control_error < 10'], ['currentADCSMode == 1']]], # P33
+    ['G', '0', T2, ['->', ['currentADCSMode == 1'], ['control_error <= 15']]], # P34
+    ['G', '0', T2, ['->', ['currentADCSMode == 1'], ['->', ['RWs_command > 0'], ['F', '0', '180', ['pointing_error < 2']]]]], # P35
+    ['G', '0', T2, ['->', ['currentADCSMode == 1'], ['->', ['RWs_command > 0'], ['F', '0', '180', ['control_error < 0.5']]]]], # P36
+    ['G', '0', T2, ['->', ['currentADCSMode == 1'], ['->', ['not_Eclipse'], ['F', '0', '900', ['knowledge_error < 1']]]]], # P37
+    ['G', '0', T2, ['->', ['currentADCSMode == 2'], ['->', ['RWs_command > 0'], ['F', '0', '900', ['RWs_angular_momentum < 0.25']]]]], # P38
+    ['G', '0', T2, ['->', ['currentADCSMode == 2'], ['F', '0', '10799', ['real_Omega - signal_target_Omega == 0']]]], # P39
+    ['G', '0', T2, ['->', ['not_Eclipse'], ['sun_angle < 45']]], # P40
+    # intervallo molto lungo ['G', '16200', T2, ['->', ['pointing_error < 2'], ['F', '0', '5400', ['&&', ['pointing_error < k2'], ['U', '0', '600', ['pointing_error >= k'], ['pointing_error < k2']]]]]] # P41
+    ['G', '1600', T2, ['->', ['pointing_error < 2'], ['F', '0', '5400', ['&&', ['pointing_error < k2'], ['U', '0', '600', ['pointing_error >= k'], ['pointing_error < k2']]]]]] # P41
 ]
 
 #Requisiti da Bounded Model Checking of STL Properties using Syntactic Separation
 cars = [
-    ['G', '0', '100', ['R_dist > 0.1']],
-    ['G', '0', '20', ['->', ['R_dist < 6'], ['F', '0', '15', ['B_acc2']]]],
-    ['F', '12', '20', ['->', ['B_dec2'], ['F', '3', '18', ['B_acc2']]]],
-    ['F', '4', '40', ['U', '10', '20', ['B_dec2'], ['&&', ['|R_x| <= 0.5'], ['|R_y| <= 0.5']]]]
+    ['G', '0', '100', ['dist > 0.1']],
+    ['G', '0', '20', ['->', ['dist < 6'], ['F', '0', '15', ['acc2']]]],
+    ['F', '12', '20', ['->', ['dec2'], ['F', '3', '18', ['acc2']]]],
+    ['F', '4', '40', ['U', '10', '20', ['dec2'], ['&&', ['|x| <= 0.5'], ['|y| <= 0.5']]]]
 ]
 
 thermostat = [
-    ['G', '0', '40', ['R_x1 <= 21']],
-    ['G', '0', '10', ['U', '0', '5', ['R_x2 > 20'], ['B_on1']]],
-    ['G', '0', '20', ['R', '2', '12', ['R_x2 > 20'], ['R_x1 < 10']]],
-    ['F', '0', '20', ['->', ['&&', ['B_off1'], ['B_off2']], ['G', '0', '5', ['||', ['B_on1'], ['B_on2']]]]]
+    ['G', '0', '40', ['x1 <= 21']],
+    ['G', '0', '10', ['U', '0', '5', ['x2 > 20'], ['on1']]],
+    ['G', '0', '20', ['R', '2', '12', ['x2 > 20'], ['x1 < 10']]],
+    ['F', '0', '20', ['->', ['&&', ['off1'], ['off2']], ['G', '0', '5', ['||', ['on1'], ['on2']]]]]
 ]
 
 watertank = [
-    ['G', '0', '50', ['&&', ['R_x1 > 0'], ['R_x1 <= 9'], ['R_x2 > 0'], ['R_x2 <= 9']]],
-    ['G', '0', '10', ['->', ['R_x1 < 4.9'], ['F', '0', '10', ['R_x1 >= 5.1']]]],
-    ['F', '5', '14', ['->', ['B_off1'], ['F', '0', '7', ['&&', ['B_on1'], ['R_x1 > 5.5']]]]],
-    ['G', '0', '20', ['->', ['&&', ['B_on1'], ['B_on2']], ['F', '0', '5', ['||', ['B_off1'], ['B_off2']]]]]
+    ['G', '0', '50', ['&&', ['x1 > 0'], ['x1 <= 9'], ['x2 > 0'], ['x2 <= 9']]],
+    ['G', '0', '10', ['->', ['x1 < 4.9'], ['F', '0', '10', ['x1 >= 5.1']]]],
+    ['F', '5', '14', ['->', ['off1'], ['F', '0', '7', ['&&', ['on1'], ['x1 > 5.5']]]]],
+    ['G', '0', '20', ['->', ['&&', ['on1'], ['on2']], ['F', '0', '5', ['||', ['off1'], ['off2']]]]]
 
 ]
 
 railroad = [
-    ['F', '1', '49', ['R_pos <= 0']],
-    ['G', '20', '40', ['->', ['R_angle >= 80'], ['F', '1', '20', ['R_pos <= 0']]]],
-    ['G', '3', '50', ['F', '5', '20', ['R_angle >= 80']]],
-    ['G', '10', '60', ['->', ['R_angle >= 80'], ['G', '20', '40', ['R_angle < 60']]]]
+    ['F', '1', '49', ['pos <= 0']],
+    ['G', '20', '40', ['->', ['angle >= 80'], ['F', '1', '20', ['pos <= 0']]]],
+    ['G', '3', '50', ['F', '5', '20', ['angle >= 80']]],
+    ['G', '10', '60', ['->', ['angle >= 80'], ['G', '20', '40', ['angle < 60']]]]
 ]
 
 batteries = [
-    ['G', '1', '20', ['F', '3', '14', ['R_d1 >= 1.4']]],
-    ['F', '6', '30', ['->', ['&&', ['B_live1'], ['B_live2']], ['G', '7', '24', ['&&', ['B_live1'], ['B_live2']]]]],
-    ['G', '1', '49', ['&&', ['R_d1 > 0.5'], ['R_d2 > 0.5']]],
-    ['G', '11', '50', ['U', '2', '14', ['||', ['R_g1 >= 0'], ['R_g2 >= 0']], ['&&', ['B_dead1'], ['B_dead2']]]]
+    ['G', '1', '20', ['F', '3', '14', ['d1 >= 1.4']]],
+    ['F', '6', '30', ['->', ['&&', ['live1'], ['live2']], ['G', '7', '24', ['&&', ['live1'], ['live2']]]]],
+    ['G', '1', '49', ['&&', ['d1 > 0.5'], ['d2 > 0.5']]],
+    ['G', '11', '50', ['U', '2', '14', ['||', ['g1 >= 0'], ['g2 >= 0']], ['&&', ['dead1'], ['dead2']]]]
 ]
 
 
 # Test stuff (do not remove pls!)
 
 # railroad = [
-#     ['G', '3', '50', ['F', '5', '20', ['B_a']]],
-#     ['G', '10', '60', ['->', ['B_a'], ['G', '20', '40', ['!', ['B_a']]]]]
+#     ['G', '3', '50', ['F', '5', '20', ['a']]],
+#     ['G', '10', '60', ['->', ['a'], ['G', '20', '40', ['!', ['a']]]]]
 # ]
 
 # railroad = [
-#     ['G', '0', '10', ['F', '0', '5', ['B_a']]],
-#     ['G', '0', '6', ['->', ['B_a'], ['G', '3', '8', ['!', ['B_a']]]]]
+#     ['G', '0', '10', ['F', '0', '5', ['a']]],
+#     ['G', '0', '6', ['->', ['a'], ['G', '3', '8', ['!', ['a']]]]]
 # ]
 
 railroad_merged = [
-    ['G', '3', '9', ['F', '5', '20', ['B_a']]],
-    ['G', '10', '50', ['||', ['&&', ['F', '5', '20', ['B_a']], ['!', ['B_a']]], ['&&', ['F', '5', '20', ['B_a']], ['G', '20', '40', ['!', ['B_a']]]]]],
-    ['G', '51', '60', ['||', ['!', ['B_a']], ['G', '20', '40', ['!', ['B_a']]]]]
+    ['G', '3', '9', ['F', '5', '20', ['a']]],
+    ['G', '10', '50', ['||', ['&&', ['F', '5', '20', ['a']], ['!', ['a']]], ['&&', ['F', '5', '20', ['a']], ['G', '20', '40', ['!', ['a']]]]]],
+    ['G', '51', '60', ['||', ['!', ['a']], ['G', '20', '40', ['!', ['a']]]]]
 ]
 
 

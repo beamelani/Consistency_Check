@@ -331,7 +331,6 @@ class Node:
         :return: True if we can quickly determine that self implies other, False otherwise
         Assumes both nodes' operands have been sorted with sort_operands
         '''
-        assert self.operator == other.operator == ','
         self_lower_bounds = sorted({op.lower for op in self.operands if op.operator in {'G', 'F', 'U', 'R'}})
         len_self = len(self.operands)
         len_other = len(other.operands)

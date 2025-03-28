@@ -901,9 +901,9 @@ def local_consistency_check(local_solver, node):
                     local_solver.add_real_constraint(False, operand)
                 else: # Boolean variable
                     prop = operand[0]
-                    if prop == 'B_false':
+                    if prop == 'false':
                         return False # we have false in the upper level of a node
-                    elif prop == 'B_true':
+                    elif prop == 'true':
                         continue # if we have true in the upper level of a node we can just ignore it
                     local_solver.add_boolean_constraint(False, prop)
             case '!':
@@ -911,9 +911,9 @@ def local_consistency_check(local_solver, node):
                     local_solver.add_real_constraint(True, operand[0])
                 else: # Boolean variable
                     prop = operand[0][0]
-                    if prop == 'B_true':
+                    if prop == 'true':
                         return False # we have !true in the upper level of a node
-                    elif prop == 'B_false':
+                    elif prop == 'false':
                         continue # if we have !false in the upper level of a node we can just ignore it
                     local_solver.add_boolean_constraint(True, prop)
 
