@@ -236,6 +236,13 @@ railroad_merged = [
     ['G', '51', '60', ['||', ['!', ['a']], ['G', '20', '40', ['!', ['a']]]]]
 ]
 
+example = [
+    ['&&',
+        ['G', '0', '10', ['x > 5']],
+        ['F', '0', '11', ['x < 0']]
+    ]
+]
+
 
 def make_and(formulas):
     if len(formulas) == 1:
@@ -273,7 +280,7 @@ def check_dataset(dataset_name, dataset, max_depth, mode, max_quantum, timeout, 
         elapsed_tableau = (time.perf_counter() - start_t) / iters
     
     # print(len(res_tableau[0]))
-    # nx.drawing.nx_pydot.write_dot(res_tableau[0], './rr1_2.dot')
+    #nx.drawing.nx_pydot.write_dot(res_tableau[0], './example.dot')
 
     # Dizionario con i risultati
     return {
