@@ -325,111 +325,14 @@ if __name__ == '__main__':
         "req_cps": req_cps,
         "avionics": requirements_riscritti2 + parameter_ranges,
     }
-    #datasets = [cars, thermostat, watertank, batteries]
     sys.setrecursionlimit(1000000000)
     max_depth = 10000000
-    mode = 'sat' # 'strong_sat'
+    mode = 'strong_sat'
     sampling_interval = 1 # Fraction(1,10)
     timeout = 120 # in seconds
     iterations = 1
 
-    #results = [check_dataset(ds, max_depth) for ds in datasets]
     results = [check_dataset(name, data, max_depth, mode, sampling_interval, timeout, iterations) for name, data in datasets.items()]
 
     print("Benchmark results:")
     pretty_print(results, ms=False, csvfile="results.csv")
-
-
-'''
-
-def test_combinations_with_smt(formulas):
-    """
-    Testa tutte le combinazioni a due a due di `formulas` usando `smt_check_consistency`.
-    Interrompe il ciclo se una combinazione non è soddisfacibile.
-
-    Args:
-        formulas (list): Una lista di formule.
-        max_depth (int): La profondità massima del tableau.
-
-    Returns:
-        tuple: La combinazione che non è soddisfacibile (se trovata) e il relativo tableau.
-               Se tutte le combinazioni sono soddisfacibili, restituisce None.
-    """
-    parser = STLParser()
-    for formula_pair in combinations(formulas, 2):  # Genera tutte le combinazioni a due a due
-        combined_formula = make_and(list(formula_pair))
-        parsed_formula = parser.parse_relational_exprs(combined_formula)
-        satisfiable = smt_check_consistency(parsed_formula, False)
-        if not satisfiable:  # Se la formula non è soddisfacibile, interrompi
-            print(f"Non soddisfacibile trovato per combinazione: {formula_pair}")
-            return formula_pair
-
-    print("Tutte le combinazioni sono soddisfacibili.")
-    return None
-
-# formula = requirements[0]
-formula = make_and(requirements_riscritti)
-# print(formula)
-
-parser = STLParser()
-print(formula_to_string(formula))
-parsed_formula = parser.parse_relational_exprs(formula)
-print(parsed_formula)
-
-start_t = time.perf_counter()
-res = smt_check_consistency(parsed_formula, 'sat', False)
-#test_combinations_with_smt(requirements)
-elapsed_smt = time.perf_counter() - start_t
-print('Result (SMT):', res)
-print('Elapsed time (SMT):', elapsed_smt)
-
-
-sys.setrecursionlimit(1000000)
-max_depth = 100000
-start_t = time.perf_counter()
-#tableau, _ = make_tableau(Node(*formula), max_depth, 'sat', True, False)
-res = make_tableau(Node(*formula), max_depth, 'sat', False, True, False)
-elapsed_tableau = time.perf_counter() - start_t
-print('Result (tableau):', res)
-print('Elapsed time (tableau):', elapsed_tableau)
-
-#plot_tree(tableau)
-
-
-
-def test_combinations_with_tableau(formulas, max_depth, build_tree, verbose, mode='complete'):
-    """
-    Testa tutte le combinazioni a due a due di `formulas` usando `make_tableau`.
-    Interrompe il ciclo se una combinazione non è soddisfacibile.
-
-    Args:
-        formulas (list): Una lista di formule.
-        max_depth (int): La profondità massima del tableau.
-
-    Returns:
-        tuple: La combinazione che non è soddisfacibile (se trovata) e il relativo tableau.
-               Se tutte le combinazioni sono soddisfacibili, restituisce None.
-    """
-    for formula_pair in combinations(formulas, 2):  # Genera tutte le combinazioni a due a due
-        combined_formula = make_and(list(formula_pair))
-        if build_tree:
-            tableau, satisfiable = make_tableau(Node(*combined_formula), max_depth, mode, build_tree, verbose)
-        else:
-            satisfiable = make_tableau(Node(*combined_formula), max_depth, mode, build_tree, verbose)
-        if not satisfiable:  # Se la formula non è soddisfacibile, interrompi
-            print(f"Non soddisfacibile trovato per combinazione: {formula_pair}")
-            if build_tree:
-                return formula_pair, tableau
-            else:
-                return formula_pair
-
-    print("Tutte le combinazioni sono soddisfacibili.")
-    return None
-
-#start_t = time.perf_counter()
-#result = test_combinations_with_tableau(railroad, max_depth, False, False, 'sat')
-#elapsed_tableau = time.perf_counter() - start_t
-
-#print('Elapsed time (SMT):', elapsed_smt)
-#print('Elapsed time (tableau):', elapsed_tableau)
-'''
