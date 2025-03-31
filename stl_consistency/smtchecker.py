@@ -143,10 +143,10 @@ class SMTSTLConsistencyChecker:
                         print(f"{prop} = Bool('{prop}')")
                     self.smt_variables[prop] = Bool(prop)
 
-                    if formula[0] in {'B_true', 'B_false'}:
+                    if formula[0] in {'true', 'false'}:
                         if verbose:
                             print(f"s.add({prop} == {formula[0][2:]})")
-                        s.add(self.smt_variables[prop] == (formula[0] == 'B_true'))
+                        s.add(self.smt_variables[prop] == (formula[0] == 'true'))
                     else:
                         if verbose:
                             print(f"s.add({prop} == {formula[0]}_t{encoded_time})") 

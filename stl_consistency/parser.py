@@ -72,8 +72,8 @@ class STLParser:
                         name = args[0]
                         name_lower = name.lower()
                         if name_lower in {'true', 'false'}:
-                            return ['B_' + name_lower]
-                        return ['B_' + name]
+                            return [name_lower]
+                        return [name]
                     assert isinstance(args[0], list) # LPAR ImplExpr RPAR
                     return args[0]
             assert False

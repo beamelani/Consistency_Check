@@ -22,7 +22,8 @@
 
 import unittest
 
-from stl_consistency.tableau import make_tableau
+from stl_consistency.node import Node
+from stl_consistency.tableau import make_tableau, shift_bounds
 from stl_consistency.parser import STLParser
 
 class TestTableau(unittest.TestCase):
@@ -80,6 +81,32 @@ class TestTableau(unittest.TestCase):
 
     def test_jump1_U(self):
         self.make_test("b U[0,10] !a && G[0,9] a && F[10,20] a && G[15,20] !a", 200, True)
+
+    def test_G_is_derived(self):
+        self.make_test("G[0,6]  (! (a0 U[2,10] (F[0,6] (! a0))))", 500, True, mltl=True)
+
+    def test_shift_bounds_GF(self):
+        formula = [
+            ',',
+            ['G', '3', '50', ['F', '5', '20', ['B_a']]],
+            ['G', '10', '60', ['->', ['B_a'], ['G', '20', '40', ['!', ['B_a']]]]],
+            ['G', '3', '50', ['F', '5', '20', ['F', '20', '30', ['G', '20', '40', ['!', ['B_a']]]]]],
+            ['F', 0, 5, ['&&', ['G', 10, 20, ['B_a']], ['G', 20, 30, ['B_a']]]],
+            ['U', 0, 5, ['G', 10, 20, ['B_a']], ['G', 20, 30, ['B_a']]],
+            ['U', 0, 5, ['G', 10, 20, ['B_a']], ['||', ['G', 20, 30, ['B_a']], ['B_a']]],
+        ]
+        expected = [
+            ',',
+            ['G', 8, 55, ['F', 0, 15, ['B_a']]],
+            ['G', 10, 60, ['->', ['B_a'], ['G', 20, 40, ['!', ['B_a']]]]],
+            ['G', 48, 95, ['F', 0, 15, ['F', 0, 10, ['G', 0, 20, ['!', ['B_a']]]]]],
+            ['F', 10, 15, ['&&', ['G', 0, 10, ['B_a']], ['G', 10, 20, ['B_a']]]],
+            ['U', 10, 15, ['G', 0, 10, ['B_a']], ['G', 10, 20, ['B_a']]],
+            ['U', 0, 5, ['G', 10, 20, ['B_a']], ['||', ['G', 20, 30, ['B_a']], ['B_a']]],
+        ]
+        node = Node(*formula)
+        shift_bounds(node)
+        self.assertEqual(node.to_list(), expected)
 
 if __name__ == '__main__':
     unittest.main()

@@ -79,6 +79,44 @@ def push_negation(node):
         new_node.operands = [push_negation(op) for op in node.operands]
         return new_node
 
+def shift_bounds(node):
+    def shift_backward(f, shift_amount):
+        match f.operator:
+            case '&&' | '||' | ',' | '->' | '!':
+                for operand in f:
+                    shift_backward(operand, shift_amount)
+            case 'G' | 'F' | 'U' | 'R':
+                f.lower -= shift_amount
+                f.upper -= shift_amount
+            case _:
+                raise RuntimeError('Trying to shift bounds of proposition')
+
+    match node.operator:
+        case '&&' | '||' | ',' | '->' | '!':
+            for operand in node:
+                shift_bounds(operand)
+        case 'G' | 'F':
+            shift_bounds(node[0])
+            shift_amount = node[0].get_min_lower(False)
+            # If get_min_lower is -1, we can't shift because there are props at the first level
+            if shift_amount > 0:
+                shift_backward(node[0], shift_amount)
+                node.lower += shift_amount
+                node.upper += shift_amount
+        case 'U' | 'R':
+            shift_bounds(node[0])
+            shift_bounds(node[1])
+            shift_amount0 = node[0].get_min_lower(False)
+            shift_amount1 = node[1].get_min_lower(False)
+            shift_amount = min(shift_amount0, shift_amount1)
+            # If get_min_lower is -1, we can't shift because there are props at the first level
+            if shift_amount > 0:
+                shift_backward(node[0], shift_amount)
+                shift_backward(node[1], shift_amount)
+                node.lower += shift_amount
+                node.upper += shift_amount
+
+
 def extract_time_instants(formula, flag):
     """
     :return: funzione che restituisce gli estremi di tutti gli intervalli della formula in un vettore ordinato
@@ -116,31 +154,31 @@ def extract_time_instants(formula, flag):
     return time_instants
 
 
-def assign_identifier(formula):
+def assign_identifier(node):
     '''
-    :param formula:
-    :return: la formula assegna un identificatore agli operatori nested, in modo che nella decomposizione gli operatori
+    :param node:
+    :return: la funzione assegna un identificatore agli operatori nested, in modo che nella decomposizione gli operatori
     derivati dalla decomposizione di un nested siano riconducibili all'operatore originario
     '''
-    counter = 0
-    if formula.operator in {'&&', '||', ',', '->'}:
-        for operand in formula.operands:
-            if operand.operator in {'G', 'F'} and operand.operands[0].operator not in {'P', '!'}:
-                operand.identifier = counter
-                counter += 1
-            elif operand.operator in {'U', 'R'} and (
-                    operand.operands[0].operator not in {'P', '!'} or operand.operands[1].operator not in {'P', '!'}):
-                operand.identifier = counter
-                counter += 1
-    elif formula.operator in {'G', 'F', 'U', 'R'}:
-        if formula.operator in {'G', 'F'} and formula.operands[0].operator not in {'P', '!'}:
-            formula.identifier = counter
-            counter += 1
-        elif formula.operator in {'U', 'R'} and (
-                formula.operands[0].operator not in {'P', '!'} or formula.operands[1].operator not in {'P', '!'}):
-            formula.identifier = counter
-            counter += 1
-    return formula
+    id_counter = 0
+
+    def do_assign(node):
+        nonlocal id_counter
+        match node.operator:
+            case '&&' | '||' | ',' | '->':
+                for operand in node.operands:
+                    do_assign(operand)
+            case 'G' | 'F':
+                if node.operands[0].operator not in {'P', '!'}:
+                    node.identifier = id_counter
+                    id_counter += 1
+            case 'U' | 'R':
+                if node.operands[0].operator not in {'P', '!'} or node.operands[1].operator not in {'P', '!'}:
+                    node.identifier = id_counter
+                    id_counter += 1
+
+    do_assign(node)
+
 
 # TODO Can we merge this with assign_identifier?
 def assign_real_expr_id(node):
@@ -234,18 +272,22 @@ def decompose(tableau_data, local_solver, node, current_time):
                     #res = decompose_imply_new(node, j)
                     res = decompose_imply_classic(node, j, 'strong_sat', tableau_data.number_of_implications)
                 break
-            case 'F':
-                if node.operands[j].lower == current_time:
-                    res = decompose_F(node, j)
-                    break
-            case 'U':
-                if node.operands[j].lower == current_time:
-                    res = decompose_U(node, j)
-                    break
-            case 'R':
-                if node.operands[j].lower == current_time:
-                    res = decompose_R(node, j)
-                    break
+
+    if res is None:
+        for j in range(len(node.operands)):
+            match node.operands[j].operator:
+                case 'F':
+                    if node.operands[j].lower == current_time:
+                        res = decompose_F(node, j)
+                        break
+                case 'U':
+                    if node.operands[j].lower == current_time:
+                        res = decompose_U(node, j)
+                        break
+                case 'R':
+                    if node.operands[j].lower == current_time:
+                        res = decompose_R(node, j)
+                        break
 
     if res is not None:
         for child in res:
@@ -336,6 +378,13 @@ def decompose_all_G_nodes(outer_node, current_time):
                 if (operand[0].check_boolean_closure(lambda n: n.operator == 'P') and
                     any(other.lower_bound() == operand.lower for j, other in enumerate(outer_node.operands) if (j != i and other is not None))):
                     outer_node.jump1 = True
+                # Set is_derived to false
+                for j, other in enumerate(outer_node.operands):
+                    if j != i and other is not None:
+                        if other.operator in {'G', 'U', 'R', 'F'} and other.is_derived and other.identifier == operand.identifier:
+                            other.is_derived = False
+                        elif other.operator == 'O' and other.operands[0].operator in {'U', 'R', 'F'} and other.operands[0].is_derived and other.operands[0].identifier == operand.identifier:
+                            other.operands[0].is_derived = False
                 # Elimino l'elemento se a == b
                 outer_node.operands[i] = None
     outer_node.operands = [x for x in outer_node.operands if x is not None]
@@ -448,7 +497,10 @@ def decompose_U(formula, index):
         U_formula[1].check_boolean_closure(lambda n: n.operator == 'P') and
         any(other.lower_bound() == U_formula.lower for j, other in enumerate(formula.operands) if j != index)):
         new_node2.jump1 = True
-
+    if U_formula.lower == U_formula.upper:
+        for operand in new_node1.operands:  # quando U va via tolgo is_derived dagli operatori
+            if operand.is_derived and operand.identifier == U_formula.identifier:
+                operand.is_derived = False
     return [new_node2, new_node1]
 
 
@@ -644,12 +696,14 @@ def decompose_imply_classic(node, index, mode='sat', number_of_implications=None
     if rhs.operator == 'G' and rhs.is_derived:
         new_rhs = merge_derived_g_nodes(rhs, new_node2)
     new_node2.replace_operand(index, *(x for x in [new_lhs, new_rhs] if x is not None))
-    if node.operands[index].identifier is not None and mode == 'strong_sat':
-        if imply_formula.identifier not in new_node2.satisfied_implications:
-            skip = False
-        else:
-            skip = True
+
+    if imply_formula.identifier is not None and mode == 'strong_sat':
+        skip = imply_formula.identifier in new_node2.satisfied_implications
         new_node2.satisfied_implications.add(imply_formula.identifier)
+    else:
+        # TODO this is needed because sometimes imply_formula.identifier is None (req_cps): find out why and fix it
+        skip = True
+
     # euristica per ottimizzare, se nella formula ho già antecedente che deve essere vero
     # resituisco prima nodo in cui antecedente è vero, altrimenti il contrario
     def check_match(sub1, sub2):
@@ -663,9 +717,9 @@ def decompose_imply_classic(node, index, mode='sat', number_of_implications=None
             for operand in node.operands:
                 if check_match(element, operand):
                     return new_node2, new_node1
-    if mode == 'sat' or new_node2.satisfied_implications == number_of_implications:
-        return new_node1, new_node2
-    elif mode == 'strong_sat' and skip: #se quella implicazione l'avevo già prec soddisfatta non mi interessa risoddisfarla
+
+    if mode == 'sat' or new_node2.satisfied_implications == number_of_implications or (mode == 'strong_sat' and skip):
+        # in strong_sat, se quella implicazione l'avevo già prec soddisfatta non mi interessa risoddisfarla
         return new_node1, new_node2
     else:
         return new_node2, new_node1
@@ -777,7 +831,7 @@ def decompose_jump(node):
             jump = 1
             node.jump1 = False
         else:
-            jump = [] 
+            must_jump_1 = False
             for and_operand in node.operands:
                 # Controllo prima gli operatori nested problematici perché il salto dipende da loro:
                 # verifico se ho raggiunto la threshold per cui posso saltare, se l'ho raggiunta cacolo il salto,
@@ -794,14 +848,13 @@ def decompose_jump(node):
                     elif o_operand.operator == 'R':
                         max_upper = o_operand.operands[1].get_max_upper()
 
-                    if max_upper != -1 and o_operand.lower >= o_operand.initial_time + max_upper:
-                        # se operatore interno è esaurito
-                        indice = bisect.bisect_right(time_instants, o_operand.lower) # trovo il primo numero maggiore dell'istante corrente di tempo
-                        jump.append(time_instants[indice] - o_operand.lower) # il jump che devo fare è l'istante in cui devo arrivare - quello corrente
-                    else:  # se sono qui non posso saltare, devo andare avanti di 1 in 1
-                        jump.append(1)
+                    must_jump_1 = max_upper == -1 or o_operand.lower < o_operand.initial_time + max_upper
 
-            jump = min(jump)
+            if must_jump_1:
+                jump = 1
+            else:
+                indice = bisect.bisect_right(time_instants, node.current_time) # trovo il primo numero maggiore dell'istante corrente di tempo
+                jump = time_instants[indice] - node.current_time # il jump che devo fare è l'istante in cui devo arrivare - quello corrente
         # Now we build the new node after the jump
         new_node_operands = []
         for and_operand in node.operands:
@@ -857,9 +910,9 @@ def local_consistency_check(local_solver, node):
                     local_solver.add_real_constraint(False, operand)
                 else: # Boolean variable
                     prop = operand[0]
-                    if prop == 'B_false':
+                    if prop == 'false':
                         return False # we have false in the upper level of a node
-                    elif prop == 'B_true':
+                    elif prop == 'true':
                         continue # if we have true in the upper level of a node we can just ignore it
                     local_solver.add_boolean_constraint(False, prop)
             case '!':
@@ -867,9 +920,9 @@ def local_consistency_check(local_solver, node):
                     local_solver.add_real_constraint(True, operand[0])
                 else: # Boolean variable
                     prop = operand[0][0]
-                    if prop == 'B_true':
+                    if prop == 'true':
                         return False # we have !true in the upper level of a node
-                    elif prop == 'B_false':
+                    elif prop == 'false':
                         continue # if we have !false in the upper level of a node we can just ignore it
                     local_solver.add_boolean_constraint(True, prop)
 
@@ -1024,10 +1077,7 @@ def add_children(tableau_data, local_solver, node, depth, last_spawned, max_dept
         if mode in {'sat', 'complete'}:
             return True
         elif mode == 'strong_sat':
-            if len(node.satisfied_implications) == tableau_data.number_of_implications:
-                return True
-            else:
-                return False
+            return len(node.satisfied_implications) == tableau_data.number_of_implications
     if tableau_data.verbose:
         for child in children:
             print(child)
@@ -1086,7 +1136,7 @@ def add_children(tableau_data, local_solver, node, depth, last_spawned, max_dept
         max_depth_reached = False
         for child in child_queue:
             # If the child comes from a temporal jump, we need a new, empty solver
-            child_solver = local_solver if child.current_time == current_time else LocalSolver()
+            child_solver = local_solver if child.current_time == current_time else local_solver.get_empty_solver()
             child_res = add_children(tableau_data, child_solver, child, depth + 1, last_spawned, max_depth, current_time)
             if child_res:
                 if not child.siblings_imply:
@@ -1152,7 +1202,6 @@ def build_decomposition_tree(tableau_data, root, max_depth):
 class TableauData:
 
     def __init__(self, formula, number_of_implications, mode, build_tree, parallel, verbose):
-        #self.true_implications = set()
         self.number_of_implications = number_of_implications
         self.build_tree = build_tree
         self.mode = mode
@@ -1183,12 +1232,14 @@ def make_tableau(formula, max_depth, mode, build_tree, parallel, verbose, mltl=F
     if not mltl:
         formula = modify_U_R(formula)
         formula = decompose_and(formula)[0][0] # perché funzione sopra può aggiungere && di troppo
+    
+    formula = push_negation(formula)
+    shift_bounds(formula)
     assign_and_or_element(formula)
-    formula = assign_identifier(formula)
     assign_real_expr_id(formula)
     number_of_implications = count_implications(formula)
     set_initial_time(formula)
-    formula = push_negation(formula)
+    assign_identifier(formula)
 
     tableau_data = TableauData(formula, number_of_implications, mode, build_tree, parallel, verbose)
     return build_decomposition_tree(tableau_data, formula, max_depth)

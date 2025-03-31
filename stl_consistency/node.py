@@ -113,7 +113,7 @@ class Node:
             new.real_expr_id = self.real_expr_id
         return new
 
-    def __list__(self):
+    def to_list(self):
         '''
         Convert node to list representation
         '''
@@ -155,6 +155,18 @@ class Node:
                 raise ValueError(f'Operator {self.operator} not handled')
         self.current_time = min_time
         return min_time
+
+    def get_min_lower(self, ignore_prop=True):
+        '''
+        :return: the minimum lower bound from temporal operators in the first-level
+                 boolean closure of self, and -1 if self is purely propositional
+        '''
+        match self.operator:
+            case '&&' | '||' | ',' | '->' | '!':
+                return min(filter(lambda x: not ignore_prop or x >= 0, (op.get_min_lower(ignore_prop) for op in self.operands)))
+            case _:
+                # Works because in all non-temporal operators self.lower == -1
+                return self.lower
 
     def get_max_upper(self):
         '''
@@ -233,16 +245,52 @@ class Node:
         return isinstance(other, Node) and (self.operator, self.lower, self.upper, self.operands) == (other.operator, other.lower, other.upper, other.operands)
 
     def __lt__(self, other):
-        return (self.operator, self.lower, self.upper, self.operands) < (other.operator, other.lower, other.upper, other.operands)
+        # TODO do something less ugly
+        if self.operator == 'P' and len(self.operands) > 1:
+            self_operands = [str(self.real_expr_id)]
+        else:
+            self_operands = self.operands
+        if other.operator == 'P' and len(other.operands) > 1:
+            other_operands = [str(other.real_expr_id)]
+        else:
+            other_operands = other.operands
+        return (self.operator, self.lower, self.upper, self_operands) < (other.operator, other.lower, other.upper, other_operands)
     
     def __le__(self, other):
-        return (self.operator, self.lower, self.upper, self.operands) <= (other.operator, other.lower, other.upper, other.operands)
+        # TODO do something less ugly
+        if self.operator == 'P' and len(self.operands) > 1:
+            self_operands = [str(self.real_expr_id)]
+        else:
+            self_operands = self.operands
+        if other.operator == 'P' and len(other.operands) > 1:
+            other_operands = [str(other.real_expr_id)]
+        else:
+            other_operands = other.operands
+        return (self.operator, self.lower, self.upper, self_operands) <= (other.operator, other.lower, other.upper, other_operands)
 
     def __gt__(self, other):
-        return (self.operator, self.lower, self.upper, self.operands) > (other.operator, other.lower, other.upper, other.operands)
+        # TODO do something less ugly
+        if self.operator == 'P' and len(self.operands) > 1:
+            self_operands = [str(self.real_expr_id)]
+        else:
+            self_operands = self.operands
+        if other.operator == 'P' and len(other.operands) > 1:
+            other_operands = [str(other.real_expr_id)]
+        else:
+            other_operands = other.operands
+        return (self.operator, self.lower, self.upper, self_operands) > (other.operator, other.lower, other.upper, other_operands)
     
     def __ge__(self, other):
-        return (self.operator, self.lower, self.upper, self.operands) >= (other.operator, other.lower, other.upper, other.operands)
+        # TODO do something less ugly
+        if self.operator == 'P' and len(self.operands) > 1:
+            self_operands = [str(self.real_expr_id)]
+        else:
+            self_operands = self.operands
+        if other.operator == 'P' and len(other.operands) > 1:
+            other_operands = [str(other.real_expr_id)]
+        else:
+            other_operands = other.operands
+        return (self.operator, self.lower, self.upper, self_operands) >= (other.operator, other.lower, other.upper, other_operands)
 
     def get_imply_sort_key(self, time=None):
         if time is None:
@@ -268,9 +316,9 @@ class Node:
             return False
         match self.operator:
             case 'F':
-                return self.operands[0] == other.operands[0] and other.lower - time_other <= self.lower - time_self and other.upper - time_other >= self.upper - time_self
+                return other.lower - time_other <= self.lower - time_self and other.upper - time_other >= self.upper - time_self and self.operands[0] == other.operands[0]
             case 'G':
-                return self.operands[0] == other.operands[0] and self.lower - time_self <= other.lower - time_other and self.upper - time_self >= other.upper - time_other
+                return self.lower - time_self <= other.lower - time_other and self.upper - time_self >= other.upper - time_other and self.operands[0] == other.operands[0]
             case 'P':
                 return self.operands[0] == other.operands[0]
             case '!':
@@ -283,7 +331,6 @@ class Node:
         :return: True if we can quickly determine that self implies other, False otherwise
         Assumes both nodes' operands have been sorted with sort_operands
         '''
-        assert self.operator == other.operator == ','
         self_lower_bounds = sorted({op.lower for op in self.operands if op.operator in {'G', 'F', 'U', 'R'}})
         len_self = len(self.operands)
         len_other = len(other.operands)
