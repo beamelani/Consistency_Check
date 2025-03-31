@@ -261,7 +261,7 @@ def check_dataset(dataset_name, dataset, max_depth, mode, max_quantum, timeout, 
     # Prima prova: SMT
     start_t = time.perf_counter()
     for _ in range(iters):
-        res_smt = False #run_with_timeout(timeout, smt_check_consistency, normalized_formula, mode, False)
+        res_smt = run_with_timeout(timeout, smt_check_consistency, normalized_formula, mode, False, False)
         if res_smt == 'timeout':
             elapsed_smt = timeout
             break

@@ -62,7 +62,13 @@ def main():
         start_t = time.perf_counter()
         parsed_formula = parser.parse_formula_as_stl_list(formula)
         parsing_t = time.perf_counter()
-        res = smt_check_consistency(parsed_formula, mode, args.verbose)
+        res = smt_check_consistency(parsed_formula, mode, args.print_trace, args.verbose)
+
+        if args.print_trace:
+            trace, res = res
+            if res:
+                print('Trace:')
+                print(trace)
     else:
         start_t = time.perf_counter()
 

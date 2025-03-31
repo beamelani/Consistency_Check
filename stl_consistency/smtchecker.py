@@ -99,7 +99,7 @@ class SMTSTLConsistencyChecker:
 
         return sorted_model
 
-    def solve(self, table, mode, verbose):
+    def solve(self, table, mode, return_trace, verbose):
         # This hashtable will contain the variables for the SMT Solver
         self.smt_variables = {}
 
@@ -358,15 +358,15 @@ class SMTSTLConsistencyChecker:
         elif check_res == sat:
             if verbose:
                 print("The STL requirements are consistent.")
-                print("This is a signal witness:")
-                print(self._filter_witness(s.model()))
+            if return_trace:
+                return self._filter_witness(s.model()), True
             return True
         else:
             print("Unable to check consistency!")
-            return False
+            return None
 
 
-def smt_check_consistency(parsed_formula, mode='sat', verbose=False):
+def smt_check_consistency(parsed_formula, mode, return_trace, verbose=False):
     table = STLAbstractSyntaxTable(parsed_formula)
 
     if verbose:
@@ -374,4 +374,4 @@ def smt_check_consistency(parsed_formula, mode='sat', verbose=False):
         table.print()
 
     checker = SMTSTLConsistencyChecker()
-    return checker.solve(table, mode, verbose)
+    return checker.solve(table, mode, return_trace, verbose)
