@@ -29,6 +29,42 @@ from stl_consistency.node import Node
 from stl_consistency.local_solver import LocalSolver
 
 
+def modify_U_R(node):
+    """Modifica una formula sostituendo ogni p U[a,b] q e p R[a,b] q in tutta la formula ricorsivamente."""
+    """ pU[a,b]q diventa pU[a,b]q && G[0,a]p mentre (p R[a,b] q) → (F[0,a] p) || (p R[a,b] q)"""
+    # Se il nodo è atomico ('P'), lo restituiamo senza modifiche
+    if node.operator == 'P':
+        return node
+
+    # Se il nodo ha operatori figli, li modifichiamo prima
+    #new_operands = [modify_U_R(operand) for operand in node.operands]
+    for i in range(len(node.operands)):
+        node.operands[i] = modify_U_R(node.operands[i])
+
+    # Se il nodo è un Until, lo modifichiamo: (p U[a,b] q) → (p U[a,b] q) ∧ (G[0,a] p)
+    if node.operator == 'U' and node.lower > 0:
+        p = node[0]
+        a = node.lower
+
+        G_part = Node('G', '0', a, p)
+        new_node = Node('&&')
+        new_node.operands = [node, G_part]
+        return new_node # Sostituiamo con il nuovo nodo
+
+    # Se il nodo è un Release, lo modifichiamo: (p R[a,b] q) → (F[0,a] p) ∨ (p R[a,b] q)
+    elif node.operator == 'R' and node.lower > 0:
+        p = node[0]
+        a = node.lower
+
+        F_part = Node('F', '0', a, p)
+        new_node = Node('||')
+        new_node.operands = [F_part, node]
+        return new_node  # Sostituiamo con il nuovo nodo
+
+    # Restituiamo il nodo con gli operandi aggiornati
+    return node
+
+
 def push_negation(node):
     if node.operator == '!':
         operand = node[0]
@@ -116,41 +152,44 @@ def shift_bounds(node):
                 node.upper += shift_amount
 
 
-def extract_time_instants(formula, flag):
+def assign_and_or_element(node):
     """
-    :return: funzione che restituisce gli estremi di tutti gli intervalli della formula in un vettore ordinato
-    (non quelli degli op derivati, eccezione se op is_derived è estratto da -> o ||)
+    Assegna l'attributo and_element numerato a ogni operando di un nodo G con operando &&
     """
-    if flag:
-        time_instants = []
-        if formula.operator not in {'P'}:
-            for elem in formula:
-                if elem.operator not in {'P'}:
-                    if elem.operator in ['G', 'F', 'U', 'R'] and not elem.is_derived:
-                        # Controlla operatori temporali G (Globally), F (Finally) e U (Until)
-                        time_instants.append(elem.lower)
-                        time_instants.append(elem.upper)
-                    #caso in cui op is_derived è estratto da un -> che era dentro a un G o U o R (flag == True)
-                    elif elem.operator in ['G', 'F', 'U', 'R'] and elem.is_derived and (not elem.id_implication == -1 or not elem.or_element == -1):
-                        time_instants.append(elem.lower)
-                        time_instants.append(elem.upper) #va fatto anche nel caso 'O' ??
-                    elif elem.operator in ['O'] and not elem.operands[0].is_derived:
-                        time_instants.append(elem.operands[0].lower)
-                        time_instants.append(elem.operands[0].upper)
+    if not node.operands:
+        return
+
+    if node.operator == 'G' and node.operands[0].operator == '&&':
+        # Scorre i figli e assegna and_element
+        for index, operand in enumerate(node.operands[0].operands):
+            operand.and_element = index
+    elif node.operator == 'G' and node.operands[0].operator == '||':
+        # Scorre i figli e assegna or_element
+        for index, operand in enumerate(node.operands[0].operands):
+            operand.or_element = index
+
+    # Ricorsione su tutti gli operandi
+    for operand in node.operands:
+        if isinstance(operand, Node):
+            assign_and_or_element(operand)
+
+
+def count_implications(node, counter=[0]):
+    """
+    Conta tutte le implicazioni ('->') presenti nel nodo e nei suoi sotto-nodi,
+    assegnando a ciascuna un identificatore univoco.
+
+    """
+    if not isinstance(node, Node):
+        return
+    if node.operator == '->':
+        node.identifier = counter[0]  # Assegna l'ID univoco all'implicazione
+        counter[0] += 1  # Incrementa il contatore
     else:
-        time_instants = []
-        if formula.operator not in {'P'}:
-            for elem in formula:
-                if elem.operator not in {'P'}:
-                    if elem.operator in ['G', 'F', 'U', 'R']:  # Controlla operatori temporali G (Globally), F (Finally) e U (Until)
-                        time_instants.append(elem.lower)
-                        time_instants.append(elem.upper)
-                    elif elem.operator in ['O']:
-                        time_instants.append(elem.operands[0].lower)
-                        time_instants.append(elem.operands[0].upper)
-    assert all(isinstance(t, int) for t in time_instants)
-    time_instants = sorted(time_instants)
-    return time_instants
+        for operand in node.operands:  # Ricorsione su tutti gli operandi
+            count_implications(operand, counter)
+
+    return counter[0]
 
 
 def assign_identifier(node):
@@ -202,42 +241,24 @@ def assign_real_expr_id(node):
     do_assign(node)
 
 
-def has_temporal_operator(node):
+def set_initial_time(formula):
     '''
-    :param node: Node containing a formula
-    :return: True if the formula contains any temporal operator
+    :return: Serve per il jump nei casi nested problematici (devo sapere qual era il lower bound iniziale
+    del nested + esterno per sapere se posso saltare)
     '''
-    match node.operator:
-        case 'G' | 'F' | 'U' | 'R':
-            return True
-        case '&&' | '||' | ',' | '!' | '->':
-            return any(has_temporal_operator(operand) for operand in node)
-    return False
-
-def is_complex_temporal_operator(node):
-    match node.operator:
-        case 'G' | 'U':
-            return has_temporal_operator(node[0])
-        case 'R':
-            return has_temporal_operator(node[1])
-    return False
-
-def flagging(node):
-    '''
-    :param node:
-    :return: True if the node contains any `problematic` operators
-    '''
-    match node.operator:
-        case ',' | '&&' | '||' | '!' | '->':
-            return any(flagging(operand) for operand in node)
-        case 'O':
-            match node[0].operator:
-                case 'G' | 'U':
-                    return has_temporal_operator(node[0][0])
-                case 'R':
-                    return has_temporal_operator(node[0][1])
-            return False
-    return False
+    if formula.operator in {'&&', '||', ',', '->'}:
+        for operand in formula.operands:
+            if operand.operator in {'G', 'U'} and operand.operands[0].operator not in {'P', '!'}:
+                operand.initial_time = operand.lower
+            elif operand.operator in {'R'} and operand.operands[1].operator not in {'P', '!'}:
+                operand.initial_time = operand.lower
+            elif operand.operator in {'&&', '||', ',', '->', '<->'}:
+                return set_initial_time(operand)
+    elif formula.operator in {'G', 'U'} and formula.operands[0].operator not in {'P', '!'}:
+        formula.initial_time = formula.lower
+    elif formula.operator in {'R'} and formula.operands[1].operator not in {'P', '!'}:
+        formula.initial_time = formula.lower
+    return formula
 
 
 def decompose(tableau_data, local_solver, node, current_time):
@@ -300,7 +321,6 @@ def decompose_all_G_nodes(outer_node, current_time):
     """
     Decompone tutti i nodi G nella formula con lower bound uguale a current_time.
     """
-    assert outer_node.operator == ','
     # Funzione interna ricorsiva per modificare l'argomento
     def modify_argument(arg, G_node, identifier, short, simple):
         if arg.operator in {'P', '!'}:
@@ -568,7 +588,6 @@ def decompose_R(formula, index):
     return [new_node2, new_node1]
 
 def decompose_and(node):
-    assert node.operator == ','
     new_node = node.shallow_copy()
     # We decomose all AND operators, but only at the first level
     has_decomposed = False
@@ -774,6 +793,71 @@ def simplify_F(node):
         del node.operands[i]
     return node
 
+
+def has_temporal_operator(node):
+    '''
+    :param node: Node containing a formula
+    :return: True if the formula contains any temporal operator
+    '''
+    match node.operator:
+        case 'G' | 'F' | 'U' | 'R':
+            return True
+        case '&&' | '||' | ',' | '!' | '->':
+            return any(has_temporal_operator(operand) for operand in node)
+    return False
+
+def is_complex_temporal_operator(node):
+    match node.operator:
+        case 'G' | 'U':
+            return has_temporal_operator(node[0])
+        case 'R':
+            return has_temporal_operator(node[1])
+    return False
+
+def flagging(node):
+    '''
+    :param node:
+    :return: True if the node contains any `problematic` operators
+    '''
+    match node.operator:
+        case ',' | '&&' | '||' | '!' | '->':
+            return any(flagging(operand) for operand in node)
+        case 'O':
+            match node[0].operator:
+                case 'G' | 'U':
+                    return has_temporal_operator(node[0][0])
+                case 'R':
+                    return has_temporal_operator(node[0][1])
+            return False
+    return False
+
+def extract_time_instants(node, flag):
+    """
+    :return: funzione che restituisce gli estremi di tutti gli intervalli della formula in un vettore ordinato
+    (non quelli degli op derivati, eccezione se op is_derived è estratto da -> o ||)
+    """
+    time_instants = []
+    if flag:
+        for elem in node:
+            if elem.operator in {'G', 'F', 'U', 'R'} and (not elem.is_derived or not elem.id_implication == -1 or not elem.or_element == -1):
+                # Controlla operatori temporali G (Globally), F (Finally) e U (Until)
+                #caso in cui op is_derived è estratto da un -> che era dentro a un G o U o R (flag == True)
+                time_instants.append(elem.lower)
+                time_instants.append(elem.upper)
+            elif elem.operator == 'O' and not elem.operands[0].is_derived:
+                time_instants.append(elem.operands[0].lower)
+                time_instants.append(elem.operands[0].upper)
+    else:
+        for elem in node:
+            if elem.operator in {'G', 'F', 'U', 'R'}:  # Controlla operatori temporali G (Globally), F (Finally) e U (Until)
+                time_instants.append(elem.lower)
+                time_instants.append(elem.upper)
+            elif elem.operator == 'O':
+                time_instants.append(elem.operands[0].lower)
+                time_instants.append(elem.operands[0].upper)
+
+    return sorted(time_instants)
+
 def decompose_jump(tableau_data, node):
     '''
     Distingue casi problematici da non problematici
@@ -935,101 +1019,6 @@ def local_consistency_check(local_solver, node):
 
     return local_solver.check()
 
-
-def set_initial_time(formula):
-    '''
-    :return: Serve per il jump nei casi nested problematici (devo sapere qual era il lower bound iniziale
-    del nested + esterno per sapere se posso saltare)
-    '''
-    if formula.operator in {'&&', '||', ',', '->'}:
-        for operand in formula.operands:
-            if operand.operator in {'G', 'U'} and operand.operands[0].operator not in {'P', '!'}:
-                operand.initial_time = operand.lower
-            elif operand.operator in {'R'} and operand.operands[1].operator not in {'P', '!'}:
-                operand.initial_time = operand.lower
-            elif operand.operator in {'&&', '||', ',', '->', '<->'}:
-                return set_initial_time(operand)
-    elif formula.operator in {'G', 'U'} and formula.operands[0].operator not in {'P', '!'}:
-        formula.initial_time = formula.lower
-    elif formula.operator in {'R'} and formula.operands[1].operator not in {'P', '!'}:
-        formula.initial_time = formula.lower
-    return formula
-
-
-def modify_U_R(node):
-    """Modifica una formula sostituendo ogni p U[a,b] q e p R[a,b] q in tutta la formula ricorsivamente."""
-    """ pU[a,b]q diventa pU[a,b]q && G[0,a]p mentre (p R[a,b] q) → (F[0,a] p) || (p R[a,b] q)"""
-    # Se il nodo è atomico ('P'), lo restituiamo senza modifiche
-    if node.operator == 'P':
-        return node
-
-    # Se il nodo ha operatori figli, li modifichiamo prima
-    #new_operands = [modify_U_R(operand) for operand in node.operands]
-    for i in range(len(node.operands)):
-        node.operands[i] = modify_U_R(node.operands[i])
-
-    # Se il nodo è un Until, lo modifichiamo: (p U[a,b] q) → (p U[a,b] q) ∧ (G[0,a] p)
-    if node.operator == 'U' and node.lower > 0:
-        p = node[0]
-        a = node.lower
-
-        G_part = Node('G', '0', a, p)
-        new_node = Node('&&')
-        new_node.operands = [node, G_part]
-        return new_node # Sostituiamo con il nuovo nodo
-
-    # Se il nodo è un Release, lo modifichiamo: (p R[a,b] q) → (F[0,a] p) ∨ (p R[a,b] q)
-    elif node.operator == 'R' and node.lower > 0:
-        p = node[0]
-        a = node.lower
-
-        F_part = Node('F', '0', a, p)
-        new_node = Node('||')
-        new_node.operands = [F_part, node]
-        return new_node  # Sostituiamo con il nuovo nodo
-
-    # Restituiamo il nodo con gli operandi aggiornati
-    return node
-
-
-def count_implications(node, counter=[0]):
-    """
-    Conta tutte le implicazioni ('->') presenti nel nodo e nei suoi sotto-nodi,
-    assegnando a ciascuna un identificatore univoco.
-
-    """
-    if not isinstance(node, Node):
-        return
-    if node.operator == '->':
-        node.identifier = counter[0]  # Assegna l'ID univoco all'implicazione
-        counter[0] += 1  # Incrementa il contatore
-    else:
-        for operand in node.operands:  # Ricorsione su tutti gli operandi
-            count_implications(operand, counter)
-
-    return counter[0]
-
-
-def assign_and_or_element(node):
-    """
-    Assegna l'attributo and_element numerato a ogni operando di un nodo G con operando &&
-    """
-    if not node.operands:
-        return
-
-    if node.operator == 'G' and node.operands[0].operator in {'&&'}:
-        # Scorre i figli e assegna and_element
-        for index, operand in enumerate(node.operands[0].operands):
-            operand.and_element = index
-    elif node.operator == 'G' and node.operands[0].operator in {'||'}:
-        # Scorre i figli e assegna and_element
-        for index, operand in enumerate(node.operands[0].operands):
-            operand.or_element = index
-
-    # Ricorsione su tutti gli operandi
-    for operand in node.operands:
-        if isinstance(operand, Node):
-            assign_and_or_element(operand)
 
 def add_tree_child(tableau_data, G, parent_label, child):
     tableau_data.counter += 1
@@ -1210,7 +1199,7 @@ def build_decomposition_tree(tableau_data, root, max_depth):
 
 class TableauData:
 
-    def __init__(self, formula, number_of_implications, mode, build_tree, return_trace, parallel, verbose):
+    def __init__(self, number_of_implications, mode, build_tree, return_trace, parallel, verbose):
         self.number_of_implications = number_of_implications
         self.build_tree = build_tree
         self.mode = mode
@@ -1251,7 +1240,7 @@ def make_tableau(formula, max_depth, mode, build_tree, return_trace, parallel, v
     set_initial_time(formula)
     assign_identifier(formula)
 
-    tableau_data = TableauData(formula, number_of_implications, mode, build_tree, return_trace, parallel, verbose)
+    tableau_data = TableauData(number_of_implications, mode, build_tree, return_trace, parallel, verbose)
     return build_decomposition_tree(tableau_data, formula, max_depth)
 
 
