@@ -28,7 +28,6 @@ import concurrent.futures as fs
 from stl_consistency.node import Node
 from stl_consistency.local_solver import LocalSolver
 
-trace_stack = []
 
 def push_negation(node):
     if node.operator == '!':
@@ -247,7 +246,6 @@ def decompose(tableau_data, local_solver, node, current_time):
     :param current_time: istante di tempo attuale, per capire quali operatori sono attivi e quali no
     :return: ritorna la lista decomposta (i.e. il successivo nodo del tree)
     """
-    global trace_stack
     # fai qui il check accept/reject, se rigetti non serve andare avanti
     if not local_consistency_check(local_solver, node):
         return ['Rejected']
@@ -295,7 +293,7 @@ def decompose(tableau_data, local_solver, node, current_time):
         return res
 
     # se arrivo qui vuol dire che non sono entrata in nessun return e quindi non c'era nulla da decomporre
-    return decompose_jump(node)
+    return decompose_jump(tableau_data, node)
 
 
 def decompose_all_G_nodes(outer_node, current_time):
@@ -776,7 +774,7 @@ def simplify_F(node):
         del node.operands[i]
     return node
 
-def decompose_jump(node):
+def decompose_jump(tableau_data, node):
     '''
     Distingue casi problematici da non problematici
 
@@ -788,8 +786,10 @@ def decompose_jump(node):
     NB: NON CONTARE I BOUND DEGLI OPERATORI DERIVED DAI NESTED
     '''
     assert node.operator == ','
-    global trace_stack
-    trace_stack.append([])
+    trace_stack = tableau_data.trace_stack
+    if trace_stack is not None:
+        trace_stack.append([])
+
     flag = flagging(node)
     time_instants = extract_time_instants(node, flag)
     if not flag:  # non ci sono operatori probelmatici attivi
@@ -811,10 +811,13 @@ def decompose_jump(node):
                 sub_formula = and_operand.operands[0].shallow_copy()
                 sub_formula.lower = new_time
                 new_operands.append(sub_formula)
-            elif and_operand.operator in {'P', '!'}:
+            elif trace_stack is not None and and_operand.operator in {'P', '!'}:
                 trace_stack[-1].append(str(and_operand))
-        repetitions = new_time - node.current_time - 1 #-1 perché una volta l'ho già aggiunta prima
-        trace_stack.extend([trace_stack[-1]] * repetitions)
+
+        if trace_stack is not None:
+            repetitions = new_time - node.current_time - 1 #-1 perché una volta l'ho già aggiunta prima
+            trace_stack.extend([trace_stack[-1]] * repetitions)
+
         if new_operands:
             new_node = node.shallow_copy()
             new_node.jump1 = False
@@ -860,8 +863,6 @@ def decompose_jump(node):
         for and_operand in node.operands:
             if and_operand.operator in {'F', 'G', 'U', 'R'} and (jump == 1 or not and_operand.is_derived):
                 new_node_operands.append(and_operand)
-            elif and_operand.operator in {'P', '!'}:
-                trace_stack[-1].append(str(and_operand))
             elif and_operand.operator == 'O' and and_operand.operands[0].lower < and_operand.operands[0].upper:
                 if jump == 1:
                     sub_formula = and_operand.operands[0].shallow_copy() # argomento di 'O'
@@ -877,7 +878,13 @@ def decompose_jump(node):
                         sub_formula = and_operand.operands[0].shallow_copy()
                         sub_formula.lower = sub_formula.lower + jump
                         new_node_operands.append(sub_formula)
-        trace_stack.extend([trace_stack[-1]] * (jump - 1)) #aggiungo alla traccia gli atomi dell'ultimo nodo tot volte a seconda di quanto salto
+            elif trace_stack is not None and and_operand.operator in {'P', '!'}:
+                trace_stack[-1].append(str(and_operand))
+
+        if trace_stack is not None:
+            # aggiungo alla traccia gli atomi dell'ultimo nodo tot volte a seconda di quanto salto
+            trace_stack.extend([trace_stack[-1]] * (jump - 1))
+        
         new_node = node.shallow_copy()
         new_node.operands = new_node_operands
         new_node.current_time = node.current_time + jump
@@ -1071,9 +1078,11 @@ def add_children(tableau_data, local_solver, node, depth, last_spawned, max_dept
         local_solver.pop()
         if tableau_data.verbose:
             print('No more children in this branch')
-        for element in node.operands: #altrimenti l'ultimo elemento non viene aggiunto perché non si passa dal jump (è sempre vero??)
-            if element.operator in {'P', '!'}:
-                trace_stack[-1].append(str(element))
+        if tableau_data.trace_stack is not None:
+            # altrimenti l'ultimo elemento non viene aggiunto perché non si passa dal jump
+            for element in node.operands:
+                if element.operator in {'P', '!'}:
+                    tableau_data.trace_stack[-1].append(str(element))
         if mode in {'sat', 'complete'}:
             return True
         elif mode == 'strong_sat':
@@ -1176,7 +1185,6 @@ def build_decomposition_tree(tableau_data, root, max_depth):
             False if the tableau has only rejected branches rooted at node,
             None if we reached max_dept without finding an accepting branch
     """
-    global trace_stack
     root.current_time = 0
     root.jump1 = root.check_boolean_closure(lambda n: n.operator == 'P')
 
@@ -1191,17 +1199,18 @@ def build_decomposition_tree(tableau_data, root, max_depth):
 
     if res and tableau_data.mode in {'sat', 'strong_sat'} and tableau_data.verbose:
         print("The requirement set is consistent")
-        print(f"A trace satisfying the requirements is: " + str([item for sublist in trace_stack for item in sublist]))
+        if tableau_data.trace_stack is not None:
+            print(f"A trace satisfying the requirements is: " + str([item for sublist in tableau_data.trace_stack for item in sublist]))
     elif not res and tableau_data.mode in {'sat', 'strong_sat'}:
         print("The requirement set is not consistent")
-    if tableau_data.build_tree:
-        return tableau_data.tree, res
+    if tableau_data.build_tree or tableau_data.trace_stack is not None:
+        return tableau_data.tree, tableau_data.trace_stack, res
     else:
         return res
 
 class TableauData:
 
-    def __init__(self, formula, number_of_implications, mode, build_tree, parallel, verbose):
+    def __init__(self, formula, number_of_implications, mode, build_tree, return_trace, parallel, verbose):
         self.number_of_implications = number_of_implications
         self.build_tree = build_tree
         self.mode = mode
@@ -1212,6 +1221,7 @@ class TableauData:
             self.tree = nx.DiGraph()
         else:
             self.tree = None
+        self.trace_stack = [] if return_trace else None
         if mode == 'sat':
             self.rejected_store = []
 
@@ -1225,7 +1235,7 @@ def plot_tree(G):
     plt.show()
 
 
-def make_tableau(formula, max_depth, mode, build_tree, parallel, verbose, mltl=False):
+def make_tableau(formula, max_depth, mode, build_tree, return_trace, parallel, verbose, mltl=False):
     if formula.operator != ',':
         formula = Node(',', formula)
 
@@ -1241,7 +1251,7 @@ def make_tableau(formula, max_depth, mode, build_tree, parallel, verbose, mltl=F
     set_initial_time(formula)
     assign_identifier(formula)
 
-    tableau_data = TableauData(formula, number_of_implications, mode, build_tree, parallel, verbose)
+    tableau_data = TableauData(formula, number_of_implications, mode, build_tree, return_trace, parallel, verbose)
     return build_decomposition_tree(tableau_data, formula, max_depth)
 
 

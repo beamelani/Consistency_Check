@@ -42,6 +42,7 @@ def main():
     argp.add_argument('-s', '--smt', action='store_true', help='Use SMT-based bounded satisfiability checker instead of tree-based tableau (default)')
     argp.add_argument('-d', '--max-depth', type=int, default=DEFAULT_DEPTH, help='Build tableau up to the given depth (ignored if --smt is given)')
     argp.add_argument('-p', '--plot', type=str, help='Plot the tree-shaped tableau to the given dot file (ignored if --smt is given)')
+    argp.add_argument('--print-trace', action='store_true', help='Print an example trace that satisfies the formula)')
     argp.add_argument('-t', '--strong-sat', action='store_true', help='Use strong definition of satisfiability that avoids formulas being satisfied vacuously (default is normal satisfiability)')
     argp.add_argument('--smtlib-result', action='store_true', help='Emit result as SMTLIB output (sat, unsat, unknown)')
     argp.add_argument('--parallel', action='store_true', help='Use parallel version of the tableau')
@@ -73,26 +74,35 @@ def main():
             args.max_depth,
             mode,
             build_tree=args.plot is not None,
+            return_trace=args.print_trace,
             parallel=args.parallel,
             verbose=args.verbose,
             mltl=args.mltl
         )
 
-        if args.plot:
-            tree, res = res
-            networkx.drawing.nx_pydot.write_dot(tree, args.plot)
+        if args.plot or args.print_trace:
+            tree, trace, res = res
+            if args.plot:
+                networkx.drawing.nx_pydot.write_dot(tree, args.plot)
+            if args.print_trace and res:
+                    print('Trace:')
+                    print(trace)
 
     if args.smtlib_result:
         if res:
             print('sat')
+        elif res is None:
+            print('unknown')
         else:
-            print('unsat') # TODO distinguish unknown
+            print('unsat')
     else:
         print(f'Elapsed time: {time.perf_counter() - parsing_t} (parsing: {parsing_t - start_t})')
         if res:
             print('The constraints are consistent.')
+        elif res is None:
+            print('Consistency could not be proved within the given depth limit. Please increase it with the -d option.')
         else:
-            print(f'The constraints are not consistent (for signals up to t = {args.max_depth}).')
+            print(f'The constraints are not consistent.')
 
 
 if __name__ == "__main__":

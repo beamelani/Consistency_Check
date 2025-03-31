@@ -261,7 +261,7 @@ def check_dataset(dataset_name, dataset, max_depth, mode, max_quantum, timeout, 
     # Prima prova: SMT
     start_t = time.perf_counter()
     for _ in range(iters):
-        res_smt = run_with_timeout(timeout, smt_check_consistency, normalized_formula, mode, False)
+        res_smt = False #run_with_timeout(timeout, smt_check_consistency, normalized_formula, mode, False)
         if res_smt == 'timeout':
             elapsed_smt = timeout
             break
@@ -271,8 +271,8 @@ def check_dataset(dataset_name, dataset, max_depth, mode, max_quantum, timeout, 
     # Seconda prova: Tableau
     start_t = time.perf_counter()
     for _ in range(iters):
-        res_tableau = run_with_timeout(timeout, make_tableau, Node(*normalized_formula), max_depth, mode, False, False, False)
-        # res_tableau = make_tableau(Node(*normalized_formula), max_depth, mode, False, False, False)
+        res_tableau = run_with_timeout(timeout, make_tableau, Node(*normalized_formula), max_depth, mode, False, False, False, False)
+        #res_tableau = make_tableau(Node(*normalized_formula), max_depth, mode, False, False, False, False)
         if res_tableau == 'timeout':
             elapsed_tableau = timeout
             break
@@ -327,7 +327,7 @@ if __name__ == '__main__':
     }
     sys.setrecursionlimit(1000000000)
     max_depth = 10000000
-    mode = 'strong_sat'
+    mode = 'sat' # 'strong_sat'
     sampling_interval = 1 # Fraction(1,10)
     timeout = 120 # in seconds
     iterations = 1
