@@ -649,10 +649,8 @@ def decompose_imply_classic(node, index, mode='sat', number_of_implications=None
     rhs = imply_formula.operands[1]
     
     if lhs.id_implication == -1:
-        lhs = lhs.shallow_copy() # TODO Can we avoid these shallow copies?
         lhs.id_implication = 0
     if rhs.id_implication == -1:
-        rhs = rhs.shallow_copy()
         rhs.id_implication = 1
 
     def merge_derived_g_nodes(imply_op, new_node):
