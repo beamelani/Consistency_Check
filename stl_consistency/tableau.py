@@ -203,17 +203,12 @@ def assign_identifier(node):
     def do_assign(node):
         nonlocal id_counter
         match node.operator:
+            case 'G' | 'F' | 'U' | 'R':
+                node.identifier = id_counter
+                id_counter += 1
             case '&&' | '||' | ',' | '->':
                 for operand in node.operands:
                     do_assign(operand)
-            case 'G' | 'F':
-                if node.operands[0].operator not in {'P', '!'}:
-                    node.identifier = id_counter
-                    id_counter += 1
-            case 'U' | 'R':
-                if node.operands[0].operator not in {'P', '!'} or node.operands[1].operator not in {'P', '!'}:
-                    node.identifier = id_counter
-                    id_counter += 1
 
     do_assign(node)
 
@@ -320,19 +315,19 @@ def decompose_all_G_nodes(outer_node, current_time):
             extract.lower = arg.lower + G_node.lower
             extract.upper = arg.upper + G_node.lower
             extract.is_derived = G_node.lower < G_node.upper
-            extract.identifier = G_node.identifier
+            extract.parent = G_node.identifier
             extract.set_initial_time()
             return extract
         elif short and arg.operator == 'G' and G_node.lower > G_node.initial_time: #non aggiungo un altro G, ma allungo intervallo di quello già esistente
             G_counter = 0
             for i, operand in enumerate(outer_node.operands):
-                if operand.operator == 'G' and operand.is_derived and operand.identifier == G_node.identifier and operand.and_element == arg.and_element:
+                if operand.operator == 'G' and operand.is_derived and operand.parent == G_node.identifier and operand.and_element == arg.and_element:
                     outer_node.operands[i] = operand.shallow_copy()
                     outer_node.operands[i].upper += 1
                     G_counter += 1
                     if G_node.lower == G_node.upper:
                         outer_node.operands[i].is_derived = False
-                elif operand.operator == 'O' and operand.operands[0].operator == 'G' and operand.operands[0].is_derived and operand.operands[0].identifier == G_node.identifier and operand.operands[0].and_element == arg.and_element:
+                elif operand.operator == 'O' and operand.operands[0].operator == 'G' and operand.operands[0].is_derived and operand.operands[0].parent == G_node.identifier and operand.operands[0].and_element == arg.and_element:
                     operand.operands[0] = operand.operands[0].shallow_copy()
                     operand.operands[0].upper += 1
                     G_counter += 1
@@ -343,7 +338,7 @@ def decompose_all_G_nodes(outer_node, current_time):
                 extract.lower = arg.lower + G_node.lower
                 extract.upper = arg.upper + G_node.lower
                 extract.is_derived = True
-                extract.identifier = G_node.identifier
+                extract.parent = G_node.identifier
                 extract.set_initial_time()
                 return extract
             else:
@@ -383,9 +378,9 @@ def decompose_all_G_nodes(outer_node, current_time):
                 # Set is_derived to false
                 for j, other in enumerate(outer_node.operands):
                     if j != i and other is not None:
-                        if other.operator in {'G', 'U', 'R', 'F'} and other.is_derived and other.identifier == operand.identifier:
+                        if other.operator in {'G', 'U', 'R', 'F'} and other.is_derived and other.parent == operand.identifier:
                             other.is_derived = False
-                        elif other.operator == 'O' and other.operands[0].operator in {'U', 'R', 'F'} and other.operands[0].is_derived and other.operands[0].identifier == operand.identifier:
+                        elif other.operator == 'O' and other.operands[0].operator in {'U', 'R', 'F'} and other.operands[0].is_derived and other.operands[0].parent == operand.identifier:
                             other.operands[0].is_derived = False
                 # Elimino l'elemento se a == b
                 outer_node.operands[i] = None
@@ -466,7 +461,7 @@ def decompose_U(formula, index):
             extract.lower = arg.lower + U_formula.lower
             extract.upper = arg.upper + U_formula.lower
             extract.current_time = U_formula.current_time
-            extract.identifier = U_formula.identifier
+            extract.parent = U_formula.identifier
             extract.set_initial_time()
             if derived:
                 extract.is_derived = True
@@ -494,7 +489,7 @@ def decompose_U(formula, index):
         new_node2.jump1 = True
     if U_formula.lower == U_formula.upper:
         for operand in new_node1.operands:  # quando U va via tolgo is_derived dagli operatori
-            if operand.is_derived and operand.identifier == U_formula.identifier:
+            if operand.is_derived and operand.parent == U_formula.identifier:
                 operand.is_derived = False
     return [new_node2, new_node1]
 
@@ -524,7 +519,7 @@ def decompose_R(formula, index):
             extract.lower = arg.lower + R_formula.lower
             extract.upper = arg.upper + R_formula.lower
             extract.current_time = R_formula.current_time
-            extract.identifier = R_formula.identifier
+            extract.parent = R_formula.identifier
             extract.set_initial_time()
             if derived:
                 extract.is_derived = True
@@ -548,7 +543,7 @@ def decompose_R(formula, index):
         new_operand = modify_argument(second_operand.shallow_copy(), False)
         new_node1.replace_operand(index, new_operand)
         for operand in new_node1.operands:  # quando R va via tolgo is_derived dagli operatori
-            if operand.is_derived and operand.identifier == R_formula.identifier:
+            if operand.is_derived and operand.parent == R_formula.identifier:
                 operand.is_derived = False
         if (second_operand.check_boolean_closure(lambda n: n.operator == 'P') and
             any(op.lower_bound() == R_formula.lower for j, op in enumerate(new_node1.operands) if j != index)):
@@ -629,10 +624,10 @@ def decompose_or(node, index):
         if or_operand.is_derived and or_operand.or_element > -1:
             z = 0
             for element in new_node.operands:
-                if element.operator == 'G' and element.identifier == or_operand.identifier and element.or_element == or_operand.or_element:
+                if element.operator == 'G' and element.parent == or_operand.parent and element.or_element == or_operand.or_element:
                     z += 1
                     element.upper = or_operand.upper
-                elif element.operator == 'O' and element.operands[0].operator == 'G' and element.operands[0].is_derived and element.operands[0].identifier == or_operand.identifier and element.operands[0].or_element == or_operand.or_element:
+                elif element.operator == 'O' and element.operands[0].operator == 'G' and element.operands[0].is_derived and element.operands[0].parent == or_operand.parent and element.operands[0].or_element == or_operand.or_element:
                     z += 1
                     element.operands[0].upper = or_operand.upper
             if z == 0: #se il G non era ancora mai stato estratto
@@ -666,7 +661,7 @@ def decompose_imply_classic(node, index, mode='sat', number_of_implications=None
     def merge_derived_g_nodes(imply_op, new_node):
         # Cerca nodi 'G' derivati nel nuovo nodo
         for i, operand in enumerate(new_node.operands):
-            if operand.operator == 'G' and operand.identifier == imply_op.identifier and operand.is_derived and operand.id_implication == imply_op.id_implication:
+            if operand.operator == 'G' and operand.parent == imply_op.parent and operand.is_derived and operand.id_implication == imply_op.id_implication:
                 # We are modifying the existing G node, so we need to make a copy
                 new_node.operands[i] = operand.shallow_copy()
                 # TODO Investigate if this is correct

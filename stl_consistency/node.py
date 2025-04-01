@@ -32,6 +32,7 @@ class Node:
         self.initial_time = '-1' # the initial time of the outer operator of a nested operator
         self.is_derived = False  # tells if a temporal operand is derived from the decomposition of a nested temporal operand
         self.identifier = None   # a number that uniquely identifies (some) operands
+        self.parent = None
         self.operator = operator
         self.id_implication = -1 # serve per identificare da quale el. dell'implicazione proviene un termine quando è stato estratto (mi serve se l'impl è annidata e ha elementi con G e devo quindi sapere quale el incrementare invece di estrarre)
         self.and_element = -1 # identifica univoc gli operandi di un && dentro a un G
@@ -94,6 +95,7 @@ class Node:
         new.initial_time = self.initial_time
         new.is_derived = self.is_derived
         new.identifier = self.identifier
+        new.parent = self.parent
         new.operator = self.operator
         new.id_implication = self.id_implication
         new.and_element = self.and_element
