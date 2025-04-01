@@ -934,7 +934,7 @@ def decompose_jump(tableau_data, node):
                     elif o_operand.operator == 'R':
                         max_upper = o_operand.operands[1].get_max_upper()
 
-                    must_jump_1 = max_upper == -1 or o_operand.lower < o_operand.initial_time + max_upper
+                    must_jump_1 = must_jump_1 or max_upper == -1 or o_operand.lower < o_operand.initial_time + max_upper
 
             if must_jump_1:
                 jump = 1
