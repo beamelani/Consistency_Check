@@ -314,30 +314,28 @@ def decompose_all_G_nodes(outer_node, current_time):
             extract = arg.shallow_copy()
             extract.lower = arg.lower + G_node.lower
             extract.upper = arg.upper + G_node.lower
-            extract.is_derived = G_node.lower < G_node.upper
-            extract.parent = G_node.identifier
+            extract.parent = G_node.identifier if G_node.lower < G_node.upper else None
             extract.set_initial_time()
             return extract
         elif short and arg.operator == 'G' and G_node.lower > G_node.initial_time: #non aggiungo un altro G, ma allungo intervallo di quello già esistente
             G_counter = 0
             for i, operand in enumerate(outer_node.operands):
-                if operand.operator == 'G' and operand.is_derived and operand.parent == G_node.identifier and operand.and_element == arg.and_element:
+                if operand.operator == 'G' and operand.is_derived() and operand.parent == G_node.identifier and operand.and_element == arg.and_element:
                     outer_node.operands[i] = operand.shallow_copy()
                     outer_node.operands[i].upper += 1
                     G_counter += 1
                     if G_node.lower == G_node.upper:
-                        outer_node.operands[i].is_derived = False
-                elif operand.operator == 'O' and operand.operands[0].operator == 'G' and operand.operands[0].is_derived and operand.operands[0].parent == G_node.identifier and operand.operands[0].and_element == arg.and_element:
+                        outer_node.operands[i].parent = None
+                elif operand.operator == 'O' and operand.operands[0].operator == 'G' and operand.operands[0].is_derived() and operand.operands[0].parent == G_node.identifier and operand.operands[0].and_element == arg.and_element:
                     operand.operands[0] = operand.operands[0].shallow_copy()
                     operand.operands[0].upper += 1
                     G_counter += 1
                     if G_node.lower == G_node.upper:
-                        operand.operands[0].is_derived = False
+                        operand.operands[0].parent = False
             if G_counter == 0:
                 extract = arg.shallow_copy()
                 extract.lower = arg.lower + G_node.lower
                 extract.upper = arg.upper + G_node.lower
-                extract.is_derived = True
                 extract.parent = G_node.identifier
                 extract.set_initial_time()
                 return extract
@@ -378,10 +376,9 @@ def decompose_all_G_nodes(outer_node, current_time):
                 # Set is_derived to false
                 for j, other in enumerate(outer_node.operands):
                     if j != i and other is not None:
-                        if other.operator in {'G', 'U', 'R', 'F'} and other.is_derived and other.parent == operand.identifier:
-                            other.is_derived = False
-                        elif other.operator == 'O' and other.operands[0].operator in {'U', 'R', 'F'} and other.operands[0].is_derived and other.operands[0].parent == operand.identifier:
-                            other.operands[0].is_derived = False
+                        temp_op = other.operands[0] if other.operator == 'O' else other
+                        if temp_op.operator in {'G', 'U', 'R', 'F'} and temp_op.is_derived() and temp_op.parent == operand.identifier:
+                            temp_op.parent = None
                 # Elimino l'elemento se a == b
                 outer_node.operands[i] = None
     outer_node.operands = [x for x in outer_node.operands if x is not None]
@@ -461,10 +458,9 @@ def decompose_U(formula, index):
             extract.lower = arg.lower + U_formula.lower
             extract.upper = arg.upper + U_formula.lower
             extract.current_time = U_formula.current_time
-            extract.parent = U_formula.identifier
-            extract.set_initial_time()
             if derived:
-                extract.is_derived = True
+                extract.parent = U_formula.identifier
+            extract.set_initial_time()
             return extract
         elif arg.operator in {'&&', '||', ',', '->'}:
             # Applica la modifica ricorsivamente agli operandi
@@ -489,8 +485,9 @@ def decompose_U(formula, index):
         new_node2.jump1 = True
     if U_formula.lower == U_formula.upper:
         for operand in new_node1.operands:  # quando U va via tolgo is_derived dagli operatori
-            if operand.is_derived and operand.parent == U_formula.identifier:
-                operand.is_derived = False
+            temp_op = operand.operands[0] if operand.operator == 'O' else operand
+            if temp_op.is_derived() and temp_op.parent == U_formula.identifier:
+                temp_op.parent = None
     return [new_node2, new_node1]
 
 
@@ -519,10 +516,9 @@ def decompose_R(formula, index):
             extract.lower = arg.lower + R_formula.lower
             extract.upper = arg.upper + R_formula.lower
             extract.current_time = R_formula.current_time
-            extract.parent = R_formula.identifier
-            extract.set_initial_time()
             if derived:
-                extract.is_derived = True
+                extract.parent = R_formula.identifier
+            extract.set_initial_time()
             return extract
         elif arg.operator in {'&&', '||', ',', '->'}:
             # Applica la modifica ricorsivamente agli operandi
@@ -543,8 +539,9 @@ def decompose_R(formula, index):
         new_operand = modify_argument(second_operand.shallow_copy(), False)
         new_node1.replace_operand(index, new_operand)
         for operand in new_node1.operands:  # quando R va via tolgo is_derived dagli operatori
-            if operand.is_derived and operand.parent == R_formula.identifier:
-                operand.is_derived = False
+            temp_op = operand.operands[0] if operand.operator == 'O' else operand
+            if temp_op.is_derived() and temp_op.parent == R_formula.identifier:
+                temp_op.parent = None
         if (second_operand.check_boolean_closure(lambda n: n.operator == 'P') and
             any(op.lower_bound() == R_formula.lower for j, op in enumerate(new_node1.operands) if j != index)):
             new_node1.jump1 = True
@@ -621,13 +618,13 @@ def decompose_or(node, index):
     #for or_operand in sorted(node[index].operands, key=complexity_score):
     for or_operand in sorted(node[index].operands, key=lambda op: complexity_score(op, node)):
         new_node = node.shallow_copy()
-        if or_operand.is_derived and or_operand.or_element > -1:
+        if or_operand.is_derived() and or_operand.or_element > -1:
             z = 0
             for element in new_node.operands:
                 if element.operator == 'G' and element.parent == or_operand.parent and element.or_element == or_operand.or_element:
                     z += 1
                     element.upper = or_operand.upper
-                elif element.operator == 'O' and element.operands[0].operator == 'G' and element.operands[0].is_derived and element.operands[0].parent == or_operand.parent and element.operands[0].or_element == or_operand.or_element:
+                elif element.operator == 'O' and element.operands[0].operator == 'G' and element.operands[0].is_derived() and element.operands[0].parent == or_operand.parent and element.operands[0].or_element == or_operand.or_element:
                     z += 1
                     element.operands[0].upper = or_operand.upper
             if z == 0: #se il G non era ancora mai stato estratto
@@ -661,7 +658,7 @@ def decompose_imply_classic(node, index, mode='sat', number_of_implications=None
     def merge_derived_g_nodes(imply_op, new_node):
         # Cerca nodi 'G' derivati nel nuovo nodo
         for i, operand in enumerate(new_node.operands):
-            if operand.operator == 'G' and operand.parent == imply_op.parent and operand.is_derived and operand.id_implication == imply_op.id_implication:
+            if operand.operator == 'G' and operand.parent == imply_op.parent and operand.is_derived() and operand.id_implication == imply_op.id_implication:
                 # We are modifying the existing G node, so we need to make a copy
                 new_node.operands[i] = operand.shallow_copy()
                 # TODO Investigate if this is correct
@@ -676,9 +673,9 @@ def decompose_imply_classic(node, index, mode='sat', number_of_implications=None
     # rhs of the implication
     new_node2 = node.shallow_copy()
     new_lhs, new_rhs = lhs, rhs
-    if lhs.operator == 'G' and lhs.is_derived:
+    if lhs.operator == 'G' and lhs.is_derived():
         new_lhs = merge_derived_g_nodes(lhs, new_node2)
-    if rhs.operator == 'G' and rhs.is_derived:
+    if rhs.operator == 'G' and rhs.is_derived():
         new_rhs = merge_derived_g_nodes(rhs, new_node2)
     new_node2.replace_operand(index, *(x for x in [new_lhs, new_rhs] if x is not None))
 
@@ -807,11 +804,11 @@ def extract_time_instants(node, flag):
     time_instants = []
     if flag:
         for elem in node:
-            if elem.operator in {'G', 'F', 'U', 'R'} and not elem.is_derived:
+            if elem.operator in {'G', 'F', 'U', 'R'} and not elem.is_derived():
                 # Controlla operatori temporali G (Globally), F (Finally) e U (Until)
                 time_instants.append(elem.lower)
                 time_instants.append(elem.upper)
-            elif elem.operator == 'O' and not elem.operands[0].is_derived:
+            elif elem.operator == 'O' and not elem.operands[0].is_derived():
                 time_instants.append(elem.operands[0].lower)
                 time_instants.append(elem.operands[0].upper)
     else:
@@ -893,7 +890,7 @@ def decompose_jump(tableau_data, node):
                 # una volta calcolato il salto per ogni operatore problematico, faccio il minimo
                 # una volta stabilito il salto da effettuare faccio un altro ciclo negli operands e applico il salto ad ognuno
                 # controllando se ogni operatore è derivato da un nested o no (perché saltano in modo diverso)
-                if and_operand.operator == 'O' and not and_operand.operands[0].is_derived and and_operand.operands[0].operator in {'G', 'U', 'R'}:
+                if and_operand.operator == 'O' and not and_operand.operands[0].is_derived() and and_operand.operands[0].operator in {'G', 'U', 'R'}:
                     max_upper = -1
                     o_operand = and_operand.operands[0]
                     # trovo il max tra gli upper bound degli op interni
@@ -912,7 +909,7 @@ def decompose_jump(tableau_data, node):
         # Now we build the new node after the jump
         new_node_operands = []
         for and_operand in node.operands:
-            if and_operand.operator in {'F', 'G', 'U', 'R'} and (jump == 1 or not and_operand.is_derived):
+            if and_operand.operator in {'F', 'G', 'U', 'R'} and (jump == 1 or not and_operand.is_derived()):
                 new_node_operands.append(and_operand)
             elif and_operand.operator == 'O' and and_operand.operands[0].lower < and_operand.operands[0].upper:
                 if jump == 1:
@@ -920,7 +917,7 @@ def decompose_jump(tableau_data, node):
                     sub_formula.lower = sub_formula.lower + jump
                     new_node_operands.append(sub_formula)
                 else:
-                    if and_operand.operands[0].is_derived:  # per questi devo aggiungere jump ad entrambi gli estremi dell'intervallo
+                    if and_operand.operands[0].is_derived():  # per questi devo aggiungere jump ad entrambi gli estremi dell'intervallo
                         sub_formula = and_operand.operands[0].shallow_copy()
                         sub_formula.lower = sub_formula.lower + jump
                         sub_formula.upper = sub_formula.upper + jump
