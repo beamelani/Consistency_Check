@@ -839,9 +839,8 @@ def extract_time_instants(node, flag):
     time_instants = []
     if flag:
         for elem in node:
-            if elem.operator in {'G', 'F', 'U', 'R'} and (not elem.is_derived or not elem.id_implication == -1 or not elem.or_element == -1):
+            if elem.operator in {'G', 'F', 'U', 'R'} and not elem.is_derived:
                 # Controlla operatori temporali G (Globally), F (Finally) e U (Until)
-                #caso in cui op is_derived è estratto da un -> che era dentro a un G o U o R (flag == True)
                 time_instants.append(elem.lower)
                 time_instants.append(elem.upper)
             elif elem.operator == 'O' and not elem.operands[0].is_derived:
