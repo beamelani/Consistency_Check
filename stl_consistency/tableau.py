@@ -206,6 +206,8 @@ def assign_identifier(node):
             case 'G' | 'F' | 'U' | 'R':
                 node.identifier = id_counter
                 id_counter += 1
+                for operand in node.operands:
+                    do_assign(operand)
             case '&&' | '||' | ',' | '->':
                 for operand in node.operands:
                     do_assign(operand)
@@ -216,6 +218,7 @@ def assign_identifier(node):
 # TODO Can we merge this with assign_identifier?
 def assign_real_expr_id(node):
     id_counter = 0
+    # We assign the same identifier to equal P formulas
     # We use a list instead of a set because lists (node.operands) are unhashable
     already_assigned = []
 
