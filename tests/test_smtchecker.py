@@ -31,7 +31,7 @@ class TestSMTChecker(unittest.TestCase):
         parser = STLParser()
         parsed_formula = parser.parse_formula_as_stl_list(formula)
         print(parsed_formula)
-        self.assertEqual(smt_check_consistency(parsed_formula), result)
+        self.assertEqual(smt_check_consistency(parsed_formula, 'sat', False, False), result)
 
     def test_and(self):
         self.make_test("a && b", True)
@@ -61,7 +61,7 @@ class TestSMTChecker(unittest.TestCase):
         formula = "G[1,2] ((x > 0 -> x == -42) && (x < 0 -> x == 42))"
         parser = STLParser()
         parsed_formula = parser.parse_formula_as_stl_list(formula)
-        self.assertEqual(smt_check_consistency(parsed_formula, 'strong_sat'), False)
+        self.assertEqual(smt_check_consistency(parsed_formula, 'strong_sat', False), False)
 
     def test_abs(self):
         self.make_test("G[0,5] (|x| > 20 | |x| < 10) && F[0,5] (x == -15)", False)
