@@ -109,6 +109,19 @@ class Node:
             new.real_expr_id = self.real_expr_id
         return new
 
+    def set_initial_time(self):
+        '''
+        Set the time at which the operator starts being active
+        '''
+        match self.operator:
+            case 'G' | 'U':
+                self.initial_time = self.lower
+            case 'R':
+                self.initial_time = self.lower
+            case '&&' | '||' | ',' | '->':
+                for operand in self.operands:
+                    operand.set_initial_time()
+
     def to_list(self):
         '''
         Convert node to list representation
@@ -128,29 +141,6 @@ class Node:
         The current time must be set before using this method with node.set_current_time()
         '''
         return " ".join([str(self), str(self.current_time), str(self.counter)])
-
-    def set_min_time(self):
-        '''
-        :param formula:
-        :return: estrae il min lower bound della formula e setta il current_time
-        '''
-        match self.operator:
-            case 'P' | '!':
-                min_time = None
-            case 'G' | 'F' | 'U' | 'R':
-                min_time = self.lower
-            case 'O':
-                min_time = self.operands[0].lower
-            case '&&' | '||' | ',' | '->':
-                min_time = None
-                for op in self.operands:
-                    op_time = op.set_min_time()
-                    if op_time is not None and (min_time is None or op_time < min_time):
-                        min_time = op_time
-            case _:
-                raise ValueError(f'Operator {self.operator} not handled')
-        self.current_time = min_time
-        return min_time
 
     def get_min_lower(self, ignore_prop=True):
         '''

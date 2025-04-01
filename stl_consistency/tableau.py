@@ -241,26 +241,6 @@ def assign_real_expr_id(node):
     do_assign(node)
 
 
-def set_initial_time(formula):
-    '''
-    :return: Serve per il jump nei casi nested problematici (devo sapere qual era il lower bound iniziale
-    del nested + esterno per sapere se posso saltare)
-    '''
-    if formula.operator in {'&&', '||', ',', '->'}:
-        for operand in formula.operands:
-            if operand.operator in {'G', 'U'} and operand.operands[0].operator not in {'P', '!'}:
-                operand.initial_time = operand.lower
-            elif operand.operator in {'R'} and operand.operands[1].operator not in {'P', '!'}:
-                operand.initial_time = operand.lower
-            elif operand.operator in {'&&', '||', ',', '->', '<->'}:
-                return set_initial_time(operand)
-    elif formula.operator in {'G', 'U'} and formula.operands[0].operator not in {'P', '!'}:
-        formula.initial_time = formula.lower
-    elif formula.operator in {'R'} and formula.operands[1].operator not in {'P', '!'}:
-        formula.initial_time = formula.lower
-    return formula
-
-
 def decompose(tableau_data, local_solver, node, current_time):
     """
     :param node: nodo da decomporre che ha operatore ','
@@ -331,7 +311,9 @@ def decompose_all_G_nodes(outer_node, current_time):
             c, d = arg.lower, arg.upper
             q = arg.operands[0]
             G_node.lower += 1 # this implements G[a+2,b]F[c,d] q because decompose_jump adds 1 again
-            return Node('||', Node('F', a+c+1, a+d, q), Node(',', Node('G', a+c, a+c, q), Node('G', a+d+1, a+d+1, q)))
+            ret = Node('||', Node('F', a+c+1, a+d, q), Node(',', Node('G', a+c, a+c, q), Node('G', a+d+1, a+d+1, q)))
+            ret.set_initial_time()
+            return ret
         elif arg.operator in {'U', 'R', 'F'} or (arg.operator == 'G' and (not short or G_node.lower == G_node.initial_time)):
             # Modifica bounds sommando quelli del nodo G
             extract = arg.shallow_copy()
@@ -339,6 +321,7 @@ def decompose_all_G_nodes(outer_node, current_time):
             extract.upper = arg.upper + lower_bound
             extract.is_derived = G_node.lower < G_node.upper
             extract.identifier = identifier
+            extract.set_initial_time()
             return extract
         elif short and arg.operator == 'G' and G_node.lower > G_node.initial_time: #non aggiungo un altro G, ma allungo intervallo di quello già esistente
             G_counter = 0
@@ -361,6 +344,7 @@ def decompose_all_G_nodes(outer_node, current_time):
                 extract.upper = arg.upper + lower_bound
                 extract.is_derived = True
                 extract.identifier = identifier
+                extract.set_initial_time()
                 return extract
             else:
                 return None # non ritorno niente perché è bastato modificare il nodo esistente
@@ -410,10 +394,7 @@ def decompose_all_G_nodes(outer_node, current_time):
     for G_node in G_nodes:
         lower_bound = G_node.lower
         identifier = G_node.identifier
-        #initial_time = node.initial_time
-        # a volte se il G annidato viene dalla dec di un altro op annidato diverso da G (tipo F), non ha l'initial time settato
-        if G_node.initial_time == '-1':
-            set_initial_time(G_node)
+        assert G_node.initial_time != '-1'
         # Decomponi il nodo originale
         new_operands = modify_argument(G_node.operands[0], G_node, identifier, True, True)
         if new_operands:
@@ -438,6 +419,7 @@ def decompose_F(node, index):
             extract.lower = arg.lower + lower_bound
             extract.upper = arg.upper + lower_bound
             extract.current_time = current_time
+            extract.set_initial_time()
             return extract
         elif arg.operator in {'&&', '||', ',', '->'}:
             # Applica la modifica ricorsivamente agli operandi
@@ -473,10 +455,12 @@ def decompose_U(formula, index):
     '''
     assert index >= 0 and formula is not None
     U_formula = formula[index]
+    assert U_formula.initial_time != '-1'
     first_operand = formula[index].operands[0]
     second_operand = formula[index].operands[1]
     lower_bound = U_formula.lower
     current_time = U_formula.current_time
+
     def modify_argument(arg, derived):
         if arg.operator in {'P', '!'}:
             return arg
@@ -487,6 +471,7 @@ def decompose_U(formula, index):
             extract.upper = arg.upper + lower_bound
             extract.current_time = current_time
             extract.identifier = U_formula.identifier
+            extract.set_initial_time()
             if derived:
                 extract.is_derived = True
             return extract
@@ -497,10 +482,6 @@ def decompose_U(formula, index):
             return new_arg
         else:
             raise ValueError(f"Operatore non gestito: {arg.operator}")
-
-    # If the U operator comes from the argument of another operator, its initial time may not be set
-    if U_formula.initial_time == '-1':
-            set_initial_time(U_formula)
 
     # Node in which U is not satisfied (p, OU)
     new_node1 = formula.shallow_copy()
@@ -534,6 +515,7 @@ def decompose_R(formula, index):
     '''
     assert index >= 0 and formula is not None
     R_formula = formula[index]
+    assert R_formula.initial_time != '-1'
     first_operand = formula[index].operands[0]
     second_operand = formula[index].operands[1]
     lower_bound = R_formula.lower
@@ -549,6 +531,7 @@ def decompose_R(formula, index):
             extract.upper = arg.upper + lower_bound
             extract.current_time = current_time
             extract.identifier = R_formula.identifier
+            extract.set_initial_time()
             if derived:
                 extract.is_derived = True
             return extract
@@ -559,10 +542,6 @@ def decompose_R(formula, index):
             return new_arg
         else:
             raise ValueError(f"Operatore non gestito: {arg.operator}")
-
-    # If the R operator comes from the argument of another operator, its initial time may not be set
-    if R_formula.initial_time == '-1':
-            set_initial_time(R_formula)
 
     # Node in which U is not satisfied (q, OU)
     new_node1 = formula.shallow_copy()
@@ -1236,7 +1215,7 @@ def make_tableau(formula, max_depth, mode, build_tree, return_trace, parallel, v
     assign_and_or_element(formula)
     assign_real_expr_id(formula)
     number_of_implications = count_implications(formula)
-    set_initial_time(formula)
+    formula.set_initial_time()
     assign_identifier(formula)
 
     tableau_data = TableauData(number_of_implications, mode, build_tree, return_trace, parallel, verbose)
