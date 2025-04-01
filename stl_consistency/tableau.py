@@ -199,42 +199,29 @@ def assign_identifier(node):
     derivati dalla decomposizione di un nested siano riconducibili all'operatore originario
     '''
     id_counter = 0
-
-    def do_assign(node):
-        nonlocal id_counter
-        match node.operator:
-            case 'G' | 'F' | 'U' | 'R':
-                node.identifier = id_counter
-                id_counter += 1
-                for operand in node.operands:
-                    do_assign(operand)
-            case '&&' | '||' | ',' | '->':
-                for operand in node.operands:
-                    do_assign(operand)
-
-    do_assign(node)
-
-
-# TODO Can we merge this with assign_identifier?
-def assign_real_expr_id(node):
-    id_counter = 0
     # We assign the same identifier to equal P formulas
     # We use a list instead of a set because lists (node.operands) are unhashable
     already_assigned = []
 
     def do_assign(node):
         nonlocal id_counter
-        if node.operator == 'P' and len(node.operands) > 1:
-            prev_id = next(filter(lambda expr_id: expr_id[0] == node.operands, already_assigned), None)
-            if prev_id:
-                node.real_expr_id = prev_id[1]
-            else:
-                node.real_expr_id = id_counter
-                already_assigned.append((node.operands, id_counter))
+        match node.operator:
+            case 'P':
+                prev_id = next(filter(lambda expr_id: expr_id[0] == node.operands, already_assigned), None)
+                if prev_id:
+                    node.identifier = prev_id[1]
+                else:
+                    node.identifier = id_counter
+                    already_assigned.append((node.operands, id_counter))
+                    id_counter += 1
+            case 'G' | 'F' | 'U' | 'R':
+                node.identifier = id_counter
                 id_counter += 1
-        elif node.operator != 'P':
-            for operand in node.operands:
-                do_assign(operand)
+                for operand in node.operands:
+                    do_assign(operand)
+            case '&&' | '||' | ',' | '->' | '!':
+                for operand in node.operands:
+                    do_assign(operand)
 
     do_assign(node)
 
@@ -1200,7 +1187,6 @@ def make_tableau(formula, max_depth, mode, build_tree, return_trace, parallel, v
     formula = push_negation(formula)
     shift_bounds(formula)
     assign_and_or_element(formula)
-    assign_real_expr_id(formula)
     number_of_implications = count_implications(formula)
     formula.set_initial_time()
     assign_identifier(formula)

@@ -48,7 +48,6 @@ class Node:
             self.upper = int(args[1])
             self.operands = list(args[2:])
         elif operator in {'<', '<=', '>', '>=', '==', '!='}:
-            self.real_expr_id = None
             self.lower = self.upper = -1
             self.operator = 'P'
             self.operands = [operator] + list(args)
@@ -108,8 +107,6 @@ class Node:
         new.operands = self.operands.copy()
         if hasattr(self, 'satisfied_implications'):
             new.satisfied_implications = self.satisfied_implications.copy()
-        if hasattr(self, 'real_expr_id'):
-            new.real_expr_id = self.real_expr_id
         return new
 
     def set_initial_time(self):
@@ -236,11 +233,11 @@ class Node:
     def __lt__(self, other):
         # TODO do something less ugly
         if self.operator == 'P' and len(self.operands) > 1:
-            self_operands = [str(self.real_expr_id)]
+            self_operands = [str(self.identifier)]
         else:
             self_operands = self.operands
         if other.operator == 'P' and len(other.operands) > 1:
-            other_operands = [str(other.real_expr_id)]
+            other_operands = [str(other.identifier)]
         else:
             other_operands = other.operands
         return (self.operator, self.lower, self.upper, self_operands) < (other.operator, other.lower, other.upper, other_operands)
@@ -248,11 +245,11 @@ class Node:
     def __le__(self, other):
         # TODO do something less ugly
         if self.operator == 'P' and len(self.operands) > 1:
-            self_operands = [str(self.real_expr_id)]
+            self_operands = [str(self.identifier)]
         else:
             self_operands = self.operands
         if other.operator == 'P' and len(other.operands) > 1:
-            other_operands = [str(other.real_expr_id)]
+            other_operands = [str(other.identifier)]
         else:
             other_operands = other.operands
         return (self.operator, self.lower, self.upper, self_operands) <= (other.operator, other.lower, other.upper, other_operands)
@@ -260,11 +257,11 @@ class Node:
     def __gt__(self, other):
         # TODO do something less ugly
         if self.operator == 'P' and len(self.operands) > 1:
-            self_operands = [str(self.real_expr_id)]
+            self_operands = [str(self.identifier)]
         else:
             self_operands = self.operands
         if other.operator == 'P' and len(other.operands) > 1:
-            other_operands = [str(other.real_expr_id)]
+            other_operands = [str(other.identifier)]
         else:
             other_operands = other.operands
         return (self.operator, self.lower, self.upper, self_operands) > (other.operator, other.lower, other.upper, other_operands)
@@ -272,11 +269,11 @@ class Node:
     def __ge__(self, other):
         # TODO do something less ugly
         if self.operator == 'P' and len(self.operands) > 1:
-            self_operands = [str(self.real_expr_id)]
+            self_operands = [str(self.identifier)]
         else:
             self_operands = self.operands
         if other.operator == 'P' and len(other.operands) > 1:
-            other_operands = [str(other.real_expr_id)]
+            other_operands = [str(other.identifier)]
         else:
             other_operands = other.operands
         return (self.operator, self.lower, self.upper, self_operands) >= (other.operator, other.lower, other.upper, other_operands)

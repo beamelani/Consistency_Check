@@ -42,6 +42,7 @@ class LocalSolver:
         return new_solver
 
     def add_boolean_constraint(self, negated, prop):
+        # TODO use identifier
         entry = (negated, prop)
         if entry not in self.current_assertions:
             self.current_assertions.add(entry)
@@ -52,8 +53,8 @@ class LocalSolver:
                 self.check_result = self.boolean_solver.check()
 
     def add_real_constraint(self, negated, node):
-        assert node.real_expr_id is not None
-        entry = (negated, node.real_expr_id)
+        assert node.identifier is not None
+        entry = (negated, node.identifier)
         if entry not in self.current_assertions:
             self.current_assertions.add(entry)
             self.assertion_stack[-1].append(entry)
@@ -62,7 +63,7 @@ class LocalSolver:
                     self.z3_ast_cache[entry] = z3.Not(z3_ast) if negated else z3_ast
             self.solver.assert_exprs(self.z3_ast_cache[entry])
             
-            if (not negated, node.real_expr_id) in self.current_assertions:
+            if (not negated, node.identifier) in self.current_assertions:
                 self.check_result = False
 
             if self.check_result:
