@@ -1147,12 +1147,13 @@ def build_decomposition_tree(tableau_data, root, max_depth):
 
     res = add_children(tableau_data, LocalSolver(), root, 0, 0, max_depth, root.current_time)
 
-    if res and tableau_data.mode in {'sat', 'strong_sat'} and tableau_data.verbose:
-        print("The requirement set is consistent")
-        if tableau_data.trace_stack is not None:
-            print(f"A trace satisfying the requirements is: " + str([item for sublist in tableau_data.trace_stack for item in sublist]))
-    elif not res and tableau_data.mode in {'sat', 'strong_sat'}:
-        print("The requirement set is not consistent")
+    if tableau_data.verbose:
+        if res:
+            print("The requirement set is consistent")
+            if tableau_data.trace_stack is not None:
+                print(f"A trace satisfying the requirements is: " + str([item for sublist in tableau_data.trace_stack for item in sublist]))
+        else:
+            print("The requirement set is not consistent")
     if tableau_data.build_tree or tableau_data.trace_stack is not None:
         return tableau_data.tree, tableau_data.trace_stack, res
     else:
