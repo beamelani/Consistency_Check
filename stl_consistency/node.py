@@ -47,8 +47,6 @@ class Node:
             self.lower = int(args[0])
             self.upper = int(args[1])
             self.operands = list(args[2:])
-            if operator == 'G':
-                self.counter_F = 0 #needed in case you have GF and need to keep track of when F is satisfied
         elif operator in {'<', '<=', '>', '>=', '==', '!='}:
             self.real_expr_id = None
             self.lower = self.upper = -1
@@ -107,8 +105,6 @@ class Node:
         new.operands = self.operands.copy()
         if hasattr(self, 'satisfied_implications'):
             new.satisfied_implications = self.satisfied_implications.copy()
-        if hasattr(self, 'counter_F'):
-            new.counter_F = self.counter_F
         if hasattr(self, 'real_expr_id'):
             new.real_expr_id = self.real_expr_id
         return new
