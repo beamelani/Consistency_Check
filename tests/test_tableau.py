@@ -70,6 +70,9 @@ class TestTableau(unittest.TestCase):
     def test_release(self):
         self.make_test("false R[0,10] a", 100, True)
 
+    def test_GFGG(self):
+        self.make_test("G[0,6] F[2,4] a && G[0,6] (a -> G[1,3] !a)", 200, False)
+
     def test_jump1_0(self):
         self.make_test("!a && G[10,20] !a && F[0,20] a", 200, True)
 
