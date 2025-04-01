@@ -302,7 +302,7 @@ def decompose_all_G_nodes(outer_node, current_time):
     Decompone tutti i nodi G nella formula con lower bound uguale a current_time.
     """
     # Funzione interna ricorsiva per modificare l'argomento
-    def modify_argument(arg, G_node, identifier, short, simple):
+    def modify_argument(arg, G_node, short, simple):
         if arg.operator in {'P', '!'}:
             return arg
         elif simple and arg.operator == 'F' and G_node.lower + 2 <= G_node.upper:
@@ -317,10 +317,10 @@ def decompose_all_G_nodes(outer_node, current_time):
         elif arg.operator in {'U', 'R', 'F'} or (arg.operator == 'G' and (not short or G_node.lower == G_node.initial_time)):
             # Modifica bounds sommando quelli del nodo G
             extract = arg.shallow_copy()
-            extract.lower = arg.lower + lower_bound
-            extract.upper = arg.upper + lower_bound
+            extract.lower = arg.lower + G_node.lower
+            extract.upper = arg.upper + G_node.lower
             extract.is_derived = G_node.lower < G_node.upper
-            extract.identifier = identifier
+            extract.identifier = G_node.identifier
             extract.set_initial_time()
             return extract
         elif short and arg.operator == 'G' and G_node.lower > G_node.initial_time: #non aggiungo un altro G, ma allungo intervallo di quello già esistente
@@ -340,10 +340,10 @@ def decompose_all_G_nodes(outer_node, current_time):
                         operand.operands[0].is_derived = False
             if G_counter == 0:
                 extract = arg.shallow_copy()
-                extract.lower = arg.lower + lower_bound
-                extract.upper = arg.upper + lower_bound
+                extract.lower = arg.lower + G_node.lower
+                extract.upper = arg.upper + G_node.lower
                 extract.is_derived = True
-                extract.identifier = identifier
+                extract.identifier = G_node.identifier
                 extract.set_initial_time()
                 return extract
             else:
@@ -351,7 +351,7 @@ def decompose_all_G_nodes(outer_node, current_time):
         elif arg.operator in {'&&', ','}:
             # Applica la modifica ricorsivamente agli operandi
             arg = arg.shallow_copy()
-            new_operands = (modify_argument(op, G_node, identifier, short, False) for op in arg.operands)
+            new_operands = (modify_argument(op, G_node, short, False) for op in arg.operands)
             arg.operands = [x for x in new_operands if x is not None]
             if arg.operands:
                 return arg
@@ -359,7 +359,7 @@ def decompose_all_G_nodes(outer_node, current_time):
                 return None
         elif arg.operator in {'||', '->'}:
             arg = arg.shallow_copy()
-            new_operands = (modify_argument(op, G_node, identifier, False, False) for op in arg.operands)
+            new_operands = (modify_argument(op, G_node, False, False) for op in arg.operands)
             arg.operands = [x for x in new_operands if x is not None]
             return arg
         else:
@@ -392,11 +392,9 @@ def decompose_all_G_nodes(outer_node, current_time):
     outer_node.operands = [x for x in outer_node.operands if x is not None]
 
     for G_node in G_nodes:
-        lower_bound = G_node.lower
-        identifier = G_node.identifier
         assert G_node.initial_time != '-1'
         # Decomponi il nodo originale
-        new_operands = modify_argument(G_node.operands[0], G_node, identifier, True, True)
+        new_operands = modify_argument(G_node.operands[0], G_node, True, True)
         if new_operands:
             outer_node.operands.append(new_operands)
     return [outer_node], len(G_nodes) > 0
@@ -458,8 +456,6 @@ def decompose_U(formula, index):
     assert U_formula.initial_time != '-1'
     first_operand = formula[index].operands[0]
     second_operand = formula[index].operands[1]
-    lower_bound = U_formula.lower
-    current_time = U_formula.current_time
 
     def modify_argument(arg, derived):
         if arg.operator in {'P', '!'}:
@@ -467,9 +463,9 @@ def decompose_U(formula, index):
         elif arg.operator in {'G', 'F', 'U', 'R'}:
             # Modifica bounds sommando quelli del nodo
             extract = arg.shallow_copy()
-            extract.lower = arg.lower + lower_bound
-            extract.upper = arg.upper + lower_bound
-            extract.current_time = current_time
+            extract.lower = arg.lower + U_formula.lower
+            extract.upper = arg.upper + U_formula.lower
+            extract.current_time = U_formula.current_time
             extract.identifier = U_formula.identifier
             extract.set_initial_time()
             if derived:
@@ -518,8 +514,6 @@ def decompose_R(formula, index):
     assert R_formula.initial_time != '-1'
     first_operand = formula[index].operands[0]
     second_operand = formula[index].operands[1]
-    lower_bound = R_formula.lower
-    current_time = R_formula.current_time
 
     def modify_argument(arg, derived):
         if arg.operator in {'P', '!'}:
@@ -527,9 +521,9 @@ def decompose_R(formula, index):
         elif arg.operator in {'G', 'F', 'U', 'R'}:
             # Modifica bounds sommando quelli del nodo
             extract = arg.shallow_copy()
-            extract.lower = arg.lower + lower_bound
-            extract.upper = arg.upper + lower_bound
-            extract.current_time = current_time
+            extract.lower = arg.lower + R_formula.lower
+            extract.upper = arg.upper + R_formula.lower
+            extract.current_time = R_formula.current_time
             extract.identifier = R_formula.identifier
             extract.set_initial_time()
             if derived:
