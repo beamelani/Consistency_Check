@@ -473,11 +473,14 @@ def decompose_U(formula, index):
         U_formula[1].check_boolean_closure(lambda n: n.operator == 'P') and
         any(other.lower_bound() == U_formula.lower for j, other in enumerate(formula.operands) if j != index)):
         new_node2.jump1 = True
-    if U_formula.lower == U_formula.upper:
-        for operand in new_node1.operands:  # quando U va via tolgo is_derived dagli operatori
-            temp_op = operand.operands[0] if operand.operator == 'O' else operand
-            if temp_op.is_derived() and temp_op.parent == U_formula.identifier:
-                temp_op.parent = None
+
+    # quando U va via tolgo is_derived dagli operatori
+    del_parent = new_node2.operands + (new_node1.operands if U_formula.lower == U_formula.upper else [])
+    for operand in del_parent:
+        temp_op = operand.operands[0] if operand.operator == 'O' else operand
+        if temp_op.parent == U_formula.identifier:
+            temp_op.parent = None
+
     return [new_node2, new_node1]
 
 
@@ -528,17 +531,20 @@ def decompose_R(formula, index):
     else:
         new_operand = modify_argument(second_operand.shallow_copy(), False)
         new_node1.replace_operand(index, new_operand)
-        for operand in new_node1.operands:  # quando R va via tolgo is_derived dagli operatori
-            temp_op = operand.operands[0] if operand.operator == 'O' else operand
-            if temp_op.is_derived() and temp_op.parent == R_formula.identifier:
-                temp_op.parent = None
         if (second_operand.check_boolean_closure(lambda n: n.operator == 'P') and
             any(op.lower_bound() == R_formula.lower for j, op in enumerate(new_node1.operands) if j != index)):
             new_node1.jump1 = True
 
-    # Node where U is satisfied (p)
+    # Node where R is satisfied (p)
     new_node2 = formula.shallow_copy()
     new_node2.replace_operand(index, modify_argument(first_operand.shallow_copy(), False), modify_argument(second_operand.shallow_copy(), False))
+
+    # quando R va via tolgo is_derived dagli operatori
+    del_parent = new_node2.operands + (new_node1.operands if R_formula.lower == R_formula.upper else [])
+    for operand in del_parent:  
+        temp_op = operand.operands[0] if operand.operator == 'O' else operand
+        if temp_op.parent == R_formula.identifier:
+            temp_op.parent = None
 
     return [new_node2, new_node1]
 
