@@ -321,12 +321,12 @@ def decompose_all_G_nodes(outer_node, current_time):
                     operand.operands[0].upper += 1
                     G_counter += 1
                     if G_node.lower == G_node.upper:
-                        operand.operands[0].parent = False
+                        operand.operands[0].parent = None
             if G_counter == 0:
                 extract = arg.shallow_copy()
                 extract.lower = arg.lower + G_node.lower
                 extract.upper = arg.upper + G_node.lower
-                extract.parent = G_node.identifier
+                extract.parent = G_node.identifier if G_node.lower < G_node.upper else None
                 extract.set_initial_time()
                 return extract
             else:
