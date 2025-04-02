@@ -363,12 +363,6 @@ def decompose_all_G_nodes(outer_node, current_time):
                 if (operand[0].check_boolean_closure(lambda n: n.operator == 'P') and
                     any(other.lower_bound() == operand.lower for j, other in enumerate(outer_node.operands) if (j != i and other is not None))):
                     outer_node.jump1 = True
-                # Set is_derived to false
-                for j, other in enumerate(outer_node.operands):
-                    if j != i and other is not None:
-                        temp_op = other.operands[0] if other.operator == 'O' else other
-                        if temp_op.operator in {'G', 'U', 'R', 'F'} and temp_op.is_derived() and temp_op.parent == operand.identifier:
-                            temp_op.parent = None
                 # Elimino l'elemento se a == b
                 outer_node.operands[i] = None
     outer_node.operands = [x for x in outer_node.operands if x is not None]
@@ -379,6 +373,12 @@ def decompose_all_G_nodes(outer_node, current_time):
         new_operands = modify_argument(G_node.operands[0], G_node, True, True)
         if new_operands:
             outer_node.operands.append(new_operands)
+        if G_node.lower == G_node.upper:
+            # Set parent to None (we do it here so that it doesn't interfere with modify_argument)
+            for j, other in enumerate(outer_node.operands):
+                temp_op = other.operands[0] if other.operator == 'O' else other
+                if temp_op.operator in {'G', 'U', 'R', 'F'} and temp_op.is_derived() and temp_op.parent == G_node.identifier:
+                    temp_op.parent = None
     return [outer_node], len(G_nodes) > 0
 
 
