@@ -656,6 +656,7 @@ def decompose_imply_classic(node, index, mode='sat', number_of_implications=None
     # lhs of the implication
     new_node1 = node.shallow_copy()
     new_node1.replace_operand(index, push_negation(Node('!', lhs)))
+    new_node1[index].set_initial_time()
 
     # rhs of the implication
     new_node2 = node.shallow_copy()
