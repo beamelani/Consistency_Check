@@ -233,13 +233,13 @@ def decompose(tableau_data, local_solver, node, current_time):
     :return: ritorna la lista decomposta (i.e. il successivo nodo del tree)
     """
     # fai qui il check accept/reject, se rigetti non serve andare avanti
-    if not local_consistency_check(local_solver, node):
+    if tableau_data.tableau_opts['early_local_consistency_check'] and not local_consistency_check(local_solver, node):
         return ['Rejected']
     res, has_decomposed = decompose_and(node)
     if has_decomposed:
         return res
     
-    res, has_decomposed = decompose_all_G_nodes(node, current_time)
+    res, has_decomposed = decompose_all_G_nodes(tableau_data.tableau_opts, node, current_time)
     if has_decomposed:
         return res
 
@@ -247,14 +247,14 @@ def decompose(tableau_data, local_solver, node, current_time):
     for j in range(len(node.operands)):
         match node.operands[j].operator:
             case '||':
-                res = decompose_or(node, j)
+                res = decompose_or(tableau_data.tableau_opts, node, j)
                 break
             case '->':
                 if tableau_data.mode == 'complete' or tableau_data.mode == 'sat':
-                    res = decompose_imply_classic(node, j)
+                    res = decompose_imply_classic(tableau_data, node, j)
                 else:
                     #res = decompose_imply_new(node, j)
-                    res = decompose_imply_classic(node, j, 'strong_sat', tableau_data.number_of_implications)
+                    res = decompose_imply_classic(tableau_data, node, j, 'strong_sat')
                 break
 
     if res is None:
@@ -279,10 +279,16 @@ def decompose(tableau_data, local_solver, node, current_time):
         return res
 
     # se arrivo qui vuol dire che non sono entrata in nessun return e quindi non c'era nulla da decomporre
+    if not tableau_data.tableau_opts['early_local_consistency_check'] and not local_consistency_check(local_solver, node):
+        return ['Rejected']
+
+    if not tableau_data.tableau_opts['jump']:
+        node.jump1 = True
+
     return decompose_jump(tableau_data, node)
 
 
-def decompose_all_G_nodes(outer_node, current_time):
+def decompose_all_G_nodes(tableau_opts, outer_node, current_time):
     """
     Decompone tutti i nodi G nella formula con lower bound uguale a current_time.
     """
@@ -367,10 +373,11 @@ def decompose_all_G_nodes(outer_node, current_time):
                 outer_node.operands[i] = None
     outer_node.operands = [x for x in outer_node.operands if x is not None]
 
+    formula_opts = tableau_opts['formula_opts']
     for G_node in G_nodes:
         assert G_node.initial_time != '-1'
         # Decomponi il nodo originale
-        new_operands = modify_argument(G_node.operands[0], G_node, True, True)
+        new_operands = modify_argument(G_node.operands[0], G_node, formula_opts, formula_opts)
         if new_operands:
             outer_node.operands.append(new_operands)
         if G_node.lower == G_node.upper:
@@ -560,7 +567,7 @@ def decompose_and(node):
     return [new_node], has_decomposed
 
 
-def decompose_or(node, index):
+def decompose_or(tableau_opts, node, index):
     assert index >= 0 and node is not None
     # Funzione di ordinamento basata sulla complessità
     def complexity_score(or_node, node):
@@ -610,9 +617,12 @@ def decompose_or(node, index):
 
     # voglio creare un nodo figlio per ogni operand dell'OR, nodo che contiene l'operand dell'or + il resto del nodo padre (tolto l'or)
     res = []
+    if tableau_opts['children_order_opts']:
+        or_operands = sorted(node[index].operands, key=lambda op: complexity_score(op, node))
+    else:
+        or_operands = node[index].operands
     # Ordino i nodi secondo l’euristica
-    #for or_operand in sorted(node[index].operands, key=complexity_score):
-    for or_operand in sorted(node[index].operands, key=lambda op: complexity_score(op, node)):
+    for or_operand in or_operands:
         new_node = node.shallow_copy()
         if or_operand.is_derived() and or_operand.or_element > -1:
             z = 0
@@ -634,7 +644,7 @@ def decompose_or(node, index):
     return res
 
 
-def decompose_imply_classic(node, index, mode='sat', number_of_implications=None):
+def decompose_imply_classic(tableau_data, node, index, mode='sat'):
     '''
     :return: decompone p->q come not(p) OR (p and q), senza evitare il caso vacuously true
     '''
@@ -651,12 +661,13 @@ def decompose_imply_classic(node, index, mode='sat', number_of_implications=None
 
     def merge_derived_g_nodes(imply_op, new_node):
         # Cerca nodi 'G' derivati nel nuovo nodo
-        for i, operand in enumerate(new_node.operands):
-            if operand.operator == 'G' and operand.parent == imply_op.parent and operand.is_derived() and operand.id_implication == imply_op.id_implication:
-                # We are modifying the existing G node, so we need to make a copy
-                new_node.operands[i] = operand.shallow_copy()
-                new_node.operands[i].upper = operand.upper
-                return None
+        if tableau_data.tableau_opts['formula_opts']:
+            for i, operand in enumerate(new_node.operands):
+                if operand.operator == 'G' and operand.parent == imply_op.parent and operand.is_derived() and operand.id_implication == imply_op.id_implication:
+                    # We are modifying the existing G node, so we need to make a copy
+                    new_node.operands[i] = operand.shallow_copy()
+                    new_node.operands[i].upper = operand.upper
+                    return None
         return imply_op
 
     # lhs of the implication
@@ -667,7 +678,9 @@ def decompose_imply_classic(node, index, mode='sat', number_of_implications=None
     # rhs of the implication
     new_node2 = node.shallow_copy()
     new_lhs, new_rhs = lhs, rhs
-    if lhs.operator == 'G' and lhs.is_derived():
+    if not tableau_data.tableau_opts['formula_opts']:
+        new_lhs = None
+    elif lhs.operator == 'G' and lhs.is_derived():
         new_lhs = merge_derived_g_nodes(lhs, new_node2)
     if rhs.operator == 'G' and rhs.is_derived():
         new_rhs = merge_derived_g_nodes(rhs, new_node2)
@@ -680,26 +693,28 @@ def decompose_imply_classic(node, index, mode='sat', number_of_implications=None
         # TODO this is needed because sometimes imply_formula.identifier is None (req_cps): find out why and fix it
         skip = True
 
-    # euristica per ottimizzare, se nella formula ho già antecedente che deve essere vero
-    # resituisco prima nodo in cui antecedente è vero, altrimenti il contrario
-    def check_match(sub1, sub2):
-        return sub1.operator == sub2.operator and ((sub1.operator == 'P' and sub1.operands == sub2.operands) or (sub1.operator == '!' and sub1[0].operands == sub2[0].operands))
-    if lhs.operator in {'P', '!'}:
-        for operand in node.operands:
-            if check_match(lhs, operand):
-                return new_node2, new_node1
-    elif lhs.operator in {'&&', ',', '||'}:
-        for element in lhs.operands:
+    if tableau_data.tableau_opts['children_order_opts']:
+        # euristica per ottimizzare, se nella formula ho già antecedente che deve essere vero
+        # resituisco prima nodo in cui antecedente è vero, altrimenti il contrario
+        def check_match(sub1, sub2):
+            return sub1.operator == sub2.operator and ((sub1.operator == 'P' and sub1.operands == sub2.operands) or (sub1.operator == '!' and sub1[0].operands == sub2[0].operands))
+        if lhs.operator in {'P', '!'}:
             for operand in node.operands:
-                if check_match(element, operand):
+                if check_match(lhs, operand):
                     return new_node2, new_node1
+        elif lhs.operator in {'&&', ',', '||'}:
+            for element in lhs.operands:
+                for operand in node.operands:
+                    if check_match(element, operand):
+                        return new_node2, new_node1
 
-    if mode == 'sat' or new_node2.satisfied_implications == number_of_implications or (mode == 'strong_sat' and skip):
-        # in strong_sat, se quella implicazione l'avevo già prec soddisfatta non mi interessa risoddisfarla
-        return new_node1, new_node2
+        if mode == 'sat' or new_node2.satisfied_implications == tableau_data.number_of_implications or (mode == 'strong_sat' and skip):
+            # in strong_sat, se quella implicazione l'avevo già prec soddisfatta non mi interessa risoddisfarla
+            return new_node1, new_node2
+        else:
+            return new_node2, new_node1
     else:
-        return new_node2, new_node1
-
+        return new_node1, new_node2
 
 
 def decompose_imply_new(node, index):
@@ -865,7 +880,7 @@ def decompose_jump(tableau_data, node):
             new_node.jump1 = False
             new_node.operands = new_operands
             new_node.current_time = new_time
-            if len(new_node.operands) > 1:
+            if tableau_data.tableau_opts['formula_opts'] and len(new_node.operands) > 1:
                 simplify_F(new_node)
             return [new_node]
         else:
@@ -930,13 +945,13 @@ def decompose_jump(tableau_data, node):
         new_node = node.shallow_copy()
         new_node.operands = new_node_operands
         new_node.current_time = node.current_time + jump
-        if len(new_node.operands) > 1:
+        if tableau_data.tableau_opts['formula_opts'] and len(new_node.operands) > 1:
             simplify_F(new_node)
 
         # We build a simplified node without complex nested operators that implies new_node
         simple_node_operands = list(filter(lambda n: not is_complex_temporal_operator(n), new_node.operands))
         
-        if len(simple_node_operands) == len(new_node.operands) or not simple_node_operands:
+        if not tableau_data.tableau_opts['simple_nodes_first'] or len(simple_node_operands) == len(new_node.operands) or not simple_node_operands:
             return [new_node]
         else:
             simple_node = new_node.shallow_copy()
@@ -989,11 +1004,13 @@ def add_tree_child(tableau_data, G, parent_label, child):
     G.add_edge(parent_label, child_label)
 
 def add_rejected(tableau_data, node):
-    if not check_rejected(tableau_data, node):
+    if tableau_data.tableau_opts['memoization'] and not check_rejected(tableau_data, node):
         #print(node)
         bisect.insort_left(tableau_data.rejected_store, node, key=Node.get_imply_sort_key)
 
 def check_rejected(tableau_data, node):
+    if not tableau_data.tableau_opts['memoization']:
+        return False
     node.sort_operands()
     max_lower = max((op.lower for op in node.operands if op.operator in {'G', 'F', 'U', 'R'}))
     i = bisect.bisect_left(tableau_data.rejected_store, node.get_imply_sort_key(max_lower), key=Node.get_imply_sort_key)
@@ -1158,7 +1175,7 @@ def build_decomposition_tree(tableau_data, root, max_depth):
 
 class TableauData:
 
-    def __init__(self, number_of_implications, mode, build_tree, return_trace, parallel, verbose):
+    def __init__(self, number_of_implications, mode, build_tree, return_trace, parallel, verbose, tableau_opts):
         self.number_of_implications = number_of_implications
         self.build_tree = build_tree
         self.mode = mode
@@ -1172,6 +1189,7 @@ class TableauData:
         self.trace_stack = [] if return_trace else None
         if mode == 'sat':
             self.rejected_store = []
+        self.tableau_opts = tableau_opts
 
 
 def plot_tree(G):
@@ -1183,7 +1201,16 @@ def plot_tree(G):
     plt.show()
 
 
-def make_tableau(formula, max_depth, mode, build_tree, return_trace, parallel, verbose, mltl=False):
+default_tableau_opts = {
+    'jump': True,
+    'formula_opts': True,
+    'children_order_opts': True,
+    'early_local_consistency_check': True,
+    'memoization': True,
+    'simple_nodes_first': True
+}
+
+def make_tableau(formula, max_depth, mode, build_tree, return_trace, parallel, verbose, mltl=False, tableau_opts=default_tableau_opts):
     if formula.operator != ',':
         formula = Node(',', formula)
 
@@ -1192,13 +1219,14 @@ def make_tableau(formula, max_depth, mode, build_tree, return_trace, parallel, v
         formula = decompose_and(formula)[0][0] # perché funzione sopra può aggiungere && di troppo
     
     formula = push_negation(formula)
-    shift_bounds(formula)
+    if tableau_opts['formula_opts']:
+        shift_bounds(formula)
     assign_and_or_element(formula)
     number_of_implications = count_implications(formula)
     formula.set_initial_time()
     assign_identifier(formula)
 
-    tableau_data = TableauData(number_of_implications, mode, build_tree, return_trace, parallel, verbose)
+    tableau_data = TableauData(number_of_implications, mode, build_tree, return_trace, parallel, verbose, tableau_opts)
     return build_decomposition_tree(tableau_data, formula, max_depth)
 
 

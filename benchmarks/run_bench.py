@@ -21,6 +21,23 @@ if platform.system() == 'Darwin':
 else:
     time_bin = '/usr/bin/time'
 
+def get_tableau_args(args):
+    tableau_args = []
+    if args.no_jump:
+        tableau_args.append('--no-jump')
+    if args.no_formula_optimizations:
+        tableau_args.append('--no-formula-optimizations')
+    if args.no_children_order_optimizations:
+        tableau_args.append('--no-children-order-optimizations')
+    if args.no_early_local_consistency_check:
+        tableau_args.append('--no-early-local-consistency-check')
+    if args.no_memoization:
+        tableau_args.append('--no-memoization')
+    if args.no_simple_nodes:
+        tableau_args.append('--no-simple-nodes')
+
+    return tableau_args
+
 def caps_command(timeout, max_mem):
     if timeout > 0 or max_mem > 0:
         return [
@@ -44,7 +61,7 @@ def bench_command(fname, args):
     match args.engine:
         case 'tableau':
             prog_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'stltree.py')
-            return [prog_path, '--smtlib-result', '--mltl', fname]
+            return [prog_path, '--smtlib-result', '--mltl'] + get_tableau_args(args) + [fname]
         case 'smt-quant':
             return ['bash', '-c', "'", args.translator_path, '-smtlib', f'"$(cat {fname})"', '|', args.z3_path, '-in', "'"]
     assert False
@@ -153,6 +170,12 @@ if __name__ == '__main__':
     argp.add_argument('-v', '--verbose', action='count', default=0, help='Show individual benchmark results')
     argp.add_argument('--csv', type=str, default='', help='Output result in CSV format in the specified file')
     argp.add_argument('-b', '--base-path', type=str, default=None, help='Base path for benchmark files')
+    argp.add_argument('--no-jump', action='store_true', help='Disable jump rule in tableau.')
+    argp.add_argument('--no-formula-optimizations', action='store_true', help='Disable formula optimizations in tableau.')
+    argp.add_argument('--no-children-order-optimizations', action='store_true', help='Disable children order optimizations in tableau.')
+    argp.add_argument('--no-early-local-consistency-check', action='store_true', help='Perform local consistency checks on poised tableau nodes only.')
+    argp.add_argument('--no-memoization', action='store_true', help='Disable memoization of tableau nodes.')
+    argp.add_argument('--no-simple-nodes', action='store_true', help='Disable simple nodes optimization in tableau.')
     argp.add_argument('benchmarks', type=str, help='File containing a list of banchmark files, one per line')
     subparsers = argp.add_subparsers(required=True, dest='engine')
 

@@ -47,6 +47,12 @@ def main():
     argp.add_argument('--smtlib-result', action='store_true', help='Emit result as SMTLIB output (sat, unsat, unknown)')
     argp.add_argument('--parallel', action='store_true', help='Use parallel version of the tableau')
     argp.add_argument('--mltl', action='store_true', help='Use MLTL semantics for U and R operators.') # TODO support this in SMT engine
+    argp.add_argument('--no-jump', action='store_true', help='Disable jump rule in tableau.')
+    argp.add_argument('--no-formula-optimizations', action='store_true', help='Disable formula optimizations in tableau.')
+    argp.add_argument('--no-children-order-optimizations', action='store_true', help='Disable children order optimizations in tableau.')
+    argp.add_argument('--no-early-local-consistency-check', action='store_true', help='Perform local consistency checks on poised tableau nodes only.')
+    argp.add_argument('--no-memoization', action='store_true', help='Disable memoization of tableau nodes.')
+    argp.add_argument('--no-simple-nodes', action='store_true', help='Disable simple nodes optimization in tableau.')
     argp.add_argument('-v', '--verbose', action='store_true')
     argp.add_argument('formula', type=str, help='File containing formula to be checked.')
     args = argp.parse_args()
@@ -75,6 +81,15 @@ def main():
         parsed_formula = parser.parse_formula_as_node(formula)
         parsing_t = time.perf_counter()
 
+        tableau_opts = {
+            'jump': not args.no_jump,
+            'formula_opts': not args.no_formula_optimizations,
+            'children_order_opts': not args.no_children_order_optimizations,
+            'early_local_consistency_check': not args.no_early_local_consistency_check,
+            'memoization': not args.no_memoization,
+            'simple_nodes_first': not args.no_simple_nodes
+        }
+
         res = make_tableau(
             parsed_formula,
             args.max_depth,
@@ -83,7 +98,8 @@ def main():
             return_trace=args.print_trace,
             parallel=args.parallel,
             verbose=args.verbose,
-            mltl=args.mltl
+            mltl=args.mltl,
+            tableau_opts=tableau_opts
         )
 
         if args.plot or args.print_trace:
