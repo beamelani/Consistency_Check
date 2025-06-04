@@ -245,6 +245,17 @@ def make_and(formulas):
         return formulas[0]
     return ['&&'] + formulas
 
+datasets = {
+    "cars": cars,
+    "thermostat": thermostat,
+    "watertank": watertank,
+    "railroad": railroad,
+    "batteries": batteries,
+    "pcv": pcv,
+    "mtl_requirements": mtl_requirements,
+    "req_cps": req_cps,
+    "avionics": requirements_riscritti2 + parameter_ranges,
+}
 
 # Funzione per eseguire entrambi i test su un dataset
 def check_dataset(dataset_name, dataset, max_depth, mode, max_quantum, timeout, iters):
@@ -267,7 +278,7 @@ def check_dataset(dataset_name, dataset, max_depth, mode, max_quantum, timeout, 
     # Tableau
     start_t = time.perf_counter()
     for _ in range(iters):
-        res_tableau = run_with_timeout(timeout, make_tableau, Node(*normalized_formula), max_depth, mode, False, False, False, False)
+        res_tableau = run_with_timeout(timeout, make_tableau, Node(*normalized_formula), max_depth, mode, False, False, False, False, False)
         #res_tableau = make_tableau(Node(*normalized_formula), max_depth, mode, False, False, False, False)
         if res_tableau == 'timeout':
             elapsed_tableau = timeout
@@ -310,17 +321,6 @@ def pretty_print(results, ms, csvfile):
 
 # Main execution
 if __name__ == '__main__':
-    datasets = {
-        "cars": cars,
-        "thermostat": thermostat,
-        "watertank": watertank,
-        "railroad": railroad,
-        "batteries": batteries,
-        "pcv": pcv,
-        "mtl_requirements": mtl_requirements,
-        "req_cps": req_cps,
-        "avionics": requirements_riscritti2 + parameter_ranges,
-    }
     sys.setrecursionlimit(1000000000)
     max_depth = 10000000
     mode = 'sat' # 'strong_sat'
