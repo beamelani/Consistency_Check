@@ -29,7 +29,7 @@ def run_with_timeout(timeout, f, *args, **kwargs):
 
 
 # Benchmark: (avionics requirements)
-# 1) stabilire un time horizon (T)
+# 1) time horizon (T)
 T = str(1000)
 requirements = [
     ['G', '0', T, ['||', ['&&', ['active'], ['!', ['inactive']], ['!', ['armed']]], ['&&', ['inactive'], ['!', ['active']], ['!', ['armed']]], ['&&', ['armed'], ['!', ['inactive']], ['!', ['active']]]]],
@@ -94,9 +94,9 @@ parameter_ranges = [
 ]
 
 
-#Requisiti da: Benchmarks for Temporal Logic Requirements for Automotive Systems
-t = '10' #alcuni requisiti sono da 0 a un tempo t (nel paper)
-T1 = '1000' #quando il requisito ha unboundend operators ho aggiunto bound T1
+#Requirements from: Benchmarks for Temporal Logic Requirements for Automotive Systems
+t = '10'
+T1 = '1000'
 mtl_requirements = [
     ['G', '0', T1, ['&&', ['omega < omega_hat'], ['v < v_hat']]],
     ['G', '0', T1, ['->', ['&&', ['g2'], ['G', '1', '1', ['g1']]], ['G', '0.5', '2.5', ['!', ['g2']]]]],
@@ -111,13 +111,12 @@ mtl_requirements = [
 
 ]
 
-#Requisiti da: Powertrain Control Verification Benchmark
-#questo valore di T3 scelto a caso, gli altri presi dal paper
+#Requirements from: Powertrain Control Verification Benchmark
 T3 = '15'
-epsilon = '0.02' #short interval
+epsilon = '0.02'
 t_s = '11'
 eta = '1'
-zeta_mezzi = '10'#zeta è il periodo del pulse train signal
+zeta_mezzi = '10'
 pcv = [
     # normal mode
     ['G', '0', T3, ['->', ['normal_mode'], ['&&', ['a > 8.8'], ['a < 70']]]],
@@ -133,12 +132,10 @@ pcv = [
     ['G', '0', T3, ['->', ['&&', ['||', ['startup_mode'], ['sensor_fail_mode']], ['||', ['&&', ['theta == 8.8'], ['F', '0', epsilon, ['theta == a']]], ['&&', ['theta == a'], ['F', '0', epsilon, ['theta == 8.8']]]]], ['G', eta, zeta_mezzi, ['|mu| < 0.1']]]]
 ]
 
-#requisiti da Signal-Based Properties of Cyber-Physical Systems: Taxonomy and Logic-based Characterization
+#Requirements from Signal-Based Properties of Cyber-Physical Systems: Taxonomy and Logic-based Characterization
 T2 = '3000'
 req_cps = [
     ['G', '0', T2, ['||', ['currentADCSMode == 0'], ['currentADCSMode == 1'], ['currentADCSMode == 2']]], # P1 where 0 == NMC, 1== NMF, 2== SM
-    # P2: non serve, basta definire il segnale come bool
-    # P3: non serve, basta definire il segnale come bool
     ['G', '0', T2, ['RWs_angular_velocity == 816.814']], # P4
     ['G', '2000', T2, ['pointing_error < 2']], # P5
     ['G', '1500', '2000', ['RWs_angular_momentum < 0.35']], # P6
@@ -156,7 +153,7 @@ req_cps = [
     ['G', '0', T2, ['||', ['sun_direction_ECI == 1'], ['sun_direction_ECI == -1']]], # P18
     ['G', '2000', T2, ['|sat_target_angular_velocity_safe_spin_mode| <= 1.5']], # P19
     ['G', '0', T2, ['|RWs_torque| <= 0.015']], # P20
-    ['G', '0', T2, ['sun_sensor_availability <= 3']], # P21 traduzioe non perfetta, ma good enough
+    ['G', '0', T2, ['sun_sensor_availability <= 3']], # P21
     ['G', '2000', '2000', ['&&', ['q_real - q_estimate_attitude > 0'], ['q_real - q_estimate_attitude < delta']]], # P22
     ['G', '2000', '2000', ['&&', ['q_target_attitude - q_estimate > 0'], ['q_target_attitude - q_estimate < delta']]], # P23
     ['G', '0', T2, ['&&', ['sat_estimated_angular_velocity - sat_real_angular_velocity > 0'], ['sat_estimated_angular_velocity - sat_real_angular_velocity < delta']]], # P24
@@ -165,7 +162,7 @@ req_cps = [
     ['G', '0', T2, ['->', ['!', ['not_Eclipse']], ['!', ['sun_currents']]]], # P27
     ['G', '0', T2, ['->', ['pointing_error_under_15'], ['!', ['pointing_error_above_20']]]], # P28
     ['G', '0', T2, ['->', ['pointing_error_above_20'], ['!', ['pointing_error_under_15']]]], # P29
-    ['G', '0', T2, ['->', ['RWs_command == 0'], ['F', '0', '60', ['RWs_angular_velocity == 0']]]], # P30 monotonically decreasing come lo esprimo??
+    ['G', '0', T2, ['->', ['RWs_command == 0'], ['F', '0', '60', ['RWs_angular_velocity == 0']]]], # P30
     ['G', '0', T2, ['->', ['RWs_angular_momentum > 0.35'], ['RWs_torque == 0']]], # P31
     ['G', '0', T2, ['->', ['currentADCSMode == 0'], ['control_error >= 10']]], # P32
     ['G', '0', T2, ['->', ['control_error < 10'], ['currentADCSMode == 1']]], # P33
@@ -176,11 +173,10 @@ req_cps = [
     ['G', '0', T2, ['->', ['currentADCSMode == 2'], ['->', ['RWs_command > 0'], ['F', '0', '900', ['RWs_angular_momentum < 0.25']]]]], # P38
     ['G', '0', T2, ['->', ['currentADCSMode == 2'], ['F', '0', '10799', ['real_Omega - signal_target_Omega == 0']]]], # P39
     ['G', '0', T2, ['->', ['not_Eclipse'], ['sun_angle < 45']]], # P40
-    # intervallo molto lungo ['G', '16200', T2, ['->', ['pointing_error < 2'], ['F', '0', '5400', ['&&', ['pointing_error < k2'], ['U', '0', '600', ['pointing_error >= k'], ['pointing_error < k2']]]]]] # P41
     ['G', '1600', T2, ['->', ['pointing_error < 2'], ['F', '0', '5400', ['&&', ['pointing_error < k2'], ['U', '0', '600', ['pointing_error >= k'], ['pointing_error < k2']]]]]] # P41
 ]
 
-#Requisiti da Bounded Model Checking of STL Properties using Syntactic Separation
+#Requirements from Bounded Model Checking of STL Properties using Syntactic Separation
 cars = [
     ['G', '0', '100', ['dist > 0.1']],
     ['G', '0', '20', ['->', ['dist < 6'], ['F', '0', '15', ['acc2']]]],
@@ -258,7 +254,7 @@ def check_dataset(dataset_name, dataset, max_depth, mode, max_quantum, timeout, 
     parsed_formula = parser.parse_relational_exprs(formula)
     normalized_formula = normalize_bounds(parsed_formula, max_quantum)
 
-    # Prima prova: SMT
+    # SMT
     start_t = time.perf_counter()
     for _ in range(iters):
         res_smt = run_with_timeout(timeout, smt_check_consistency, normalized_formula, mode, False, False)
@@ -268,7 +264,7 @@ def check_dataset(dataset_name, dataset, max_depth, mode, max_quantum, timeout, 
     else:
         elapsed_smt = (time.perf_counter() - start_t) / iters
 
-    # Seconda prova: Tableau
+    # Tableau
     start_t = time.perf_counter()
     for _ in range(iters):
         res_tableau = run_with_timeout(timeout, make_tableau, Node(*normalized_formula), max_depth, mode, False, False, False, False)
@@ -291,17 +287,17 @@ def check_dataset(dataset_name, dataset, max_depth, mode, max_quantum, timeout, 
         'result_tableau': res_tableau
     }
 
-# Funzione per stampare i risultati
+# Print results
 def pretty_print(results, ms, csvfile):
     timeh, timef = ("Time (ms)", lambda t: t * 1000) if ms else ("Time (s)", lambda x: x)
 
-    # Tabella
+    # Table
     results_matrix = [
         [r['dataset'], timef(r['time_smt']), r['result_smt'], timef(r['time_tableau']), r['result_tableau']]
         for r in results
     ]
 
-    # Intestazione della tabella
+    # Columns in table
     header = ["Dataset", f"SMT {timeh}", "SMT Result", f"Tableau {timeh}", "Tableau Result"]
 
     print(tabulate(results_matrix, headers=header))
@@ -312,7 +308,7 @@ def pretty_print(results, ms, csvfile):
             cw.writerow(header)
             cw.writerows(results_matrix)
 
-# Esecuzione principale
+# Main execution
 if __name__ == '__main__':
     datasets = {
         "cars": cars,

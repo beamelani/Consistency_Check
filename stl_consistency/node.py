@@ -33,9 +33,9 @@ class Node:
         self.identifier = None   # a number that uniquely identifies (some) formulas
         self.parent = None # if this formula comes from the decomposition of a nested temporal operand, contains the parent's identifier, None otherwise
         self.operator = operator
-        self.id_implication = -1 # serve per identificare da quale el. dell'implicazione proviene un termine quando è stato estratto (mi serve se l'impl è annidata e ha elementi con G e devo quindi sapere quale el incrementare invece di estrarre)
-        self.and_element = -1 # identifica univoc gli operandi di un && dentro a un G
-        self.or_element = -1 # identifica univoc gli operandi di un || dentro a un G
+        self.id_implication = -1 # to identify from which element of an implication an operands has been extracted
+        self.and_element = -1 # identifies univoc operands of && inside a G
+        self.or_element = -1 # identifies univoc operands of || inside a G
         self.jump1 = False # needed because in some instances you can only jump 1 step to make sure you do not miss anything important
         self.siblings_imply = False
         if operator in {'&&', '||', ',', '!', 'O', '->', '<->'}:
