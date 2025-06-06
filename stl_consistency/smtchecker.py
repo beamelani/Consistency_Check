@@ -108,9 +108,9 @@ class SMTSTLConsistencyChecker:
 
         if verbose:
             print("# SMT Encoding in Python")
-            print("")
+            print()
+            print(f"Time horizon = {time_horizon}")
             print("============================")
-            print("from z3 import *")
             print("")
 
         self._encode_variables(table, time_horizon, verbose)
