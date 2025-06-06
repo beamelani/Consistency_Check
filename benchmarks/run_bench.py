@@ -35,6 +35,8 @@ def get_tableau_args(args):
         tableau_args.append('--no-memoization')
     if args.no_simple_nodes:
         tableau_args.append('--no-simple-nodes')
+    if args.no_g_f:
+        tableau_args.append('--no-g-f')
 
     return tableau_args
 
@@ -176,6 +178,7 @@ if __name__ == '__main__':
     argp.add_argument('--no-early-local-consistency-check', action='store_true', help='Perform local consistency checks on poised tableau nodes only.')
     argp.add_argument('--no-memoization', action='store_true', help='Disable memoization of tableau nodes.')
     argp.add_argument('--no-simple-nodes', action='store_true', help='Disable simple nodes optimization in tableau.')
+    argp.add_argument('--no-g-f', action='store_true', help='Do not use special rules for G and F in the tableau.')
     argp.add_argument('benchmarks', type=str, help='File containing a list of banchmark files, one per line')
     subparsers = argp.add_subparsers(required=True, dest='engine')
 

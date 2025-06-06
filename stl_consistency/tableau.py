@@ -149,6 +149,18 @@ def shift_bounds(node):
                 node.lower += shift_amount
                 node.upper += shift_amount
 
+def remove_GF(node):
+    match node.operator:
+        case 'G':
+            return Node('R', node.lower, node.upper, Node('false'), node[0])
+        case 'F':
+            return Node('U', node.lower, node.upper, Node('true'), node[0])
+        case 'P':
+            return node
+        case _:
+            new_node = node.shallow_copy()
+            new_node.operands = [remove_GF(op) for op in node.operands]
+            return new_node
 
 def assign_and_or_element(node):
     """
@@ -1174,7 +1186,8 @@ default_tableau_opts = {
     'children_order_opts': True,
     'early_local_consistency_check': True,
     'memoization': True,
-    'simple_nodes_first': True
+    'simple_nodes_first': True,
+    'g_f': True
 }
 
 def make_tableau(formula, max_depth, mode, build_tree, return_trace, parallel, verbose, mltl=False, tableau_opts=default_tableau_opts):
@@ -1183,11 +1196,13 @@ def make_tableau(formula, max_depth, mode, build_tree, return_trace, parallel, v
 
     if not mltl:
         formula = modify_U_R(formula)
-        formula = decompose_and(formula)[0][0] # perché funzione sopra può aggiungere && di troppo
+        formula = decompose_and(formula)[0][0] # modify_U_R may add &&'s
     
     formula = push_negation(formula)
     if tableau_opts['formula_opts']:
         shift_bounds(formula)
+    if not tableau_opts['g_f']:
+        formula = remove_GF(formula)
     assign_and_or_element(formula)
     number_of_implications = count_implications(formula)
     formula.set_initial_time()

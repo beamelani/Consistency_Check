@@ -53,6 +53,7 @@ def main():
     argp.add_argument('--no-early-local-consistency-check', action='store_true', help='Perform local consistency checks on poised tableau nodes only.')
     argp.add_argument('--no-memoization', action='store_true', help='Disable memoization of tableau nodes.')
     argp.add_argument('--no-simple-nodes', action='store_true', help='Disable simple nodes optimization in tableau.')
+    argp.add_argument('--no-g-f', action='store_true', help='Do not use special rules for G and F in the tableau.')
     argp.add_argument('-v', '--verbose', action='store_true')
     argp.add_argument('formula', type=str, help='File containing formula to be checked.')
     args = argp.parse_args()
@@ -87,7 +88,8 @@ def main():
             'children_order_opts': not args.no_children_order_optimizations,
             'early_local_consistency_check': not args.no_early_local_consistency_check,
             'memoization': not args.no_memoization,
-            'simple_nodes_first': not args.no_simple_nodes
+            'simple_nodes_first': not args.no_simple_nodes,
+            'g_f': not args.no_g_f
         }
 
         res = make_tableau(
