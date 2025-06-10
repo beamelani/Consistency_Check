@@ -4,6 +4,7 @@ import os, os.path, sys, argparse
 import plotly.graph_objects as go
 import pandas as pd
 import plotly.io as pio
+import math
 pio.kaleido.scope.mathjax = None
 
 def valid_result(r):
@@ -36,8 +37,74 @@ def make_survival_line(tool, data):
         x=data["Time (s)"],
         y=data.index,
         mode='lines+markers',
-        name=tool
+        name=tool,
+        marker=dict(size=4, symbol='x'),
+        line=dict(shape='linear',width=2,simplify=True)
     ) 
+
+def plot_identity_line(fig, end):
+    idline = [0, end+.01]
+    fig.add_trace(go.Scatter(
+        x=idline,
+        y=idline,
+        mode='lines+markers',
+        line=dict(
+            color="black",
+            width=1,
+        )
+    ))
+
+def make_scatter_plot(data, output, timeout):
+    """
+    Creates a scatter plot for the given data.
+    """
+    (tool1, data1), (tool2, data2) = tuple(data.items())
+    joint_data = data1.merge(data2, on="Name", suffixes=("_1", "_2"), validate="one_to_one")
+    # print(joint_data)
+
+    fig = go.Figure()
+    plot_identity_line(fig, timeout)
+
+    fig.add_trace(go.Scatter(
+        x=joint_data["Time (s)_1"],
+        y=joint_data["Time (s)_2"],
+        mode='markers',
+        marker=dict(size=5, symbol='x')
+    ))
+
+    # Set the layout
+    fig.update_layout(
+        #title="Scatter Plot of Benchmark Results",
+        font_family="Linux Libertine Display O,serif",
+        showlegend=False,
+        xaxis_title=tool1 + " time (s)",
+        yaxis_title=tool2 + " time (s)",
+        margin=dict(l=0, r=0, t=0, b=0),
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        xaxis=dict(
+            type='log',
+            #range=(-2, math.log10(timeout)+.01),
+            showgrid=True,
+            gridcolor='lightgrey',
+            showline=True,
+            linecolor='black',
+            linewidth=1,
+            mirror=True
+        ),
+        yaxis=dict(
+            type='log',
+            #range=(-1, math.log10(timeout)+.01),
+            showgrid=True,
+            gridcolor='lightgrey',
+            showline=True,
+            linecolor='black',
+            linewidth=1,
+            mirror=True
+        ),
+    )
+
+    fig.write_image(output+".scatter.pdf", format='pdf', width=350, height=350)
 
 
 if __name__ == "__main__":
@@ -54,6 +121,12 @@ if __name__ == "__main__":
     parser.add_argument('-o', '--output', dest='output', 
                         default='output',
                         help='Name of the output file')
+    parser.add_argument('--no-legend', action='store_true',
+                        help='Do not show the legend in the plot.')
+    parser.add_argument('--scatter', action='store_true',
+                        help='Also create a scatter plot.')
+    parser.add_argument('--log-survival', action='store_true',
+                        help='Use a log scale for the time axis in survival plots.')
     args = parser.parse_args()
     
     if args.tools == '_error_':
@@ -79,10 +152,47 @@ if __name__ == "__main__":
 
     # set the labels
     fig.update_layout(
+        font_family="Linux Libertine Display O,serif",
+        #font_size=12,
         xaxis_title="Time (s)",
         yaxis_title="Number of benchmarks solved",
-        xaxis_type="log",  # Set x-axis to logarithmic scale
-        margin=dict(l=0, r=0, t=0, b=0)
+        margin=dict(l=0, r=0, t=0, b=0),
+        plot_bgcolor='white',      # No background color
+        paper_bgcolor='white',     # No outer background
+        xaxis=dict(
+            type='log' if args.log_survival else 'linear',
+            showgrid=True,
+            gridcolor='lightgrey',  # Grey grid lines
+            # showline=True,             # Draw x=0 axis
+            # linecolor='black',     # Axis color
+            # linewidth=1
+            # mirror=True
+        ),
+        yaxis=dict(
+            showgrid=True,
+            gridcolor='lightgrey',  # Grey grid lines
+            showline=True,             # Draw x=0 axis
+            linecolor='black',     # Axis color
+            linewidth=1,
+            mirror=True,
+            zeroline=True,
+            zerolinecolor='black',  # Color of the zero line
+            zerolinewidth=1,         # Width of the zero line
+        ),
+        showlegend=not args.no_legend,
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01,
+            # font=dict(size=8),
+        )
     )
 
-    fig.write_image(args.output+".survival.pdf", format='pdf')
+    fig.write_image(args.output+".survival.pdf", format='pdf', width=350, height=350)
+
+    if args.scatter:
+        if len(tools) == 2:
+            make_scatter_plot(data, args.output, args.timeout)
+        else:
+            print("Scatter plot is only available for two tools.")
