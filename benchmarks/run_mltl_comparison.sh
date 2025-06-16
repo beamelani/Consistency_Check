@@ -11,7 +11,7 @@ shift
 timeout=120
 jobs=4
 max_mem=30720
-iters=1
+iters=5
 z3bin=z3
 outdir=./output_mltl
 

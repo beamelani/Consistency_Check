@@ -13,7 +13,7 @@ shift
 timeout=120
 jobs=4
 max_mem=30720
-iters=1
+iters=5
 outdir=./output_ablation
 
 while [[ $# -gt 0 ]]; do
