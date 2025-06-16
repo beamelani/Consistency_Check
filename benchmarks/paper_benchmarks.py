@@ -1,9 +1,10 @@
+#!/usr/bin/env python3
+
 import sys
 import os
 sys.path.append(os.getcwd())
 
 import time
-from itertools import combinations
 from wrapt_timeout_decorator import *
 from fractions import Fraction
 
@@ -326,7 +327,7 @@ if __name__ == '__main__':
     mode = 'sat' # 'strong_sat'
     sampling_interval = 1 # Fraction(1,10)
     timeout = 120 # in seconds
-    iterations = 1
+    iterations = 5
 
     results = [check_dataset(name, data, max_depth, mode, sampling_interval, timeout, iterations) for name, data in datasets.items()]
 

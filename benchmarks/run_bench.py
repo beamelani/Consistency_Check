@@ -3,6 +3,7 @@
 import argparse
 import platform
 import os
+from pathlib import Path
 import time
 import subprocess
 import re
@@ -62,7 +63,7 @@ def caps_command(timeout, max_mem):
 def bench_command(fname, args):
     match args.engine:
         case 'tableau':
-            prog_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'stltree.py')
+            prog_path = os.path.join(Path(os.path.dirname(__file__)).parent.absolute(), 'stltree.py')
             return [prog_path, '--smtlib-result', '--mltl'] + get_tableau_args(args) + [fname]
         case 'smt-quant':
             return ['bash', '-c', "'", args.translator_path, '-smtlib', f'"$(cat {fname})"', '|', args.z3_path, '-in', "'"]

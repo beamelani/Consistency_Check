@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import sys
 import os
 sys.path.append(os.getcwd())
@@ -65,7 +67,7 @@ if __name__ == '__main__':
     mode = 'sat' # 'strong_sat'
     sampling_interval = 1 # Fraction(1,10)
     timeout = 120 # in seconds
-    iterations = 1
+    iterations = 5
 
     results = {'all': {name: check_dataset(name, data, max_depth, mode, sampling_interval, timeout, iterations, default_tableau_opts) for name, data in datasets.items()}}
     for topt in default_tableau_opts:

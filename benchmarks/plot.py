@@ -25,7 +25,7 @@ def read_csv_files(tools, csv_files, timeout):
         data[tool] = df
     return data
 
-def make_survival_line(tool, data):
+def make_survival_line(tool, data, markers):
     """
     Creates a survival line for the given tool and its data.
     """
@@ -36,7 +36,7 @@ def make_survival_line(tool, data):
     return go.Scatter(
         x=data["Time (s)"],
         y=data.index,
-        mode='lines+markers',
+        mode='lines+markers' if markers else 'lines',
         name=tool,
         marker=dict(size=4, symbol='x'),
         line=dict(shape='linear',width=2,simplify=True)
@@ -69,7 +69,8 @@ def make_scatter_plot(data, output, timeout):
         x=joint_data["Time (s)_1"],
         y=joint_data["Time (s)_2"],
         mode='markers',
-        marker=dict(size=5, symbol='x')
+        marker=dict(size=5, symbol='x'),
+        cliponaxis=False,
     ))
 
     # Set the layout
@@ -79,24 +80,28 @@ def make_scatter_plot(data, output, timeout):
         showlegend=False,
         xaxis_title=tool1 + " time (s)",
         yaxis_title=tool2 + " time (s)",
-        margin=dict(l=0, r=0, t=0, b=0),
+        margin=dict(l=0, r=5, t=5, b=0),
         plot_bgcolor='white',
         paper_bgcolor='white',
         xaxis=dict(
             type='log',
-            #range=(-2, math.log10(timeout)+.01),
+            range=(-2, math.log10(timeout)+.01),
             showgrid=True,
             gridcolor='lightgrey',
+            layer='below traces',
             showline=True,
             linecolor='black',
             linewidth=1,
-            mirror=True
+            mirror=True,
         ),
         yaxis=dict(
             type='log',
-            #range=(-1, math.log10(timeout)+.01),
+            range=(-2, math.log10(timeout)+.01),
+            # scaleanchor = "x",
+            # scaleratio = 1,
             showgrid=True,
             gridcolor='lightgrey',
+            layer='below traces',
             showline=True,
             linecolor='black',
             linewidth=1,
@@ -127,6 +132,8 @@ if __name__ == "__main__":
                         help='Also create a scatter plot.')
     parser.add_argument('--log-survival', action='store_true',
                         help='Use a log scale for the time axis in survival plots.')
+    parser.add_argument('--markers-survival', action='store_true',
+                        help='Use markers in the survival plot.')
     args = parser.parse_args()
     
     if args.tools == '_error_':
@@ -147,7 +154,7 @@ if __name__ == "__main__":
     fig = go.Figure()
 
     for tool in tools:
-        line = make_survival_line(tool, data[tool])
+        line = make_survival_line(tool, data[tool], args.markers_survival)
         fig.add_trace(line)
 
     # set the labels
