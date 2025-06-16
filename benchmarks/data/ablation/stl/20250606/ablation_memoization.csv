@@ -1,0 +1,10 @@
+dataset,time,result
+cars,0.04547724259318784,True
+thermostat,0.034059055394027385,True
+watertank,0.03946469340007752,True
+railroad,120,timeout
+batteries,0.11651337220100685,True
+pcv,1.1708047829917632,True
+mtl_requirements,14.461477293598,False
+req_cps,120,timeout
+avionics,4.943270425009541,True
