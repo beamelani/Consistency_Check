@@ -1,0 +1,569 @@
+Running benchmarks...
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/Accumulator.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/Accumulator.smv.ltlf
+sat
+
+Total elapsed time (s): 0.34
+Max memory used (KB): 105888
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/AdditionGate.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/AdditionGate.smv.ltlf
+sat
+
+Total elapsed time (s): 0.34
+Max memory used (KB): 107196
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/AntiSkidCommandFacility.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/AntiSkidCommandFacility.smv.ltlf
+sat
+
+Total elapsed time (s): 0.30
+Max memory used (KB): 105836
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/AntiskidShutoffValve.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/AntiskidShutoffValve.smv.ltlf
+sat
+
+Total elapsed time (s): 0.29
+Max memory used (KB): 106692
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/BrakeActuator.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/BrakeActuator.smv.ltlf
+sat
+
+Total elapsed time (s): 0.30
+Max memory used (KB): 105460
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/BrakeCommandFacility.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/BrakeCommandFacility.smv.ltlf
+sat
+
+Total elapsed time (s): 0.29
+Max memory used (KB): 105764
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/HydraulicFuse.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/HydraulicFuse.smv.ltlf
+sat
+
+Total elapsed time (s): 0.29
+Max memory used (KB): 105592
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/HydraulicPiston.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/HydraulicPiston.smv.ltlf
+sat
+
+Total elapsed time (s): 0.29
+Max memory used (KB): 105688
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/HydraulicPump.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/HydraulicPump.smv.ltlf
+sat
+
+Total elapsed time (s): 0.30
+Max memory used (KB): 107088
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/MeterValve.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/MeterValve.smv.ltlf
+sat
+
+Total elapsed time (s): 0.29
+Max memory used (KB): 105872
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/MonitorSystem.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/MonitorSystem.smv.ltlf
+sat
+
+Total elapsed time (s): 0.30
+Max memory used (KB): 106140
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/out/extended_wbs_arch1.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/out/extended_wbs_arch1.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/SensorPedalPosition.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/SensorPedalPosition.smv.ltlf
+sat
+
+Total elapsed time (s): 0.30
+Max memory used (KB): 105700
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/Sensor.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/Sensor.smv.ltlf
+sat
+
+Total elapsed time (s): 0.29
+Max memory used (KB): 105892
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/ShutoffValve.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/ShutoffValve.smv.ltlf
+sat
+
+Total elapsed time (s): 0.29
+Max memory used (KB): 106780
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/wbs_arch1_simp.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/wbs_arch1_simp.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/wbs_arch1.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/wbs_arch1.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/Wheel.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/Wheel.smv.ltlf
+sat
+
+Total elapsed time (s): 0.30
+Max memory used (KB): 107916
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis/out/extended_wbs_arch2bis.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis/out/extended_wbs_arch2bis.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/AlternateCommandCalculator.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/AlternateCommandCalculator.smv.ltlf
+sat
+
+Total elapsed time (s): 0.30
+Max memory used (KB): 105820
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/NormalCommandCalculator.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/NormalCommandCalculator.smv.ltlf
+sat
+
+Total elapsed time (s): 0.30
+Max memory used (KB): 105648
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/OrGate.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/OrGate.smv.ltlf
+sat
+
+Total elapsed time (s): 0.29
+Max memory used (KB): 105536
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/SelectorValve.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/SelectorValve.smv.ltlf
+sat
+
+Total elapsed time (s): 0.30
+Max memory used (KB): 107804
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/SwitchGate.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/SwitchGate.smv.ltlf
+sat
+
+Total elapsed time (s): 0.30
+Max memory used (KB): 107344
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/wbs_arch2bis_simp.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/wbs_arch2bis_simp.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/wbs_arch2bis.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/wbs_arch2bis.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2/out/extended_wbs_arch2.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2/out/extended_wbs_arch2.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2_with_normal_alternate_mutex/wbs_arch2_simp.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2_with_normal_alternate_mutex/wbs_arch2_simp.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2_with_normal_alternate_mutex/wbs_arch2.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2_with_normal_alternate_mutex/wbs_arch2.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch3/out/extended_wbs_arch3.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch3/out/extended_wbs_arch3.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch3/wbs_arch3_simp.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch3/wbs_arch3_simp.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch3/wbs_arch3.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch3/wbs_arch3.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch4/out/extended_wbs_arch4.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch4/out/extended_wbs_arch4.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch4/wbs_arch4_simp.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch4/wbs_arch4_simp.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch4/wbs_arch4.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch4/wbs_arch4.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_1.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_1.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_2.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_2.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_3.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_3.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_4.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_4.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_5.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_5.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_6.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_6.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_7.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_7.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_1.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_1.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_2.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_2.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_3.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_3.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_4.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_4.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_5.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_5.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_6.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_6.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_7.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_7.smv.ltlf
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/oss/sample.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/oss/sample.smv.ltlf
+sat
+
+Total elapsed time (s): 0.30
+Max memory used (KB): 112536
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/oss/universal_extended_val.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/oss/universal_extended_val.smv.ltlf
+sat
+
+Total elapsed time (s): 21.17
+Max memory used (KB): 27554876
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/oss/universal_prop.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/oss/universal_prop.smv.ltlf
+
+Traceback (most recent call last):
+  File "/home/michele/Repos/stl-consistency/stltree.py", line 99, in <module>
+    main()
+  File "/home/michele/Repos/stl-consistency/stltree.py", line 68, in main
+    parsed_formula = parser.parse_formula_as_node(formula)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/michele/Repos/stl-consistency/stl_consistency/parser.py", line 168, in parse_formula_as_node
+    fslist = self.parse_formula_as_stl_list(formula, max_quantum)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/michele/Repos/stl-consistency/stl_consistency/parser.py", line 165, in parse_formula_as_stl_list
+    return normalize_bounds(self.parser.match(formula, flags=pe.STRICT|pe.MEMOIZE).value(), max_quantum)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/michele/Repos/stl-consistency/.venv/lib/python3.12/site-packages/pe/packrat.py", line 86, in match
+    raise exc
+pe._errors.ParseError: 
+  line 0, character 1427
+    (TRUE ->  G[66701,100000] !LOS) & (TRUE ->  G[2007,100000] !LOSfar) & (TRUE ->  G[37473,49004] !LOSmid) & (TRUE -> ((((((((((((((( G[44088,98016] (LiVar771 -> (LiVar640 & LiVar682)) &  G[80890,100000] (LiVar765 -> (LiVar631 & LiVar673))) &  G[12582,100000] (LiVar759 -> (LiVar622 & LiVar664))) &  G[58301,100000] (LiVar753 -> (LiVar613 & LiVar655))) &  G[96119,100000] (LiVar774 -> LiVar684)) &  G[32057,41173] (LiVar768 -> LiVar675)) &  G[94276,100000] (LiVar762 -> LiVar666)) &  G[19266,67485] (LiVar756 -> LiVar657)) &  G[63834,100000] ((LiVar770 & !ac1requesttssaground) -> (LiVar640 & LiVar682))) &  G[97637,100000] ((LiVar764 & !ac2requesttssaground) -> (LiVar631 & LiVar673))) &  G[30145,100000] ((LiVar758 & !ac3requesttssaground) -> (LiVar622 & LiVar664))) &  G[94971,100000] ((LiVar752 & !ac4requesttssaground) -> (LiVar613 & LiVar655))) &  G[59142,100000] ((LiVar773 & !ac1requestsssaground) -> LiVar684)) &  G[66981,100000] ((LiVar767 & !ac2requestsssaground) -> LiVar675)) &  G[61487,100000] ((LiVar761 & !ac3requestsssaground) -> LiVar666)) &  G[4370,63514] ((LiVar755 & !ac4requestsssaground) -> LiVar657))) & (TRUE ->  G[51480,100000] (((communicationphase & LiVar797) & (LiVar757 | (LiVar755 & ac4requestsssaground))) -> (LiVar616 & ((LiVar288 & LiVar287) & LiVar286)))) & (TRUE ->  G[23174,91705] (((communicationphase & LiVar797) & (LiVar766 | (LiVar764 & ac2requesttssaground))) -> (((LiVar584 & ((LiVar632 (LiVar640ac1intentionnearac1suggestionnear)  & LiVar632 (LiVar622ac3intentionnearac3suggestionnear) ) & LiVar632 (LiVar613ac4intentionnearac4suggestionnear) )) & LiVar633) & ((LiVar674 (LiVar682ac1intentionmidac1suggestionmid)  & LiVar674 (LiVar664ac3intentionmidac3suggestionmid) ) & LiVar674 (LiVar655ac4intentionmidac4suggestionmid) )))) & (TRUE ->  G[5527,17459] (((communicationphase & LiVar797) & (LiVar769 | (LiVar767 & ac2requestsssaground))) -> (LiVar634 & ((LiVar308 & LiVar307) & LiVar306)))) & (TRUE ->  G[91331,100000] (((communicationphase & LiVar797) & (LiVar754 | (LiVar752 & ac4requesttssaground))) -> (((LiVar572 & ((LiVar614 (LiVar640ac1intentionnearac1suggestionnear)  & LiVar614 (LiVar631ac2intentionnearac2suggestionnear) ) & LiVar614 (LiVar622ac3intentionnearac3suggestionnear) )) & LiVar615) & ((LiVar656 (LiVar682ac1intentionmidac1suggestionmid)  & LiVar656 (LiVar673ac2intentionmidac2suggestionmid) ) & LiVar656 (LiVar664ac3intentionmidac3suggestionmid) )))) & (TRUE ->  G[61800,100000] (((communicationphase & LiVar797) & (LiVar772 | (LiVar770 & ac1requesttssaground))) -> (((LiVar590 & ((LiVar641 (LiVar631ac2intentionnearac2suggestionnear)  & LiVar641 (LiVar622ac3intentionnearac3suggestionnear) ) & LiVar641 (LiVar613ac4intentionnearac4suggestionnear) )) & LiVar642) & ((LiVar683 (LiVar673ac2intentionmidac2suggestionmid)  & LiVar683 (LiVar664ac3intentionmidac3suggestionmid) ) & LiVar683 (LiVar655ac4intentionmidac4suggestionmid) )))) & (TRUE ->  G[58777,97600] (((communicationphase & LiVar797) & (LiVar763 | (LiVar761 & ac3requestsssaground))) -> (LiVar625 & ((LiVar298 & LiVar297) & LiVar296)))) & (TRUE ->  G[10576,55650] (((communicationphase & LiVar797) & (LiVar775 | (LiVar773 & ac1requestsssaground))) -> (LiVar643 & ((LiVar318 & LiVar317) & LiVar316)))) & (TRUE ->  G[62642,76410] (((communicationphase & LiVar797) & (LiVar760 | (LiVar758 & ac3requesttssaground))) -> (((LiVar578 & ((LiVar623 (LiVar640ac1intentionnearac1suggestionnear)  & LiVar623 (LiVar631ac2intentionnearac2suggestionnear) ) & LiVar623 (LiVar613ac4intentionnearac4suggestionnear) )) & LiVar624) & ((LiVar665 (LiVar682ac1intentionmidac1suggestionmid)  & LiVar665 (LiVar673ac2intentionmidac2suggestionmid) ) & LiVar665 (LiVar655ac4intentionmidac4suggestionmid) )))) & (TRUE -> (LiVar797 -> ((( G[37954,79007] (LiVar775 -> ((LiVar318 & LiVar317) & LiVar316)) &  G[18540,48126] (LiVar769 -> ((LiVar308 & LiVar307) & LiVar306))) &  G[81170,100000] (LiVar763 -> ((LiVar298 & LiVar297) & LiVar296))) &  G[23606,100000] (LiVar757 -> ((LiVar288 & LiVar287) & LiVar286))))) & (TRUE -> ((((((( G[16497,81709] ((LiVar771 | (LiVar770 & !ac1requesttssaground)) -> (LiVar312 & LiVar348)) &  G[47763,62955] (LiVar774 -> LiVar349)) &  G[48373,97037] ((LiVar765 | (LiVar764 & !ac2requesttssaground)) -> (LiVar302 & LiVar340))) &  G[82345,100000] (LiVar768 -> LiVar341)) &  G[76415,100000] ((LiVar759 | (LiVar758 & !ac3requesttssaground)) -> (LiVar292 & LiVar332))) &  G[26245,83475] (LiVar762 -> LiVar333)) &  G[43732,100000] ((LiVar753 | (LiVar752 & !ac4requesttssaground)) -> (LiVar282 & LiVar324))) &  G[90488,100000] (LiVar756 -> LiVar325))) & (TRUE -> (LiVar797 -> ((( G[81405,100000] (LiVar772 -> (((LiVar278 & LiVar277) & LiVar276) & ((LiVar315 & LiVar314) & LiVar313))) &  G[84672,100000] (LiVar766 -> (((LiVar275 & LiVar274) & LiVar273) & ((LiVar305 & LiVar304) & LiVar303)))) &  G[59306,100000] (LiVar760 -> (((LiVar272 & LiVar271) & LiVar270) & ((LiVar295 & LiVar294) & LiVar293)))) &  G[50163,100000] (LiVar754 -> (((LiVar269 & LiVar268) & LiVar267) & ((LiVar285 & LiVar284) & LiVar283)))))) & (((( G[89062,100000] (LiVar772 -> LiVar689) &  G[32793,86268] (LiVar766 -> LiVar680)) &  G[40715,100000] (LiVar760 -> LiVar671)) &  G[44998,64837] (LiVar754 -> LiVar662)) -> ((( G[77698,89996] (LiVar689 -> (ac1predictedconflictmid <-> !((LiVar352 & LiVar351) & LiVar350))) &  G[76903,81910] (LiVar680 -> (ac2predictedconflictmid <-> !((LiVar344 & LiVar343) & LiVar342)))) &  G[65365,100000] (LiVar671 -> (ac3predictedconflictmid <-> !((LiVar336 & LiVar335) & LiVar334)))) &  G[46340,100000] (LiVar662 -> (ac4predictedconflictmid <-> !((LiVar328 & LiVar327) & LiVar326))))) & (TRUE -> ((((((((((((((((((((((( G[4507,44805] (LiVar772 -> LiVar590) &  G[67898,83875] (LiVar772 -> LiVar642)) &  G[3776,65221] (LiVar775 -> LiVar643)) &  G[4948,78026] (LiVar766 -> LiVar584)) &  G[62395,89775] (LiVar766 -> LiVar633)) &  G[574,96591] (LiVar769 -> LiVar634)) &  G[48393,67890] (LiVar760 -> LiVar578)) &  G[63138,100000] (LiVar760 -> LiVar624)) &  G[47041,50214] (LiVar763 -> LiVar625)) &  G[79863,100000] (LiVar754 -> LiVar572)) &  G[21280,93924] (LiVar754 -> LiVar615)) &  G[12696,89613] (LiVar757 -> LiVar616)) &  G[80620,100000] ((LiVar770 & ac1requesttssaground) -> LiVar590)) &  G[80333,100000] ((LiVar770 & ac1requesttssaground) -> LiVar642)) &  G[39801,100000] ((LiVar773 & ac1requestsssaground) -> LiVar643)) &  G[79814,89207] ((LiVar764 & ac2requesttssaground) -> LiVar584)) &  G[64097,100000] ((LiVar764 & ac2requesttssaground) -> LiVar633)) &  G[51560,91737] ((LiVar767 & ac2requestsssaground) -> LiVar634)) &  G[27682,40562] ((LiVar758 & ac3requesttssaground) -> LiVar578)) &  G[39905,55682] ((LiVar758 & ac3requesttssaground) -> LiVar624)) &  G[46119,100000] ((LiVar761 & ac3requestsssaground) -> LiVar625)) &  G[63871,100000] ((LiVar752 & ac4requesttssaground) -> LiVar572)) &  G[7762,10451] ((LiVar752 & ac4requesttssaground) -> LiVar615)) &  G[52338,100000] ((LiVar755 & ac4requestsssaground) -> LiVar616))) & (TRUE -> (LiVar797 -> ((( G[3276,97335] ((LiVar773 & ac1requestsssaground) -> ((LiVar318 & LiVar317) & LiVar316)) &  G[46468,87648] ((LiVar767 & ac2requestsssaground) -> ((LiVar308 & LiVar307) & LiVar306))) &  G[2317,68278] ((LiVar761 & ac3requestsssaground) -> ((LiVar298 & LiVar297) & LiVar296))) &  G[58004,100000] ((LiVar755 & ac4requestsssaground) -> ((LiVar288 & LiVar287) & LiVar286))))) & (((( G[23857,82518] (LiVar772 -> LiVar690) &  G[43103,54042] (LiVar766 -> LiVar681)) &  G[96988,100000] (LiVar760 -> LiVar672)) &  G[1026,67306] (LiVar754 -> LiVar663)) -> ((( G[75224,100000] (LiVar690 -> (ac1predictedconflictfar <-> !((LiVar355 & LiVar354) & LiVar353))) &  G[99229,100000] (LiVar681 -> (ac2predictedconflictfar <-> !((LiVar347 & LiVar346) & LiVar345)))) &  G[95172,100000] (LiVar672 -> (ac3predictedconflictfar <-> !((LiVar339 & LiVar338) & LiVar337)))) &  G[20061,23821] (LiVar663 -> (ac4predictedconflictfar <-> !((LiVar331 & LiVar330) & LiVar329))))) & (((( G[13523,18426] (LiVar772 -> LiVar644) &  G[98959,100000] (LiVar766 -> LiVar635)) &  G[1141,4288] (LiVar760 -> LiVar626)) &  G[4319,26550] (LiVar754 -> LiVar617)) -> ((( G[63720,79808] (LiVar644 -> (ac1predictedconflictnear <-> !((LiVar321 & LiVar320) & LiVar319))) &  G[90170,100000] (LiVar635 -> (ac2predictedconflictnear <-> !((LiVar311 & LiVar310) & LiVar309)))) &  G[22215,75122] (LiVar626 -> (ac3predictedconflictnear <-> !((LiVar301 & LiVar300) & LiVar299)))) &  G[24760,46328] (LiVar617 -> (ac4predictedconflictnear <-> !((LiVar291 & LiVar290) & LiVar289))))) & (TRUE -> (LiVar797 -> ((( G[57775,100000] ((LiVar770 & ac1requesttssaground) -> (((LiVar278 & LiVar277) & LiVar276) & ((LiVar315 & LiVar314) & LiVar313))) &  G[71748,92654] ((LiVar764 & ac2requesttssaground) -> (((LiVar275 & LiVar274) & LiVar273) & ((LiVar305 & LiVar304) & LiVar303)))) &  G[72983,100000] ((LiVar758 & ac3requesttssaground) -> (((LiVar272 & LiVar271) & LiVar270) & ((LiVar295 & LiVar294) & LiVar293)))) &  G[31896,100000] ((LiVar752 & ac4requesttssaground) -> (((LiVar269 & LiVar268) & LiVar267) & ((LiVar285 & LiVar284) & LiVar283)))))) & (TRUE ->  G[69288,100000] (communicationphase -> ((((LiVar760 -> (LiVar207 & LiVar260)) & ((LiVar758 & ac3requesttssaground) -> (LiVar207 & LiVar260))) & ((LiVar758 & !ac3requesttssaground) -> (LiVar622 & LiVar664))) & (LiVar759 -> (LiVar622 & LiVar664))))) & (TRUE ->  G[68236,100000] (communicationphase -> ((((LiVar757 -> LiVar259) & ((LiVar755 & ac4requestsssaground) -> LiVar259)) & ((LiVar755 & !ac4requestsssaground) -> LiVar657)) & (LiVar756 -> LiVar657)))) & (TRUE ->  G[97876,100000] (communicationphase -> ((((LiVar775 -> LiVar265) & ((LiVar773 & ac1requestsssaground) -> LiVar265)) & ((LiVar773 & !ac1requestsssaground) -> LiVar684)) & (LiVar774 -> LiVar684)))) & (TRUE ->  G[58197,74327] (!communicationphase -> (((((((((((LiVar640 & LiVar682) & LiVar684) & LiVar631) & LiVar673) & LiVar675) & LiVar622) & LiVar664) & LiVar666) & LiVar613) & LiVar655) & LiVar657))) & (TRUE ->  G[24050,78463] (communicationphase -> ((((LiVar766 -> (LiVar208 & LiVar262)) & ((LiVar764 & ac2requesttssaground) -> (LiVar208 & LiVar262))) & ((LiVar764 & !ac2requesttssaground) -> (LiVar631 & LiVar673))) & (LiVar765 -> (LiVar631 & LiVar673))))) & (TRUE ->  G[84032,91824] (communicationphase -> ((((LiVar763 -> LiVar261) & ((LiVar761 & ac3requestsssaground) -> LiVar261)) & ((LiVar761 & !ac3requestsssaground) -> LiVar666)) & (LiVar762 -> LiVar666)))) & (TRUE ->  G[2320,69449] (communicationphase -> ((((LiVar754 -> (LiVar206 & LiVar258)) & ((LiVar752 & ac4requesttssaground) -> (LiVar206 & LiVar258))) & ((LiVar752 & !ac4requesttssaground) -> (LiVar613 & LiVar655))) & (LiVar753 -> (LiVar613 & LiVar655))))) & (TRUE ->  G[75322,90916] (communicationphase -> ((((LiVar772 -> (LiVar209 & LiVar264)) & ((LiVar770 & ac1requesttssaground) -> (LiVar209 & LiVar264))) & ((LiVar770 & !ac1requesttssaground) -> (LiVar640 & LiVar682))) & (LiVar771 -> (LiVar640 & LiVar682))))) & (TRUE ->  G[97661,100000] (communicationphase -> ((((LiVar769 -> LiVar263) & ((LiVar767 & ac2requestsssaground) -> LiVar263)) & ((LiVar767 & !ac2requestsssaground) -> LiVar675)) & (LiVar768 -> LiVar675)))) & (TRUE -> ((( G[11808,75891] LiVar407 (LiVar582ac3intentioncurrentin0)  &  G[97233,100000] LiVar494 (LiVar581ac3intentionnearin0) ) &  G[34193,100000] LiVar541 (LiVar580ac3intentionmidin0) ) &  G[33767,70185] LiVar542 (LiVar579ac3intentionfarin0) )) & (TRUE -> ((( G[67987,100000] LiVar408 (LiVar588ac2intentioncurrentin0)  &  G[16833,81067] LiVar505 (LiVar587ac2intentionnearin0) ) &  G[59448,100000] LiVar548 (LiVar586ac2intentionmidin0) ) &  G[29428,100000] LiVar549 (LiVar585ac2intentionfarin0) )) & (TRUE -> ((( G[41836,96330] LiVar406 (LiVar576ac4intentioncurrentin0)  &  G[65500,100000] LiVar483 (LiVar575ac4intentionnearin0) ) &  G[78820,100000] LiVar534 (LiVar574ac4intentionmidin0) ) &  G[37754,92904] LiVar535 (LiVar573ac4intentionfarin0) )) & (TRUE -> ((( G[74184,100000] LiVar409 (LiVar594ac1intentioncurrentin0)  &  G[85868,100000] LiVar516 (LiVar593ac1intentionnearin0) ) &  G[42753,57484] LiVar555 (LiVar592ac1intentionmidin0) ) &  G[32197,44029] LiVar556 (LiVar591ac1intentionfarin0) )) & (TRUE -> ((((( G[26753,40912] LiVar408 (LiVar639ac2intentioncurrentin0)  &  G[17390,72141] LiVar505 (LiVar638ac2intentionnearin0) ) &  G[29862,80342] LiVar548 (LiVar637ac2intentionmidin0) ) &  G[61722,82033] LiVar549 (LiVar636ac2intentionfarin0) ) &  G[63748,100000] ((LiVar180 & LiVar200) & LiVar201)) &  G[32264,100000] (LiVar79 & LiVar80))) & (TRUE ->  G[39831,48178] (communicationphase <->  F[15499,92883] !next(communicationphase))) & (TRUE -> ((((( G[1592,66679] LiVar407 (LiVar630ac3intentioncurrentin0)  &  G[43626,100000] LiVar494 (LiVar629ac3intentionnearin0) ) &  G[93932,100000] LiVar541 (LiVar628ac3intentionmidin0) ) &  G[46889,91551] LiVar542 (LiVar627ac3intentionfarin0) ) &  G[70616,100000] ((LiVar179 & LiVar197) & LiVar198)) &  G[10856,44916] (LiVar77 & LiVar78))) & (LiVar904 -> ( G[82297,100000] ( F[52975,100000] communicationphase) &  G[24244,69576] ( F[94985,100000] !communicationphase))) & (TRUE -> ((((( G[42416,100000] LiVar406 (LiVar621ac4intentioncurrentin0)  &  G[84986,100000] LiVar483 (LiVar620ac4intentionnearin0) ) &  G[69311,100000] LiVar534 (LiVar619ac4intentionmidin0) ) &  G[52671,100000] LiVar535 (LiVar618ac4intentionfarin0) ) &  G[25680,74814] ((LiVar178 & LiVar194) & LiVar195)) &  G[67518,100000] (LiVar75 & LiVar76))) & (TRUE -> ((((( G[8822,70604] LiVar409 (LiVar648ac1intentioncurrentin0)  &  G[94913,100000] LiVar516 (LiVar647ac1intentionnearin0) ) &  G[26316,100000] LiVar555 (LiVar646ac1intentionmidin0) ) &  G[25797,38419] LiVar556 (LiVar645ac1intentionfarin0) ) &  G[25322,100000] ((LiVar181 & LiVar203) & LiVar204)) &  G[51619,77160] (LiVar81 & LiVar82))) & (TRUE ->  G[33051,63944] ((communicationphase & LiVar814) -> (!predictedconflictfar -> LiVar378))) & ((!disableadsbin &  G[67598,100000] ((((LiVar942 -> LiVar394) & (LiVar941 -> LiVar393)) & (LiVar940 -> LiVar392)) & (LiVar939 -> LiVar391))) ->  G[47683,96604] ((communicationphase & LiVar814) -> ((((LiVar942 -> (((LiVar393 | LiVar392) | LiVar391) -> LiVar367)) & (LiVar941 -> ((LiVar392 | LiVar391) -> LiVar367))) & (LiVar940 -> (LiVar391 -> LiVar367))) & (LiVar939 -> LiVar378)))) & (TRUE -> (((LiVar698 & LiVar781) & LiVar793) & LiVar795)) & (TRUE ->  G[14287,79186] (requesttssaground -> ((((LiVar942 -> LiVar770) & (LiVar941 -> LiVar764)) & (LiVar940 -> LiVar758)) & (LiVar939 -> LiVar752)))) & ((!disableadsbin &  G[87268,100000] ((((LiVar942 -> LiVar371) & (LiVar941 -> LiVar370)) & (LiVar940 -> LiVar369)) & (LiVar939 -> LiVar368))) ->  G[90018,100000] ((communicationphase & LiVar811) -> ((((LiVar942 -> (((LiVar370 | LiVar369) | LiVar368) -> LiVar358)) & (LiVar941 -> ((LiVar369 | LiVar368) -> LiVar358))) & (LiVar940 -> (LiVar368 -> LiVar358))) & (LiVar939 -> LiVar360)))) & (TRUE ->  G[36016,51796] (((LiVar699 & LiVar782) & LiVar794) & LiVar796)) & (TRUE ->  G[95963,100000] ((communicationphase & LiVar811) -> ((!predictedconflictnear -> LiVar360) & (!predictedconflictmid -> LiVar376)))) & ( G[7711,42079] (LiVar782 & LiVar794) -> (!disableadsbin -> ((((((((LiVar942 ->  G[72028,100000] (predictedconflictnear <-> !((LiVar363 & LiVar362) & LiVar361))) & (LiVar941 ->  G[92475,100000] (predictedconflictnear <-> !((LiVar364 & LiVar362) & LiVar361)))) & (LiVar940 ->  G[51457,100000] (predictedconflictnear <-> !((LiVar364 & LiVar363) & LiVar361)))) & (LiVar939 ->  G[41208,100000] (predictedconflictnear <-> !((LiVar364 & LiVar363) & LiVar362)))) & (LiVar942 ->  G[81207,100000] (predictedconflictmid <-> !((LiVar381 & LiVar380) & LiVar379)))) & (LiVar941 ->  G[30097,49033] (predictedconflictmid <-> !((LiVar382 & LiVar380) & LiVar379)))) & (LiVar940 ->  G[95367,100000] (predictedconflictmid <-> !((LiVar382 & LiVar381) & LiVar379)))) & (LiVar939 ->  G[1639,6390] (predictedconflictmid <-> !((LiVar382 & LiVar381) & LiVar380)))))) & ((!disableadsbin &  G[82167,100000] ((((LiVar942 -> LiVar390) & (LiVar941 -> LiVar389)) & (LiVar940 -> LiVar388)) & (LiVar939 -> LiVar387))) ->  G[97737,100000] ((communicationphase & LiVar811) -> ((((LiVar942 -> (((LiVar389 | LiVar388) | LiVar387) -> LiVar366)) & (LiVar941 -> ((LiVar388 | LiVar387) -> LiVar366))) & (LiVar940 -> (LiVar387 -> LiVar366))) & (LiVar939 -> LiVar376)))) & (TRUE ->  G[88450,100000] ((communicationphase & LiVar815) -> (LiVar529 -> LiVar280))) & (TRUE ->  G[41154,100000] (requestsssaground -> ((((LiVar942 -> LiVar773) & (LiVar941 -> LiVar767)) & (LiVar940 -> LiVar761)) & (LiVar939 -> LiVar755)))) & (TRUE ->  G[66623,94856] (!communicationphase -> (((LiVar323 & LiVar365) & LiVar377) & LiVar611))) & (TRUE ->  G[23675,55195] (communicationphase -> LiVar281)) & (TRUE ->  G[90690,99354] ((communicationphase & LiVar812) -> ((LiVar448 -> LiVar266) & (LiVar528 -> LiVar279)))) & ( G[69976,100000] LiVar796 -> (!disableadsbin -> ((((LiVar942 ->  G[73261,100000] (predictedconflictfar <-> !((LiVar385 & LiVar384) & LiVar383))) & (LiVar941 ->  G[45654,90031] (predictedconflictfar <-> !((LiVar386 & LiVar384) & LiVar383)))) & (LiVar940 ->  G[72877,100000] (predictedconflictfar <-> !((LiVar386 & LiVar385) & LiVar383)))) & (LiVar939 ->  G[4127,45110] (predictedconflictfar <-> !((LiVar386 & LiVar385) & LiVar384)))))) & (TRUE ->  G[29283,86018] ((communicationphase & LiVar811) -> (LiVar650 (LiVar649intentionnearsuggestionnearcdr)  & LiVar696 (LiVar692intentionmidsuggestionmidcdr) ))) & (TRUE ->  G[40936,100000] (((LiVar699 & LiVar782) & LiVar794) & LiVar796)) & (TRUE ->  G[37587,90364] ((communicationphase & LiVar814) -> LiVar697 (LiVar693intentionfarsuggestionfarcdr) )) & (TRUE -> ( G[74038,77412] (!communicationphase -> (((LiVar323 & LiVar365) & LiVar377) & LiVar611)) &  G[24950,100000] (communicationphase -> LiVar281))) & (TRUE ->  G[56335,64450] ((communicationphase & LiVar815) -> LiVar697 (LiVar570intentionfarsuggestionfarground) )) & (TRUE -> (((LiVar449 & LiVar612) & LiVar651) & LiVar652)) & (TRUE ->  G[25168,48082] ((communicationphase & LiVar812) -> (LiVar650 (LiVar527intentionnearsuggestionnearground)  & LiVar696 (LiVar569intentionmidsuggestionmidground) ))) & (TRUE ->  G[71211,94638] (!communicationphase -> (((LiVar323 & LiVar365) & LiVar377) & LiVar611))) & (TRUE ->  G[27411,100000] (communicationphase -> ((LiVar650 (LiVar776intentionnearsuggestionnear)  & LiVar696 (LiVar791intentionmidsuggestionmid) ) & LiVar697 (LiVar792intentionfarsuggestionfar) ))) & (TRUE -> (((LiVar449 & LiVar612) & LiVar651) & LiVar652)) & (TRUE ->  G[65306,100000] (communicationphase -> LiVar281)) & (TRUE ->  G[70663,100000] (((LiVar699 & LiVar782) & LiVar794) & LiVar796)) & (TRUE -> ( G[45005,87858] (LiVar811 -> LiVar359) &  G[50789,54079] (LiVar811 -> LiVar374))) & (TRUE ->  G[46766,56186] (LiVar813 -> ((requestsssaground -> LiVar357) & (!requestsssaground -> LiVar375)))) & (TRUE ->  G[33567,94487] (LiVar815 -> LiVar357)) & (TRUE -> ( G[87076,100000] (LiVar810 -> ((requesttssaground -> LiVar322) & (!requesttssaground -> LiVar359))) &  G[25757,60591] (LiVar810 -> ((requesttssaground -> LiVar322) & (!requesttssaground -> LiVar359))))) & (TRUE ->  G[88702,100000] (LiVar814 -> LiVar375)) & (TRUE -> ( G[43873,100000] (LiVar812 -> LiVar322) &  G[57114,88488] (LiVar812 -> LiVar356))) & (TRUE -> (disabled ->  G[53716,72933] (((LiVar403 & LiVar443) & LiVar517) & LiVar518))) & (TRUE -> (!disabled ->  G[68493,100000] (((LiVar111 & LiVar202) & LiVar254) & LiVar255))) & (TRUE -> (!disabled ->  G[95115,100000] (((LiVar109 & LiVar196) & LiVar250) & LiVar251))) & (TRUE -> (disabled ->  G[10296,64051] (((LiVar400 & LiVar428) & LiVar484) & LiVar485))) & (TRUE -> (!disabled ->  G[88219,100000] (((LiVar112 & LiVar205) & LiVar256) & LiVar257))) & (TRUE -> (disabled ->  G[51431,87235] (((LiVar402 & LiVar438) & LiVar506) & LiVar507))) & (TRUE -> (!disabled ->  G[67882,100000] (((LiVar110 & LiVar199) & LiVar252) & LiVar253))) & (TRUE -> (disabled ->  G[84178,100000] (((LiVar401 & LiVar433) & LiVar495) & LiVar496))) & ( G[59440,97753] LiVar796 -> ((((LiVar937 ->  G[79138,100000] (predictedconflictfar <-> !((LiVar385 & LiVar384) & LiVar383))) & (LiVar936 ->  G[85810,100000] (predictedconflictfar <-> !((LiVar386 & LiVar384) & LiVar383)))) & (LiVar935 ->  G[90787,100000] (predictedconflictfar <-> !((LiVar386 & LiVar385) & LiVar383)))) & (LiVar934 ->  G[46225,100000] (predictedconflictfar <-> !((LiVar386 & LiVar385) & LiVar384))))) & ( G[90324,100000] ((((LiVar782 & (LiVar937 -> LiVar371)) & (LiVar936 -> LiVar370)) & (LiVar935 -> LiVar369)) & (LiVar934 -> LiVar368)) ->  G[90075,100000] ((((LiVar937 -> (((LiVar370 | LiVar369) | LiVar368) -> LiVar396)) & (LiVar936 -> ((LiVar369 | LiVar368) -> LiVar396))) & (LiVar935 -> (LiVar368 -> LiVar396))) & (LiVar934 -> LiVar397))) & (TRUE ->  G[38270,100000] (((((((((LiVar937 & LiVar741) -> !requesttssaground) & ((LiVar936 & LiVar739) -> !requesttssaground)) & ((LiVar935 & LiVar737) -> !requesttssaground)) & ((LiVar934 & LiVar735) -> !requesttssaground)) & ((LiVar937 & LiVar742) -> !requestsssaground)) & ((LiVar936 & LiVar740) -> !requestsssaground)) & ((LiVar935 & LiVar738) -> !requestsssaground)) & ((LiVar934 & LiVar736) -> !requestsssaground))) & ( G[4692,63154] LiVar794 ->  G[27800,78362] (!predictedconflictmid -> LiVar404)) & ( G[68152,100000] LiVar794 -> ((((LiVar937 ->  G[75685,100000] (predictedconflictmid <-> !((LiVar381 & LiVar380) & LiVar379))) & (LiVar936 ->  G[82340,100000] (predictedconflictmid <-> !((LiVar382 & LiVar380) & LiVar379)))) & (LiVar935 ->  G[37685,100000] (predictedconflictmid <-> !((LiVar382 & LiVar381) & LiVar379)))) & (LiVar934 ->  G[87937,96397] (predictedconflictmid <-> !((LiVar382 & LiVar381) & LiVar380))))) & ( G[14396,63735] ((((LiVar796 & (LiVar937 -> LiVar394)) & (LiVar936 -> LiVar393)) & (LiVar935 -> LiVar392)) & (LiVar934 -> LiVar391)) ->  G[82290,97643] ((((LiVar937 -> (((LiVar393 | LiVar392) | LiVar391) -> LiVar399)) & (LiVar936 -> ((LiVar392 | LiVar391) -> LiVar399))) & (LiVar935 -> (LiVar391 -> LiVar399))) & (LiVar934 -> LiVar405))) & ( G[59438,94138] LiVar796 ->  G[69271,100000] (!predictedconflictfar -> LiVar405)) & ( G[30018,44788] LiVar782 ->  G[93533,100000] (!predictedconflictnear -> LiVar397)) & ( G[38627,100000] ((LiVar782 & LiVar794) & LiVar796) ->  G[71491,100000] ((LiVar744 & LiVar777) & LiVar778)) & ( G[89976,100000] LiVar782 -> ((((LiVar937 ->  G[69977,100000] (predictedconflictnear <-> !((LiVar363 & LiVar362) & LiVar361))) & (LiVar936 ->  G[68306,100000] (predictedconflictnear <-> !((LiVar364 & LiVar362) & LiVar361)))) & (LiVar935 ->  G[87854,100000] (predictedconflictnear <-> !((LiVar364 & LiVar363) & LiVar361)))) & (LiVar934 ->  G[83464,100000] (predictedconflictnear <-> !((LiVar364 & LiVar363) & LiVar362))))) & ( G[23573,100000] ((((LiVar794 & (LiVar937 -> LiVar390)) & (LiVar936 -> LiVar389)) & (LiVar935 -> LiVar388)) & (LiVar934 -> LiVar387)) ->  G[79375,86838] ((((LiVar937 -> (((LiVar389 | LiVar388) | LiVar387) -> LiVar398)) & (LiVar936 -> ((LiVar388 | LiVar387) -> LiVar398))) & (LiVar935 -> (LiVar387 -> LiVar398))) & (LiVar934 -> LiVar404))) & TRUE
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       ^
+ParseError: `\+`, `\-`, `\-`, `\)`, `<=`, `<`, `>=`, `>`, `==`, `!=`, `!=`, `U`, `R`, `R`, `(?=(?P<_46>\&\&|\&))(?P=_46)`, `(?=(?P<_47>\|\||\|))(?P=_47)`, `\->`, `<\->`, `<\->`, `\)`
+Command exited with non-zero status 1
+Total elapsed time (s): 0.29
+Max memory used (KB): 80032
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/dummy/GCDR.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/dummy/GCDR.smv.ltlf
+sat
+
+Total elapsed time (s): 0.31
+Max memory used (KB): 118900
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/dummy/ProtocolPolicy.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/dummy/ProtocolPolicy.smv.ltlf
+sat
+
+Total elapsed time (s): 0.30
+Max memory used (KB): 110500
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/ACDR_nonreceptive.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/ACDR_nonreceptive.smv.ltlf
+sat
+
+Total elapsed time (s): 0.31
+Max memory used (KB): 109584
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/ACDR_simple.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/ACDR_simple.smv.ltlf
+sat
+
+Total elapsed time (s): 0.31
+Max memory used (KB): 110112
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/ACDR.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/ACDR.smv.ltlf
+sat
+
+Total elapsed time (s): 0.31
+Max memory used (KB): 110756
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/CommunicationLayer.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/CommunicationLayer.smv.ltlf
+sat
+
+Total elapsed time (s): 0.29
+Max memory used (KB): 103772
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/fault_dynamics.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/fault_dynamics.smv.ltlf
+sat
+
+Total elapsed time (s): 0.30
+Max memory used (KB): 104108
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/GCDR.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/GCDR.smv.ltlf
+sat
+
+Total elapsed time (s): 0.30
+Max memory used (KB): 106884
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/RouteManager.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/RouteManager.smv.ltlf
+sat
+
+Total elapsed time (s): 0.30
+Max memory used (KB): 104248
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/verification.divided.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/verification.divided.smv.ltlf
+
+Traceback (most recent call last):
+  File "/home/michele/Repos/stl-consistency/stltree.py", line 99, in <module>
+    main()
+  File "/home/michele/Repos/stl-consistency/stltree.py", line 68, in main
+    parsed_formula = parser.parse_formula_as_node(formula)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/michele/Repos/stl-consistency/stl_consistency/parser.py", line 168, in parse_formula_as_node
+    fslist = self.parse_formula_as_stl_list(formula, max_quantum)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/michele/Repos/stl-consistency/stl_consistency/parser.py", line 165, in parse_formula_as_stl_list
+    return normalize_bounds(self.parser.match(formula, flags=pe.STRICT|pe.MEMOIZE).value(), max_quantum)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/michele/Repos/stl-consistency/.venv/lib/python3.12/site-packages/pe/packrat.py", line 86, in match
+    raise exc
+pe._errors.ParseError: 
+  line 0, character 107
+    G[55525,100000] ((communicationphase & LiVar589 & LiVar427) ->      F[43200,100000] (maneuveringphase -> X LiVar560)) &  G[13057,100000] ((communicationphase & LiVar589 & LiVar426) ->      F[34417,87765] (maneuveringphase -> X LiVar559)) &  G[39552,73216] ((communicationphase & LiVar589 & LiVar425) ->      F[19560,32581] (maneuveringphase -> X LiVar558)) &  G[78997,86390] ((communicationphase & LiVar589 & LiVar424) ->      F[68810,100000] (maneuveringphase -> X LiVar557)) & G[44122,100000] ((communicationphase & LiVar583 & LiVar423) ->      F[28097,33300] (maneuveringphase -> X LiVar553)) &  G[67144,100000] ((communicationphase & LiVar583 & LiVar422) ->      F[57375,81708] (maneuveringphase -> X LiVar552)) &  G[57505,78640] ((communicationphase & LiVar583 & LiVar421) ->      F[52474,100000] (maneuveringphase -> X LiVar551)) &  G[11273,12666] ((communicationphase & LiVar583 & LiVar420) ->      F[25899,100000] (maneuveringphase -> X LiVar550)) & G[70857,100000] ((communicationphase & LiVar577 & LiVar419) ->      F[87688,100000] (maneuveringphase -> X LiVar546)) &  G[63618,75493] ((communicationphase & LiVar577 & LiVar418) ->      F[46433,100000] (maneuveringphase -> X LiVar545)) &  G[8625,32842] ((communicationphase & LiVar577 & LiVar417) ->      F[6455,90685] (maneuveringphase -> X LiVar544)) &  G[68105,100000] ((communicationphase & LiVar577 & LiVar416) ->      F[44204,90114] (maneuveringphase -> X LiVar543)) & G[42997,61275] ((communicationphase & LiVar571 & LiVar415) ->      F[72558,95407] (maneuveringphase -> X LiVar539)) &  G[99875,100000] ((communicationphase & LiVar571 & LiVar414) ->      F[62775,100000] (maneuveringphase -> X LiVar538)) &  G[30725,100000] ((communicationphase & LiVar571 & LiVar413) ->      F[53413,60350] (maneuveringphase -> X LiVar537)) &  G[91395,100000] ((communicationphase & LiVar571 & LiVar412) ->      F[77673,100000] (maneuveringphase -> X LiVar536)) & G[43774,87075] ((communicationphase & LiVar589 & LiVar478) ->      F[28812,57603] (maneuveringphase -> X LiVar560)) &  G[80366,81798] ((communicationphase & LiVar589 & LiVar477) ->      F[33817,100000] (maneuveringphase -> X LiVar559)) &  G[50888,85283] ((communicationphase & LiVar589 & LiVar476) ->      F[1049,98457] (maneuveringphase -> X LiVar558)) &  G[27443,61080] ((communicationphase & LiVar589 & LiVar475) ->      F[13554,90720] (maneuveringphase -> X LiVar557)) & G[78748,84733] ((communicationphase & LiVar583 & LiVar470) ->      F[91673,100000] (maneuveringphase -> X LiVar553)) &  G[9132,13087] ((communicationphase & LiVar583 & LiVar469) ->      F[41530,100000] (maneuveringphase -> X LiVar552)) &  G[79871,100000] ((communicationphase & LiVar583 & LiVar468) ->      F[78041,100000] (maneuveringphase -> X LiVar551)) &  G[59953,100000] ((communicationphase & LiVar583 & LiVar467) ->      F[41898,59206] (maneuveringphase -> X LiVar550)) & G[33889,100000] ((communicationphase & LiVar577 & LiVar462) ->      F[27701,100000] (maneuveringphase -> X LiVar546)) &  G[30340,44043] ((communicationphase & LiVar577 & LiVar461) ->      F[69685,100000] (maneuveringphase -> X LiVar545)) &  G[40874,83091] ((communicationphase & LiVar577 & LiVar460) ->      F[36971,78165] (maneuveringphase -> X LiVar544)) &  G[25216,51162] ((communicationphase & LiVar577 & LiVar459) ->      F[99030,100000] (maneuveringphase -> X LiVar543)) & G[44699,65223] ((communicationphase & LiVar571 & LiVar454) ->      F[61647,81171] (maneuveringphase -> X LiVar539)) &  G[70652,100000] ((communicationphase & LiVar571 & LiVar453) ->      F[19313,75244] (maneuveringphase -> X LiVar538)) &  G[73242,97428] ((communicationphase & LiVar571 & LiVar452) ->      F[39779,74268] (maneuveringphase -> X LiVar537)) &  G[20585,67267] ((communicationphase & LiVar571 & LiVar451) ->      F[39030,100000] (maneuveringphase -> X LiVar536)) & G[55838,100000] ((communicationphase & LiVar589 & LiVar482) ->      F[79153,100000] (maneuveringphase -> X LiVar560)) &  G[5705,71120] ((communicationphase & LiVar589 & LiVar481) ->      F[45120,100000] (maneuveringphase -> X LiVar559)) &  G[89655,100000] ((communicationphase & LiVar589 & LiVar480) ->      F[3508,7949] (maneuveringphase -> X LiVar558)) &  G[56087,100000] ((communicationphase & LiVar589 & LiVar479) ->      F[1081,3253] (maneuveringphase -> X LiVar557)) & G[71565,94944] ((communicationphase & LiVar583 & LiVar474) ->      F[92295,100000] (maneuveringphase -> X LiVar553)) &  G[7056,36485] ((communicationphase & LiVar583 & LiVar473) ->      F[74695,100000] (maneuveringphase -> X LiVar552)) &  G[93971,100000] ((communicationphase & LiVar583 & LiVar472) ->      F[87747,95665] (maneuveringphase -> X LiVar551)) &  G[53447,100000] ((communicationphase & LiVar583 & LiVar471) ->      F[69899,100000] (maneuveringphase -> X LiVar550)) & G[58673,96147] ((communicationphase & LiVar577 & LiVar466) ->      F[91400,100000] (maneuveringphase -> X LiVar546)) &  G[25682,36583] ((communicationphase & LiVar577 & LiVar465) ->      F[47054,100000] (maneuveringphase -> X LiVar545)) &  G[86131,92240] ((communicationphase & LiVar577 & LiVar464) ->      F[99370,100000] (maneuveringphase -> X LiVar544)) &  G[66821,94968] ((communicationphase & LiVar577 & LiVar463) ->      F[71513,84105] (maneuveringphase -> X LiVar543)) & G[65707,100000] ((communicationphase & LiVar571 & LiVar458) ->      F[83621,100000] (maneuveringphase -> X LiVar539)) &  G[33417,42391] ((communicationphase & LiVar571 & LiVar457) ->      F[47380,90222] (maneuveringphase -> X LiVar538)) &  G[90403,100000] ((communicationphase & LiVar571 & LiVar456) ->      F[75090,100000] (maneuveringphase -> X LiVar537)) &  G[85129,100000] ((communicationphase & LiVar571 & LiVar455) ->      F[7279,89958] (maneuveringphase -> X LiVar536)) & G[64872,86117] ((communicationphase & LiVar554 & LiVar447) ->      F[36411,100000] (maneuveringphase -> X LiVar560)) &  G[74693,100000] ((communicationphase & LiVar554 & LiVar446) ->      F[20798,32066] (maneuveringphase -> X LiVar559)) &  G[43711,100000] ((communicationphase & LiVar554 & LiVar445) ->      F[77783,100000] (maneuveringphase -> X LiVar558)) &  G[77226,86139] ((communicationphase & LiVar554 & LiVar444) ->      F[5300,100000] (maneuveringphase -> X LiVar557)) & G[6400,16611] ((communicationphase & LiVar547 & LiVar442) ->      F[2365,36465] (maneuveringphase -> X LiVar553)) &  G[77528,100000] ((communicationphase & LiVar547 & LiVar441) ->      F[19583,59156] (maneuveringphase -> X LiVar552)) &  G[71926,95130] ((communicationphase & LiVar547 & LiVar440) ->      F[8682,30586] (maneuveringphase -> X LiVar551)) &  G[57972,59605] ((communicationphase & LiVar547 & LiVar439) ->      F[60306,100000] (maneuveringphase -> X LiVar550)) & G[99011,100000] ((communicationphase & LiVar540 & LiVar437) ->      F[812,54029] (maneuveringphase -> X LiVar546)) &  G[34910,55768] ((communicationphase & LiVar540 & LiVar436) ->      F[75429,100000] (maneuveringphase -> X LiVar545)) &  G[63736,100000] ((communicationphase & LiVar540 & LiVar435) ->      F[94264,100000] (maneuveringphase -> X LiVar544)) &  G[85830,100000] ((communicationphase & LiVar540 & LiVar434) ->      F[40583,96447] (maneuveringphase -> X LiVar543)) & G[94695,100000] ((communicationphase & LiVar533 & LiVar432) ->      F[71071,89171] (maneuveringphase -> X LiVar539)) &  G[95549,100000] ((communicationphase & LiVar533 & LiVar431) ->      F[91223,100000] (maneuveringphase -> X LiVar538)) &  G[24057,42332] ((communicationphase & LiVar533 & LiVar430) ->      F[54037,90065] (maneuveringphase -> X LiVar537)) &  G[50737,54316] ((communicationphase & LiVar533 & LiVar429) ->      F[63666,66320] (maneuveringphase -> X LiVar536)) & G[61207,67103] ((communicationphase & LiVar554 & LiVar522) ->      F[92507,100000] (maneuveringphase -> X LiVar560)) &  G[96440,100000] ((communicationphase & LiVar554 & LiVar521) ->      F[15226,39253] (maneuveringphase -> X LiVar559)) &  G[51952,80884] ((communicationphase & LiVar554 & LiVar520) ->      F[93380,100000] (maneuveringphase -> X LiVar558)) &  G[74775,100000] ((communicationphase & LiVar554 & LiVar519) ->      F[81299,100000] (maneuveringphase -> X LiVar557)) & G[71451,100000] ((communicationphase & LiVar547 & LiVar511) ->      F[87269,100000] (maneuveringphase -> X LiVar553)) &  G[28758,34990] ((communicationphase & LiVar547 & LiVar510) ->      F[94657,100000] (maneuveringphase -> X LiVar552)) &  G[41634,100000] ((communicationphase & LiVar547 & LiVar509) ->      F[94258,100000] (maneuveringphase -> X LiVar551)) &  G[27570,42338] ((communicationphase & LiVar547 & LiVar508) ->      F[68536,100000] (maneuveringphase -> X LiVar550)) & G[25387,54547] ((communicationphase & LiVar540 & LiVar500) ->      F[83063,100000] (maneuveringphase -> X LiVar546)) &  G[53311,100000] ((communicationphase & LiVar540 & LiVar499) ->      F[5369,46637] (maneuveringphase -> X LiVar545)) &  G[49367,100000] ((communicationphase & LiVar540 & LiVar498) ->      F[95831,99333] (maneuveringphase -> X LiVar544)) &  G[53346,100000] ((communicationphase & LiVar540 & LiVar497) ->      F[81910,90330] (maneuveringphase -> X LiVar543)) & G[47115,56353] ((communicationphase & LiVar533 & LiVar489) ->      F[15340,41067] (maneuveringphase -> X LiVar539)) &  G[72097,100000] ((communicationphase & LiVar533 & LiVar488) ->      F[19646,19903] (maneuveringphase -> X LiVar538)) &  G[3930,57654] ((communicationphase & LiVar533 & LiVar487) ->      F[66843,100000] (maneuveringphase -> X LiVar537)) &  G[17224,40565] ((communicationphase & LiVar533 & LiVar486) ->      F[37207,100000] (maneuveringphase -> X LiVar536)) & G[67477,100000] ((communicationphase & LiVar554 & LiVar526) ->      F[90951,100000] (maneuveringphase -> X LiVar560)) &  G[18502,67623] ((communicationphase & LiVar554 & LiVar525) ->      F[5104,53424] (maneuveringphase -> X LiVar559)) &  G[63829,75893] ((communicationphase & LiVar554 & LiVar524) ->      F[72195,100000] (maneuveringphase -> X LiVar558)) &  G[4622,62628] ((communicationphase & LiVar554 & LiVar523) ->      F[58671,100000] (maneuveringphase -> X LiVar557)) & G[10834,85548] ((communicationphase & LiVar547 & LiVar515) ->      F[18649,100000] (maneuveringphase -> X LiVar553)) &  G[50216,100000] ((communicationphase & LiVar547 & LiVar514) ->      F[44263,100000] (maneuveringphase -> X LiVar552)) &  G[40517,100000] ((communicationphase & LiVar547 & LiVar513) ->      F[27184,100000] (maneuveringphase -> X LiVar551)) &  G[49492,92034] ((communicationphase & LiVar547 & LiVar512) ->      F[68362,94319] (maneuveringphase -> X LiVar550)) & G[53574,70652] ((communicationphase & LiVar540 & LiVar504) ->      F[35711,72226] (maneuveringphase -> X LiVar546)) &  G[16187,36102] ((communicationphase & LiVar540 & LiVar503) ->      F[26564,96271] (maneuveringphase -> X LiVar545)) &  G[13644,19122] ((communicationphase & LiVar540 & LiVar502) ->      F[14641,45185] (maneuveringphase -> X LiVar544)) &  G[24679,90887] ((communicationphase & LiVar540 & LiVar501) ->      F[16894,96867] (maneuveringphase -> X LiVar543)) & G[11471,17412] ((communicationphase & LiVar533 & LiVar493) ->      F[24520,76786] (maneuveringphase -> X LiVar539)) &  G[21731,49492] ((communicationphase & LiVar533 & LiVar492) ->      F[92435,100000] (maneuveringphase -> X LiVar538)) &  G[61721,100000] ((communicationphase & LiVar533 & LiVar491) ->      F[12586,66569] (maneuveringphase -> X LiVar537)) &  G[797,25557] ((communicationphase & LiVar533 & LiVar490) ->      F[4944,84790] (maneuveringphase -> X LiVar536)) & TRUE
+                                                                                                               ^
+ParseError: `\+`, `\-`, `\-`, `<=`, `<`, `>=`, `>`, `==`, `!=`, `!=`, `U`, `R`, `R`, `(?=(?P<_46>\&\&|\&))(?P=_46)`, `(?=(?P<_47>\|\||\|))(?P=_47)`, `\->`, `<\->`, `<\->`, `\)`
+Command exited with non-zero status 1
+Total elapsed time (s): 0.29
+Max memory used (KB): 79688
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/verification.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" /home/michele/Repos/stl-consistency/stltree.py --smtlib-result --mltl /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/verification.smv.ltlf
+
+Traceback (most recent call last):
+  File "/home/michele/Repos/stl-consistency/stltree.py", line 99, in <module>
+    main()
+  File "/home/michele/Repos/stl-consistency/stltree.py", line 68, in main
+    parsed_formula = parser.parse_formula_as_node(formula)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/michele/Repos/stl-consistency/stl_consistency/parser.py", line 168, in parse_formula_as_node
+    fslist = self.parse_formula_as_stl_list(formula, max_quantum)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/michele/Repos/stl-consistency/stl_consistency/parser.py", line 165, in parse_formula_as_stl_list
+    return normalize_bounds(self.parser.match(formula, flags=pe.STRICT|pe.MEMOIZE).value(), max_quantum)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/michele/Repos/stl-consistency/.venv/lib/python3.12/site-packages/pe/packrat.py", line 86, in match
+    raise exc
+pe._errors.ParseError: 
+  line 0, character 54
+    G[34175,34460] ((communicationphase & ac1isgsepts & X maneuveringphase) -> (      (LiVar427 -> X X LiVar560) &      (LiVar426 -> X X LiVar559) &      (LiVar425 -> X X LiVar558) &      (LiVar424 -> X X LiVar557)    )) & G[81967,82582] ((communicationphase & ac2isgsepts & X maneuveringphase) -> (      (LiVar423 -> X X LiVar553) &      (LiVar422 -> X X LiVar552) &      (LiVar421 -> X X LiVar551) &      (LiVar420 -> X X LiVar550)    )) & G[16419,69099] ((communicationphase & ac3isgsepts & X maneuveringphase) -> (      (LiVar419 -> X X LiVar546) &      (LiVar418 -> X X LiVar545) &      (LiVar417 -> X X LiVar544) &      (LiVar416 -> X X LiVar543)    )) & G[8983,20294] ((communicationphase & ac4isgsepts & X maneuveringphase) -> (      (LiVar415 -> X X LiVar539) &      (LiVar414 -> X X LiVar538) &      (LiVar413 -> X X LiVar537) &      (LiVar412 -> X X LiVar536)    )) & G[72762,100000] ((communicationphase & ac1isgsepts & X maneuveringphase) -> (      (LiVar478 -> X X LiVar688) &      (LiVar477 -> X X LiVar687) &      (LiVar476 -> X X LiVar686) &      (LiVar475 -> X X LiVar685)    )) & G[32516,89230] ((communicationphase & ac2isgsepts & X maneuveringphase) -> (      (LiVar470 -> X X LiVar679) &      (LiVar469 -> X X LiVar678) &      (LiVar468 -> X X LiVar677) &      (LiVar467 -> X X LiVar676)    )) & G[43516,74264] ((communicationphase & ac3isgsepts & X maneuveringphase) -> (      (LiVar462 -> X X LiVar670) &      (LiVar461 -> X X LiVar669) &      (LiVar460 -> X X LiVar668) &      (LiVar459 -> X X LiVar667)    )) & G[89820,98179] ((communicationphase & ac4isgsepts & X maneuveringphase) -> (      (LiVar454 -> X X LiVar661) &      (LiVar453 -> X X LiVar660) &      (LiVar452 -> X X LiVar659) &      (LiVar451 -> X X LiVar658)    )) & G[1988,14196] ((communicationphase & ac1isgsepss & X maneuveringphase) -> (      (LiVar482 -> X X LiVar729) &      (LiVar481 -> X X LiVar728) &      (LiVar480 -> X X LiVar727) &      (LiVar479 -> X X LiVar726)    )) & G[15452,47546] ((communicationphase & ac2isgsepss & X maneuveringphase) -> (      (LiVar474 -> X X LiVar725) &      (LiVar473 -> X X LiVar724) &      (LiVar472 -> X X LiVar723) &      (LiVar471 -> X X LiVar722)    )) & G[41134,100000] ((communicationphase & ac3isgsepss & X maneuveringphase) -> (      (LiVar466 -> X X LiVar721) &      (LiVar465 -> X X LiVar720) &      (LiVar464 -> X X LiVar719) &      (LiVar463 -> X X LiVar718)    )) & G[18283,32141] ((communicationphase & ac4isgsepss & X maneuveringphase) -> (      (LiVar458 -> X X LiVar717) &      (LiVar457 -> X X LiVar716) &      (LiVar456 -> X X LiVar715) &      (LiVar455 -> X X LiVar714)    )) & G[87300,100000] ((communicationphase & ac1isssepts & X maneuveringphase) -> (       (LiVar526  -> X X LiVar729) &       (LiVar525  -> X X LiVar728) &       (LiVar524  -> X X LiVar727) &       (LiVar523  -> X X LiVar726)    )) & G[13976,17463] ((communicationphase & ac2isssepts & X maneuveringphase) -> (       (LiVar515  -> X X LiVar725) &       (LiVar514  -> X X LiVar724) &       (LiVar513  -> X X LiVar723) &       (LiVar512  -> X X LiVar722)    )) & G[87621,100000] ((communicationphase & ac3isssepts & X maneuveringphase) -> (       (LiVar504  -> X X LiVar721) &       (LiVar503  -> X X LiVar720) &       (LiVar502  -> X X LiVar719) &       (LiVar501  -> X X LiVar718)    )) & G[70310,100000] ((communicationphase & ac4isssepts & X maneuveringphase) -> (       (LiVar493  -> X X LiVar717) &       (LiVar492  -> X X LiVar716) &       (LiVar491  -> X X LiVar715) &       (LiVar490  -> X X LiVar714)    )) & G[23610,100000] ((communicationphase & ac1isssepts & X maneuveringphase) -> (       (LiVar526  -> X X LiVar729) &       (LiVar525  -> X X LiVar728) &       (LiVar524  -> X X LiVar727) &       (LiVar523  -> X X LiVar726)    )) & G[27697,100000] ((communicationphase & ac2isssepts & X maneuveringphase) -> (       (LiVar515  -> X X LiVar725) &       (LiVar514  -> X X LiVar724) &       (LiVar513  -> X X LiVar723) &       (LiVar512  -> X X LiVar722)    )) & G[48977,88021] ((communicationphase & ac3isssepts & X maneuveringphase) -> (       (LiVar504  -> X X LiVar721) &       (LiVar503  -> X X LiVar720) &       (LiVar502  -> X X LiVar719) &       (LiVar501  -> X X LiVar718)    )) & G[16227,100000] ((communicationphase & ac4isssepts & X maneuveringphase) -> (       (LiVar493  -> X X LiVar717) &       (LiVar492  -> X X LiVar716) &       (LiVar491  -> X X LiVar715) &       (LiVar490  -> X X LiVar714)    )) & G[96961,100000] ((communicationphase & ac1isssepss & X maneuveringphase) -> (       (LiVar526  -> X X LiVar729) &       (LiVar525  -> X X LiVar728) &       (LiVar524  -> X X LiVar727) &       (LiVar523  -> X X LiVar726)    )) & G[85384,100000] ((communicationphase & ac2isssepss & X maneuveringphase) -> (       (LiVar515  -> X X LiVar725) &       (LiVar514  -> X X LiVar724) &       (LiVar513  -> X X LiVar723) &       (LiVar512  -> X X LiVar722)    )) & G[83939,100000] ((communicationphase & ac3isssepss & X maneuveringphase) -> (       (LiVar504  -> X X LiVar721) &       (LiVar503  -> X X LiVar720) &       (LiVar502  -> X X LiVar719) &       (LiVar501  -> X X LiVar718)    )) & G[57654,100000] ((communicationphase & ac4isssepss & X maneuveringphase) -> (       (LiVar493  -> X X LiVar717) &       (LiVar492  -> X X LiVar716) &       (LiVar491  -> X X LiVar715) &       (LiVar490  -> X X LiVar714)    )) & TRUE
+                                                          ^
+ParseError: `\+`, `\-`, `\-`, `<=`, `<`, `>=`, `>`, `==`, `!=`, `!=`, `U`, `R`, `R`, `(?=(?P<_46>\&\&|\&))(?P=_46)`, `(?=(?P<_47>\|\||\|))(?P=_47)`, `\->`, `<\->`, `<\->`, `\)`
+Command exited with non-zero status 1
+Total elapsed time (s): 0.29
+Max memory used (KB): 79820
+
+Name                                                                                                                                             Time (s)    Total memory (KiB)  Result
+---------------------------------------------------------------------------------------------------------------------------------------------  ----------  --------------------  --------
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/Accumulator.smv.ltlf                                                      0.34                105888  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/AdditionGate.smv.ltlf                                                     0.34                107196  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/AntiSkidCommandFacility.smv.ltlf                                          0.3                 105836  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/AntiskidShutoffValve.smv.ltlf                                             0.29                106692  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/BrakeActuator.smv.ltlf                                                    0.3                 105460  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/BrakeCommandFacility.smv.ltlf                                             0.29                105764  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/HydraulicFuse.smv.ltlf                                                    0.29                105592  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/HydraulicPiston.smv.ltlf                                                  0.29                105688  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/HydraulicPump.smv.ltlf                                                    0.3                 107088  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/MeterValve.smv.ltlf                                                       0.29                105872  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/MonitorSystem.smv.ltlf                                                    0.3                 106140  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/out/extended_wbs_arch1.smv.ltlf                                          -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/SensorPedalPosition.smv.ltlf                                              0.3                 105700  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/Sensor.smv.ltlf                                                           0.29                105892  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/ShutoffValve.smv.ltlf                                                     0.29                106780  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/wbs_arch1_simp.smv.ltlf                                                  -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/wbs_arch1.smv.ltlf                                                       -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/Wheel.smv.ltlf                                                            0.3                 107916  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis/out/extended_wbs_arch2bis.smv.ltlf                                    -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/AlternateCommandCalculator.smv.ltlf        0.3                 105820  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/NormalCommandCalculator.smv.ltlf           0.3                 105648  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/OrGate.smv.ltlf                            0.29                105536  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/SelectorValve.smv.ltlf                     0.3                 107804  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/SwitchGate.smv.ltlf                        0.3                 107344  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/wbs_arch2bis_simp.smv.ltlf                -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/wbs_arch2bis.smv.ltlf                     -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2/out/extended_wbs_arch2.smv.ltlf                                          -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2_with_normal_alternate_mutex/wbs_arch2_simp.smv.ltlf                      -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2_with_normal_alternate_mutex/wbs_arch2.smv.ltlf                           -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch3/out/extended_wbs_arch3.smv.ltlf                                          -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch3/wbs_arch3_simp.smv.ltlf                                                  -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch3/wbs_arch3.smv.ltlf                                                       -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch4/out/extended_wbs_arch4.smv.ltlf                                          -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch4/wbs_arch4_simp.smv.ltlf                                                  -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch4/wbs_arch4.smv.ltlf                                                       -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_1.smv.ltlf                                                 -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_2.smv.ltlf                                                 -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_3.smv.ltlf                                                 -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_4.smv.ltlf                                                 -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_5.smv.ltlf                                                 -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_6.smv.ltlf                                                 -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_7.smv.ltlf                                                 -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_1.smv.ltlf                                                -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_2.smv.ltlf                                                -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_3.smv.ltlf                                                -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_4.smv.ltlf                                                -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_5.smv.ltlf                                                -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_6.smv.ltlf                                                -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_7.smv.ltlf                                                -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/oss/sample.smv.ltlf                                                               0.3                 112536  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/oss/universal_extended_val.smv.ltlf                                              21.17              27554876  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/oss/universal_prop.smv.ltlf                                                      -1                       -1  Error 1
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/dummy/GCDR.smv.ltlf                                                     0.31                118900  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/dummy/ProtocolPolicy.smv.ltlf                                           0.3                 110500  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/ACDR_nonreceptive.smv.ltlf                                 0.31                109584  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/ACDR_simple.smv.ltlf                                       0.31                110112  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/ACDR.smv.ltlf                                              0.31                110756  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/CommunicationLayer.smv.ltlf                                0.29                103772  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/fault_dynamics.smv.ltlf                                    0.3                 104108  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/GCDR.smv.ltlf                                              0.3                 106884  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/RouteManager.smv.ltlf                                      0.3                 104248  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/verification.divided.smv.ltlf                                          -1                       -1  Error 1
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/verification.smv.ltlf                                                  -1                       -1  Error 1

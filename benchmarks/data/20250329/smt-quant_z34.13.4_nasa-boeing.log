@@ -1,0 +1,522 @@
+Running benchmarks...
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/Accumulator.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/Accumulator.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.03
+Max memory used (KB): 35328
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/AdditionGate.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/AdditionGate.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 35584
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/AntiSkidCommandFacility.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/AntiSkidCommandFacility.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 35712
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/AntiskidShutoffValve.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/AntiskidShutoffValve.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 35584
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/BrakeActuator.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/BrakeActuator.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 35840
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/BrakeCommandFacility.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/BrakeCommandFacility.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 35840
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/HydraulicFuse.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/HydraulicFuse.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 35968
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/HydraulicPiston.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/HydraulicPiston.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 35968
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/HydraulicPump.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/HydraulicPump.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 35840
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/MeterValve.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/MeterValve.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 35712
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/MonitorSystem.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/MonitorSystem.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 36352
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/out/extended_wbs_arch1.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/out/extended_wbs_arch1.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 80.89
+Max memory used (KB): 678032
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/SensorPedalPosition.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/SensorPedalPosition.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 35840
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/Sensor.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/Sensor.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 35712
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/ShutoffValve.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/ShutoffValve.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 35840
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/wbs_arch1_simp.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/wbs_arch1_simp.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 31.30
+Max memory used (KB): 654640
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/wbs_arch1.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/wbs_arch1.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 50.05
+Max memory used (KB): 650472
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/Wheel.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/Wheel.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 35712
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis/out/extended_wbs_arch2bis.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis/out/extended_wbs_arch2bis.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/AlternateCommandCalculator.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/AlternateCommandCalculator.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 35712
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/NormalCommandCalculator.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/NormalCommandCalculator.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 35840
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/OrGate.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/OrGate.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 35840
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/SelectorValve.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/SelectorValve.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 35712
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/SwitchGate.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/SwitchGate.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 35840
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/wbs_arch2bis_simp.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/wbs_arch2bis_simp.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/wbs_arch2bis.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/wbs_arch2bis.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2/out/extended_wbs_arch2.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2/out/extended_wbs_arch2.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2_with_normal_alternate_mutex/wbs_arch2_simp.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2_with_normal_alternate_mutex/wbs_arch2_simp.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2_with_normal_alternate_mutex/wbs_arch2.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2_with_normal_alternate_mutex/wbs_arch2.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch3/out/extended_wbs_arch3.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch3/out/extended_wbs_arch3.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch3/wbs_arch3_simp.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch3/wbs_arch3_simp.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch3/wbs_arch3.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch3/wbs_arch3.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch4/out/extended_wbs_arch4.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch4/out/extended_wbs_arch4.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch4/wbs_arch4_simp.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch4/wbs_arch4_simp.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch4/wbs_arch4.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch4/wbs_arch4.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_1.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_1.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 27.91
+Max memory used (KB): 655756
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_2.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_2.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_3.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_3.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_4.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_4.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_5.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_5.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_6.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_6.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_7.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_7.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_1.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_1.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 40.52
+Max memory used (KB): 656148
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_2.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_2.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_3.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_3.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_4.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_4.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_5.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_5.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_6.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_6.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_7.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_7.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+Killed
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/oss/sample.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/oss/sample.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 36352
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/oss/universal_extended_val.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/oss/universal_extended_val.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 35840
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/oss/universal_prop.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/oss/universal_prop.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+[31mERROR[0m: syntax error
+Total elapsed time (s): 0.00
+Max memory used (KB): 7168
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/dummy/GCDR.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/dummy/GCDR.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 35968
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/dummy/ProtocolPolicy.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/dummy/ProtocolPolicy.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 35840
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/ACDR_nonreceptive.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/ACDR_nonreceptive.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.04
+Max memory used (KB): 38016
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/ACDR_simple.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/ACDR_simple.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.08
+Max memory used (KB): 39936
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/ACDR.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/ACDR.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.03
+Max memory used (KB): 37376
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/CommunicationLayer.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/CommunicationLayer.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 35072
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/fault_dynamics.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/fault_dynamics.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 31360
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/GCDR.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/GCDR.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 36096
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/RouteManager.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/RouteManager.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+sat
+
+Total elapsed time (s): 0.01
+Max memory used (KB): 34560
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/verification.divided.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/verification.divided.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+[31mERROR[0m: syntax error
+Total elapsed time (s): 0.00
+Max memory used (KB): 7424
+
+Evaluating file /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/verification.smv.ltlf ...
+systemd-run --quiet --user --scope -p KillSignal=SIGKILL -p MemoryMax=51200M -p MemorySwapMax=0 -p RuntimeMaxSec=120 /usr/bin/time -f "Total elapsed time (s): %e
+Max memory used (KB): %M" bash -c ' /home/michele/Repos/mltlsat/translator/src/MLTLConvertor -smtlib "$(cat /home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/verification.smv.ltlf)" | /home/michele/Software/z3-4.13.4/bin/z3 -in '
+
+[31mERROR[0m: syntax error
+Total elapsed time (s): 0.00
+Max memory used (KB): 7296
+
+Name                                                                                                                                             Time (s)    Total memory (KiB)  Result
+---------------------------------------------------------------------------------------------------------------------------------------------  ----------  --------------------  ------------
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/Accumulator.smv.ltlf                                                      0.03                 35328  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/AdditionGate.smv.ltlf                                                     0.01                 35584  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/AntiSkidCommandFacility.smv.ltlf                                          0.01                 35712  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/AntiskidShutoffValve.smv.ltlf                                             0.01                 35584  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/BrakeActuator.smv.ltlf                                                    0.01                 35840  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/BrakeCommandFacility.smv.ltlf                                             0.01                 35840  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/HydraulicFuse.smv.ltlf                                                    0.01                 35968  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/HydraulicPiston.smv.ltlf                                                  0.01                 35968  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/HydraulicPump.smv.ltlf                                                    0.01                 35840  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/MeterValve.smv.ltlf                                                       0.01                 35712  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/MonitorSystem.smv.ltlf                                                    0.01                 36352  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/out/extended_wbs_arch1.smv.ltlf                                          80.89                678032  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/SensorPedalPosition.smv.ltlf                                              0.01                 35840  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/Sensor.smv.ltlf                                                           0.01                 35712  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/ShutoffValve.smv.ltlf                                                     0.01                 35840  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/wbs_arch1_simp.smv.ltlf                                                  31.3                 654640  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/wbs_arch1.smv.ltlf                                                       50.05                650472  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch1/Wheel.smv.ltlf                                                            0.01                 35712  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis/out/extended_wbs_arch2bis.smv.ltlf                                    -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/AlternateCommandCalculator.smv.ltlf        0.01                 35712  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/NormalCommandCalculator.smv.ltlf           0.01                 35840  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/OrGate.smv.ltlf                            0.01                 35840  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/SelectorValve.smv.ltlf                     0.01                 35712  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/SwitchGate.smv.ltlf                        0.01                 35840  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/wbs_arch2bis_simp.smv.ltlf                -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2bis_with_normal_alternate_mutex/wbs_arch2bis.smv.ltlf                     -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2/out/extended_wbs_arch2.smv.ltlf                                          -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2_with_normal_alternate_mutex/wbs_arch2_simp.smv.ltlf                      -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch2_with_normal_alternate_mutex/wbs_arch2.smv.ltlf                           -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch3/out/extended_wbs_arch3.smv.ltlf                                          -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch3/wbs_arch3_simp.smv.ltlf                                                  -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch3/wbs_arch3.smv.ltlf                                                       -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch4/out/extended_wbs_arch4.smv.ltlf                                          -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch4/wbs_arch4_simp.smv.ltlf                                                  -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/models/arch4/wbs_arch4.smv.ltlf                                                       -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_1.smv.ltlf                                                 27.91                655756  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_2.smv.ltlf                                                 -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_3.smv.ltlf                                                 -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_4.smv.ltlf                                                 -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_5.smv.ltlf                                                 -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_6.smv.ltlf                                                 -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/instance_7.smv.ltlf                                                 -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_1.smv.ltlf                                                40.52                656148  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_2.smv.ltlf                                                -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_3.smv.ltlf                                                -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_4.smv.ltlf                                                -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_5.smv.ltlf                                                -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_6.smv.ltlf                                                -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/Boeing-WBS/scripts/instances/universal_7.smv.ltlf                                                -1                       -1  TO
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/oss/sample.smv.ltlf                                                               0.01                 36352  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/oss/universal_extended_val.smv.ltlf                                               0.01                 35840  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/oss/universal_prop.smv.ltlf                                                       0                     7168  syntax error
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/dummy/GCDR.smv.ltlf                                                     0.01                 35968  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/dummy/ProtocolPolicy.smv.ltlf                                           0.01                 35840  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/ACDR_nonreceptive.smv.ltlf                                 0.04                 38016  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/ACDR_simple.smv.ltlf                                       0.08                 39936  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/ACDR.smv.ltlf                                              0.03                 37376  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/CommunicationLayer.smv.ltlf                                0.01                 35072  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/fault_dynamics.smv.ltlf                                    0.01                 31360  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/GCDR.smv.ltlf                                              0.01                 36096  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/inner_models/RouteManager.smv.ltlf                                      0.01                 34560  sat
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/verification.divided.smv.ltlf                                           0                     7424  syntax error
+/home/michele/Repos/mltlsat/Benchmarks/nasa-boeing/NASA-ATC/models/smv_files/verification.smv.ltlf                                                   0                     7296  syntax error
