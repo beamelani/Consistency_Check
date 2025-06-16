@@ -1,22 +1,33 @@
 [project]
 name = "stl-consistency"
-version = "0.1.0"
+version = "1.0.0"
 description = "Default template for PDM package"
 authors = [
     {name = "Beatrice Melani", email = "beatrice.melani@polimi.it"},
+    {name = "Michele Chiari", email = "michele.chiari@tuwien.ac.at"},
 ]
 dependencies = [
     "matplotlib>=3.9.1",
     "networkx>=3.3",
     "pe>=0.5.0",
     "pydot>=3.0",
-    "z3-solver>=4.13.0.0",
+    "z3-solver==4.13.*",
     "wrapt-timeout-decorator>=1.5.1",
 ]
-requires-python = ">=3.11.*"
+requires-python = ">=3.11.0"
 readme = "README.md"
 license = {text = "MIT"}
 
 
 [tool.pdm]
 distribution = false
+
+[dependency-groups]
+dev = [
+    "tabulate>=0.9",
+    "joblib>=1.5.1",
+    "pandas>=2.3.0",
+    "plotly>=6.1.2",
+    "kaleido>=0.2.1",
+    "wrapt-timeout-decorator>=1.5.1",
+]
