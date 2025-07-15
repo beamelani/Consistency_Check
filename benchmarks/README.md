@@ -100,7 +100,7 @@ To plot results of the comparison with the FOL encoding, run
 
 To plot the results of the ablation analysis of the tableau, run
 ```sh
-./make_compare_plots.sh
+./make_ablation_plots.sh
 ```
 
 By default, these script will use previous benchmarks data contained in the `data` directory.
