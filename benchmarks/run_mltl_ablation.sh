@@ -14,6 +14,7 @@ timeout=120
 jobs=4
 max_mem=30720
 iters=5
+bench_sets=("nasa-boeing" "random" "random0")
 outdir=./output_ablation
 
 while [[ $# -gt 0 ]]; do
@@ -34,6 +35,10 @@ while [[ $# -gt 0 ]]; do
             iters="$2"
             shift 2
             ;;
+        --bench-sets)
+            bench_sets=($2)
+            shift 2
+            ;;
         *)
             echo "Unknown argument: $1"
             exit 1
@@ -47,14 +52,12 @@ fi
 
 set -x
 
-./run_bench.py --timeout ${timeout} --max-mem ${max_mem} --jobs ${jobs} --iters ${iters} -vv --csv "${outdir}/ablation_all_random.csv" -b "${mltlsatdir}/" "${mltlsatdir}/benchmark_list/random.list" tableau &> "${outdir}/ablation_all_random.log"
-./run_bench.py --timeout ${timeout} --max-mem ${max_mem} --jobs ${jobs} --iters ${iters} -vv --csv "${outdir}/ablation_all_nasa-boeing.csv" -b "${mltlsatdir}/" "${mltlsatdir}/benchmark_list/nasa-boeing.list" tableau &> "${outdir}/ablation_all_nasa-boeing.log"
-./run_bench.py --timeout ${timeout} --max-mem ${max_mem} --jobs ${jobs} --iters ${iters} -vv --csv "${outdir}/ablation_all_random0.csv" -b "${mltlsatdir}/" "${mltlsatdir}/benchmark_list/random0.list" tableau &> "${outdir}/ablation_all_random0.log"
+for bset in "${bench_sets[@]}"; do
+    ./run_bench.py --timeout ${timeout} --max-mem ${max_mem} --jobs ${jobs} --iters ${iters} -vv --csv "${outdir}/ablation_all_${bset}.csv" -b "${mltlsatdir}/" "${mltlsatdir}/benchmark_list/${bset}.list" tableau &> "${outdir}/ablation_all_${bset}.log"
+done
 
 for opt in "${opts[@]}"; do
-
-    ./run_bench.py --timeout ${timeout} --max-mem ${max_mem} --jobs ${jobs} --iters ${iters} -vv --${opt} --csv "${outdir}/ablation_${opt}_random.csv" -b "${mltlsatdir}/" "${mltlsatdir}/benchmark_list/random.list" tableau &> "${outdir}/ablation_${opt}_random.log"
-    ./run_bench.py --timeout ${timeout} --max-mem ${max_mem} --jobs ${jobs} --iters ${iters} -vv --${opt} --csv "${outdir}/ablation_${opt}_nasa-boeing.csv" -b "${mltlsatdir}/" "${mltlsatdir}/benchmark_list/nasa-boeing.list" tableau &> "${outdir}/ablation_${opt}_nasa-boeing.log"
-    ./run_bench.py --timeout ${timeout} --max-mem ${max_mem} --jobs ${jobs} --iters ${iters} -vv --${opt} --csv "${outdir}/ablation_${opt}_random0.csv" -b "${mltlsatdir}/" "${mltlsatdir}/benchmark_list/random0.list" tableau &> "${outdir}/ablation_${opt}_random0.log"
-
+    for bset in "${bench_sets[@]}"; do
+        ./run_bench.py --timeout ${timeout} --max-mem ${max_mem} --jobs ${jobs} --iters ${iters} -vv --${opt} --csv "${outdir}/ablation_${opt}_${bset}.csv" -b "${mltlsatdir}/" "${mltlsatdir}/benchmark_list/${bset}.list" tableau &> "${outdir}/ablation_${opt}_${bset}.log"
+    done
 done
