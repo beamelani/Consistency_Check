@@ -1,6 +1,6 @@
 #!/bin/bash
 
-opts=("no-jump" "no-formula-optimizations" "no-early-local-consistency-check" "no-memoization" "no-simple-nodes")
+opts=("no-jump" "no-g-f" "no-formula-optimizations" "no-early-local-consistency-check" "no-memoization" "no-simple-nodes")
 
 if [ $# -lt 1 ]; then
     echo "Usage: $0 mltlsatdir [--timeout SECONDS] [--jobs N] [--max-mem MB] [--iters N]"
