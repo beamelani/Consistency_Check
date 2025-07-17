@@ -32,7 +32,7 @@ pip install joblib tabulate plotly pandas kaleido
 The Z3 Theorem Prover is also needed.
 Download the version you need from the [releases page](https://github.com/Z3Prover/z3/releases).
 
-The MLTL benchmarks are located in [Jianwen Li's reposirtory](https://github.com/lijwen2748/mltlsat).
+The MLTL benchmarks are located in [Jianwen Li's repository](https://github.com/lijwen2748/mltlsat).
 Clone it somewhere with
 ```sh
 git clone https://github.com/lijwen2748/mltlsat.git
@@ -54,14 +54,15 @@ cd /path/to/stltree/benchmarks
 
 The script supports the following command-line arguments:
 
-| Argument         | Required | Value        | Default   | Description                                                                 |
-|------------------|----------|--------------|-----------|-----------------------------------------------------------------------------|
-| `mltlsatdir`     | Yes      | Directory    | —         | Path to the MLTL-SAT repository (first positional argument).                |
-| `--timeout`      | No       | Seconds      | 120       | Timeout for each benchmark run (in seconds).                                |
-| `--jobs`         | No       | Integer      | 4         | Number of parallel jobs to run.                                             |
-| `--max-mem`      | No       | MB           | 30720     | Maximum memory allowed per process (in megabytes).                          |
-| `--iters`        | No       | Integer      | 5         | Number of iterations to run each benchmark.                                 |
-| `--z3bin`        | No       | Path         | z3        | Path to the Z3 binary to use for SMT-based benchmarks.                      |
+| Argument         | Required | Value        | Default                      | Description                                                  |
+|------------------|----------|--------------|------------------------------|--------------------------------------------------------------|
+| `mltlsatdir`     | Yes      | Directory    | —                            | Path to the MLTL-SAT repository (first positional argument). |
+| `--timeout`      | No       | Seconds      | 120                          | Timeout for each benchmark run (in seconds).                 |
+| `--jobs`         | No       | Integer      | 4                            | Number of parallel jobs to run.                              |
+| `--max-mem`      | No       | MB           | 30720                        | Maximum memory allowed per process (in megabytes).           |
+| `--iters`        | No       | Integer      | 5                            | Number of iterations to run each benchmark.                  |
+| `--z3bin`        | No       | Path         | z3                           | Path to the Z3 binary to use for SMT-based benchmarks.       |
+| `--bench-sets`   | No       | String       | "nasa-boeing random random0" | Benchmark sets to use.                                       |
 
 For instance:
 ```sh
@@ -78,13 +79,14 @@ cd /path/to/stltree/benchmarks
 
 The script supports the following command-line arguments:
 
-| Argument         | Required | Value        | Default   | Description                                                                 |
-|------------------|----------|--------------|-----------|-----------------------------------------------------------------------------|
-| `mltlsatdir`     | Yes      | Directory    | —         | Path to the MLTL-SAT repository (first positional argument).                |
-| `--timeout`      | No       | Seconds      | 120       | Timeout for each benchmark run (in seconds).                                |
-| `--jobs`         | No       | Integer      | 4         | Number of parallel jobs to run.                                             |
-| `--max-mem`      | No       | MB           | 30720     | Maximum memory allowed per process (in megabytes).                          |
-| `--iters`        | No       | Integer      | 5         | Number of iterations to run each benchmark.                                 |
+| Argument         | Required | Value        | Default                      | Description                                                   |
+|------------------|----------|--------------|------------------------------|---------------------------------------------------------------|
+| `mltlsatdir`     | Yes      | Directory    | —                            | Path to the MLTL-SAT repository (first positional argument).  |
+| `--timeout`      | No       | Seconds      | 120                          | Timeout for each benchmark run (in seconds).                  |
+| `--jobs`         | No       | Integer      | 4                            | Number of parallel jobs to run.                               |
+| `--max-mem`      | No       | MB           | 30720                        | Maximum memory allowed per process (in megabytes).            |
+| `--iters`        | No       | Integer      | 5                            | Number of iterations to run each benchmark.                   |
+| `--bench-sets`   | No       | String       | "nasa-boeing random random0" | Benchmark sets to use.                                        |
 
 For instance:
 ```sh

@@ -59,8 +59,6 @@ If this doesn't work, try the [development instructions](#development-environmen
 | `-v`, `--verbose`                   | Enable verbose output for debugging or analysis.                                                |
 | `formula <file>`                    | Path to a file containing the temporal logic formula to be checked.                             |
 
-Benchmarks from paper can be found in
-benchmarks/paper_benchmarks.py
 
 ### 🏁 Running STLTree
 
@@ -70,6 +68,33 @@ python stltree.py [options] <formula-file>
 ```
 
 Benchmarks (and [instructions for running them](benchmarks/README.md)) are located in the [benchmarks directory](benchmarks).
+
+
+### Input Format
+
+STLTree accepts input files that contain formulas in discrete, bounded-time STL or MLTL, with the following syntax:
+
+| Operator  | Full Name         | Arity   |
+|-----------|-------------------|---------|
+| `G[a,b]`  | Globally          | Unary   |
+| `F[a,b]`  | Eventually        | Unary   |
+| `U[a,b]`  | Until             | Binary  |
+| `R[a,b]`  | Release           | Binary  |
+| `!`, `~`  | Not               | Unary   |
+| `&`, `&&` | And               | Binary  |
+| `\|`, `\|\|` | Or                | Binary  |
+| `->`      | Implies           | Binary  |
+| `<->`     | If and only if    | Binary  |
+
+where `a` and `b` must be integers.
+
+Atomic formulas can be Boolean variables, or comparisons of linear expressions of real variables.
+Available comparison operators are `<=` `<` `>=` `>` `==` `!=`, and arithmetic operators are `+` and `-`.
+
+Check the directory `benchmarks/formulas` or the tests in `tests` for some examples.
+
+By default, STLTree checks satisfiability with a tree-shaped tableau.
+Command line argument `--smt` causes STLTree to use a bounded-model-checking-style SMT encoding.
 
 
 ## 🧑‍💻 Development Environment
